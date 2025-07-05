@@ -184,6 +184,46 @@ class ChangelogHelper:
             return self.create_fragment(fragment_type, git_message)
         
         return None
+    
+    def get_current_version(self, pyproject_path: str = "pyproject.toml") -> str:
+        """pyproject.tomlから現在のバージョンを取得"""
+        if not os.path.exists(pyproject_path):
+            return "0.0.0"
+        with open(pyproject_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                if line.strip().startswith("version"):
+                    return line.split('=')[1].strip().replace('"', '').replace("'", '')
+        return "0.0.0"
+
+    def bump_version(self, current_version: str, bump_type: str) -> str:
+        """バージョン番号を種別に応じてインクリメント"""
+        major, minor, patch = [int(x) for x in current_version.split('.')]
+        if bump_type == "major":
+            major += 1
+            minor = 0
+            patch = 0
+        elif bump_type == "minor":
+            minor += 1
+            patch = 0
+        else:
+            patch += 1
+        return f"{major}.{minor}.{patch}"
+
+    def update_pyproject_version(self, new_version: str, pyproject_path: str = "pyproject.toml"):
+        """pyproject.tomlのバージョン番号を自動更新（雛形）"""
+        if not os.path.exists(pyproject_path):
+            print(f"⚠️ {pyproject_path}が見つかりません")
+            return
+        lines = []
+        with open(pyproject_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                if line.strip().startswith("version"):
+                    lines.append(f'version = "{new_version}"\n')
+                else:
+                    lines.append(line)
+        with open(pyproject_path, 'w', encoding='utf-8') as f:
+            f.writelines(lines)
+        print(f"✅ pyproject.tomlのバージョンを{new_version}に更新しました")
 
 def main():
     if len(sys.argv) < 2:
@@ -223,7 +263,12 @@ def main():
     
     elif command == "suggest":
         version_bump = helper.suggest_version_bump()
+        current_version = helper.get_current_version()
+        next_version = helper.bump_version(current_version, version_bump)
         print(f"\n💡 推奨バージョンアップ: {version_bump}")
+        print(f"   現在のバージョン: {current_version}")
+        print(f"   次のバージョン: {next_version}")
+        # 自動更新例: helper.update_pyproject_version(next_version)
     
     elif command == "template":
         helper.create_template_fragments()

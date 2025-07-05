@@ -38,7 +38,7 @@
     "learning_support.reminder_interval_days": 7,
     "learning_support.understanding_levels": [
         "not_assessed",
-        "beginner", 
+        "beginner",
         "intermediate",
         "advanced",
         "expert"
@@ -46,7 +46,7 @@
     "learning_support.tdd_proficiency_levels": [
         "not_assessed",
         "beginner",
-        "intermediate", 
+        "intermediate",
         "advanced",
         "expert"
     ],

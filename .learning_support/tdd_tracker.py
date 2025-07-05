@@ -211,13 +211,12 @@ class TDDTracker:
         }
     
     def display_tdd_summary(self, concept: str):
-        """TDD実践のサマリーを表示"""
+        """TDD実践のサマリーを表示し、推奨アクションも出力"""
         summary = self.get_tdd_summary(concept)
         
         print(f"\n=== TDD実践サマリー: {concept} ===")
         print(f"総実践回数: {summary['total_records']}")
         print(f"成功率: {summary['success_rate']:.1%}")
-        
         print(f"\n📊 フェーズ別統計:")
         for phase, stats in summary["phases"].items():
             print(f"   {phase.upper()}: {stats['count']}回 (成功率: {stats['success_rate']:.1%})")
@@ -226,6 +225,26 @@ class TDDTracker:
         concept_record = self.data_manager.get_concept_record(concept)
         if concept_record:
             print(f"\n🎯 現在のTDD実践度: {concept_record.tdd_proficiency.value}")
+        
+        # 推奨アクション
+        self._suggest_tdd_actions(concept, summary)
+
+    def _suggest_tdd_actions(self, concept: str, summary: dict):
+        """TDDサマリーから推奨アクションを自動提案"""
+        # エラー率が高い場合やサイクル未達成時に学習パス再生成や理解度再確認を提案
+        error_phases = [p for p, s in summary["phases"].items() if s["success_rate"] < 0.7 and s["count"] > 0]
+        if summary["success_rate"] < 0.7:
+            print("\n🔔 エラー率が高い傾向があります。")
+            print(f"   推奨: python .learning_support/learning_path_generator.py {concept} kinesthetic")
+            print(f"   または理解度再確認: python .learning_support/understanding_checker.py {concept}")
+        if len([p for p in summary["phases"] if summary["phases"][p]["count"] == 0]) > 0:
+            print("\n⚠️ TDDサイクル未達成のフェーズがあります。全フェーズ実践を推奨します。")
+        if error_phases:
+            print("\n💡 改善が必要なフェーズ:")
+            for p in error_phases:
+                print(f"   - {p.upper()} (成功率: {summary['phases'][p]['success_rate']:.1%})")
+        if summary["total_records"] == 0:
+            print("\n💡 まずはREDフェーズからTDDサイクルを始めましょう。")
 
 def main():
     if len(sys.argv) < 3:

@@ -134,23 +134,43 @@ class UnderstandingChecker:
         return understanding_level in [UnderstandingLevel.INTERMEDIATE, UnderstandingLevel.ADVANCED, UnderstandingLevel.EXPERT]
     
     def _should_skip_check(self, record: ConceptRecord) -> bool:
-        """理解度確認を省略すべきかチェック"""
+        """理解度確認を省略すべきかチェック（詳細理由付き）"""
+        reasons = []
+        # 理解度が「advanced」以上
         if record.understanding_level not in [UnderstandingLevel.ADVANCED, UnderstandingLevel.EXPERT]:
-            return False
-        
+            reasons.append(f"理解度が {record.understanding_level.value}（advanced未満）")
         # 30日以内に確認済み
-        if datetime.now() - record.last_confirmed > timedelta(days=30):
-            return False
-        
+        if (datetime.now() - record.last_confirmed) > timedelta(days=30):
+            reasons.append(f"最終確認から30日超過（{record.last_confirmed.strftime('%Y-%m-%d')})")
         # 実装経験が3回以上
         if record.implementation_count < 3:
-            return False
-        
-        # TDD実践度が上級以上
+            reasons.append(f"実装経験が{record.implementation_count}回（3回未満）")
+        # TDD実践度が「advanced」以上
         if record.tdd_proficiency not in [TDDProficiency.ADVANCED, TDDProficiency.EXPERT]:
+            reasons.append(f"TDD実践度が{record.tdd_proficiency.value}（advanced未満）")
+        # 前提知識チェーンが全て「intermediate」以上
+        prereq_ng = self._check_prerequisite_chain(record.prerequisites)
+        if prereq_ng:
+            reasons.append(f"前提知識チェーンに理解度不足: {', '.join(prereq_ng)}")
+        if reasons:
+            print("\n【省略不可の理由】")
+            for r in reasons:
+                print(f"- {r}")
             return False
-        
+        print("\n✓ 省略条件を全て満たしています（理解度・TDD・前提知識・実装経験・最終確認日）")
         return True
+
+    def _check_prerequisite_chain(self, prerequisites: List[str]) -> List[str]:
+        """前提知識チェーンの理解度がintermediate以上か再帰的に確認。不足があればリストで返す"""
+        ng_list = []
+        for concept in prerequisites:
+            rec = self.data_manager.get_concept_record(concept)
+            if not rec or rec.understanding_level.value not in ["intermediate", "advanced", "expert"]:
+                ng_list.append(concept)
+            # 再帰的に前提知識をたどる
+            if rec and rec.prerequisites:
+                ng_list.extend(self._check_prerequisite_chain(rec.prerequisites))
+        return ng_list
     
     def _assess_understanding(self, concept: str) -> UnderstandingLevel:
         """理解度を評価"""
