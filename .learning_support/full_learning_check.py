@@ -128,7 +128,8 @@ class FullLearningCheck:
         recent_records = [
             r
             for r in tdd_records
-            if datetime.fromisoformat(r["timestamp"]) > datetime.now() - timedelta(days=7)
+            if datetime.fromisoformat(r["timestamp"])
+            > datetime.now() - timedelta(days=7)
         ]
         if recent_records:
             print(f"   最近7日間: {len(recent_records)}回実践")
@@ -357,7 +358,8 @@ class FullLearningCheck:
         recent_records = [
             r
             for r in self.data_manager.data["tdd_records"]
-            if datetime.fromisoformat(r["timestamp"]) > datetime.now() - timedelta(days=7)
+            if datetime.fromisoformat(r["timestamp"])
+            > datetime.now() - timedelta(days=7)
         ]
         return len(recent_records)
 

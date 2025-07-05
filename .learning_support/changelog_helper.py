@@ -20,12 +20,14 @@ class ChangelogHelper:
             "bugfix": "バグ修正",
             "doc": "ドキュメント",
             "removal": "削除・非推奨",
-            "misc": "その他"
+            "misc": "その他",
         }
         # changelog.dディレクトリを作成
         os.makedirs(self.changelog_dir, exist_ok=True)
 
-    def create_fragment(self, fragment_type: str, description: str, issue_number: Optional[int] = None) -> str:
+    def create_fragment(
+        self, fragment_type: str, description: str, issue_number: Optional[int] = None
+    ) -> str:
         """変更フラグメントを作成"""
         if fragment_type not in self.fragment_types:
             raise ValueError(f"無効なフラグメントタイプ: {fragment_type}")
@@ -36,15 +38,19 @@ class ChangelogHelper:
         else:
             filename = f"{timestamp}_{fragment_id}.{fragment_type}.md"
         filepath = os.path.join(self.changelog_dir, filename)
-        content = self._create_fragment_content(description, fragment_type, issue_number)
-        with open(filepath, 'w', encoding='utf-8') as f:
+        content = self._create_fragment_content(
+            description, fragment_type, issue_number
+        )
+        with open(filepath, "w", encoding="utf-8") as f:
             f.write(content)
         print(f"✅ 変更フラグメントを作成しました: {filename}")
         print(f"   タイプ: {self.fragment_types[fragment_type]}")
         print(f"   説明: {description}")
         return filepath
 
-    def _create_fragment_content(self, description: str, fragment_type: str, issue_number: Optional[int] = None) -> str:
+    def _create_fragment_content(
+        self, description: str, fragment_type: str, issue_number: Optional[int] = None
+    ) -> str:
         """フラグメント内容を作成"""
         content = description
         if issue_number:
@@ -53,19 +59,24 @@ class ChangelogHelper:
 
     def list_fragments(self) -> Dict[str, List[Dict[str, str]]]:
         """既存のフラグメントを一覧表示"""
-        fragments: Dict[str, List[Dict[str, str]]] = {ftype: [] for ftype in self.fragment_types}
+        fragments: Dict[str, List[Dict[str, str]]] = {
+            ftype: [] for ftype in self.fragment_types
+        }
         if not os.path.exists(self.changelog_dir):
             return fragments
         for filename in os.listdir(self.changelog_dir):
-            if filename.endswith('.md'):
+            if filename.endswith(".md"):
                 for ftype in self.fragment_types:
                     if f".{ftype}." in filename:
-                        with open(os.path.join(self.changelog_dir, filename), 'r', encoding='utf-8') as f:
+                        with open(
+                            os.path.join(self.changelog_dir, filename),
+                            "r",
+                            encoding="utf-8",
+                        ) as f:
                             content = f.read().strip()
-                        fragments[ftype].append({
-                            "filename": filename,
-                            "content": content
-                        })
+                        fragments[ftype].append(
+                            {"filename": filename, "content": content}
+                        )
                         break
         return fragments
 
@@ -91,9 +102,9 @@ class ChangelogHelper:
         issues = []
         for items in fragments.values():
             for item in items:
-                if not item['content'].strip():
+                if not item["content"].strip():
                     issues.append(f"空の内容: {item['filename']}")
-                elif len(item['content']) < 10:
+                elif len(item["content"]) < 10:
                     issues.append(f"説明が短すぎます: {item['filename']}")
         if issues:
             print("\n❌ フラグメントの問題:")
@@ -122,14 +133,14 @@ class ChangelogHelper:
             "bugfix": "修正したバグの説明をここに記入",
             "doc": "ドキュメントの変更内容をここに記入",
             "removal": "削除・非推奨の内容をここに記入",
-            "misc": "その他の変更内容をここに記入"
+            "misc": "その他の変更内容をここに記入",
         }
         print("\n=== テンプレートフラグメント作成 ===")
         for ftype, template in templates.items():
             filename = f"template.{ftype}.md"
             filepath = os.path.join(self.changelog_dir, filename)
             if not os.path.exists(filepath):
-                with open(filepath, 'w', encoding='utf-8') as f:
+                with open(filepath, "w", encoding="utf-8") as f:
                     f.write(template)
                 print(f"✅ テンプレート作成: {filename}")
             else:
@@ -139,13 +150,25 @@ class ChangelogHelper:
         """Gitメッセージから自動的にフラグメントを作成"""
         message_lower = git_message.lower()
         fragment_type = None
-        if any(keyword in message_lower for keyword in ['add', 'feat', 'feature', '追加', '新機能']):
+        if any(
+            keyword in message_lower
+            for keyword in ["add", "feat", "feature", "追加", "新機能"]
+        ):
             fragment_type = "feature"
-        elif any(keyword in message_lower for keyword in ['fix', 'bug', 'bugfix', '修正', 'バグ']):
+        elif any(
+            keyword in message_lower
+            for keyword in ["fix", "bug", "bugfix", "修正", "バグ"]
+        ):
             fragment_type = "bugfix"
-        elif any(keyword in message_lower for keyword in ['doc', 'docs', 'document', 'ドキュメント']):
+        elif any(
+            keyword in message_lower
+            for keyword in ["doc", "docs", "document", "ドキュメント"]
+        ):
             fragment_type = "doc"
-        elif any(keyword in message_lower for keyword in ['remove', 'delete', 'deprecate', '削除', '非推奨']):
+        elif any(
+            keyword in message_lower
+            for keyword in ["remove", "delete", "deprecate", "削除", "非推奨"]
+        ):
             fragment_type = "removal"
         else:
             fragment_type = "misc"
@@ -157,15 +180,15 @@ class ChangelogHelper:
         """pyproject.tomlから現在のバージョンを取得"""
         if not os.path.exists(pyproject_path):
             return "0.0.0"
-        with open(pyproject_path, 'r', encoding='utf-8') as f:
+        with open(pyproject_path, "r", encoding="utf-8") as f:
             for line in f:
                 if line.strip().startswith("version"):
-                    return line.split('=')[1].strip().replace('"', '').replace("'", '')
+                    return line.split("=")[1].strip().replace('"', "").replace("'", "")
         return "0.0.0"
 
     def bump_version(self, current_version: str, bump_type: str) -> str:
         """バージョン番号を種別に応じてインクリメント"""
-        major, minor, patch = [int(x) for x in current_version.split('.')]
+        major, minor, patch = [int(x) for x in current_version.split(".")]
         if bump_type == "major":
             major += 1
             minor = 0
@@ -177,19 +200,21 @@ class ChangelogHelper:
             patch += 1
         return f"{major}.{minor}.{patch}"
 
-    def update_pyproject_version(self, new_version: str, pyproject_path: str = "pyproject.toml"):
+    def update_pyproject_version(
+        self, new_version: str, pyproject_path: str = "pyproject.toml"
+    ):
         """pyproject.tomlのバージョン番号を自動更新（雛形）"""
         if not os.path.exists(pyproject_path):
             print(f"⚠️ {pyproject_path}が見つかりません")
             return
         lines = []
-        with open(pyproject_path, 'r', encoding='utf-8') as f:
+        with open(pyproject_path, "r", encoding="utf-8") as f:
             for line in f:
                 if line.strip().startswith("version"):
                     lines.append(f'version = "{new_version}"\n')
                 else:
                     lines.append(line)
-        with open(pyproject_path, 'w', encoding='utf-8') as f:
+        with open(pyproject_path, "w", encoding="utf-8") as f:
             f.writelines(lines)
         print(f"✅ pyproject.tomlのバージョンを{new_version}に更新しました")
 
@@ -210,7 +235,9 @@ def main():
     command = sys.argv[1]
     if command == "create":
         if len(sys.argv) < 4:
-            print("Usage: python changelog_helper.py create <type> <description> [issue_number]")
+            print(
+                "Usage: python changelog_helper.py create <type> <description> [issue_number]"
+            )
             print("Types: feature, bugfix, doc, removal, misc")
             sys.exit(1)
         fragment_type = sys.argv[2]
