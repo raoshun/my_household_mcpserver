@@ -1,0 +1,81 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: Tests",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "${workspaceFolder}/tests",
+                "-v"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Learning Support: Understanding Check",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/.learning_support/understanding_checker.py",
+            "args": [
+                "CSVリーダー"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Learning Support: Learning Path Generator",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/.learning_support/learning_path_generator.py",
+            "args": [
+                "SQLiteの複雑なJOINクエリ"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Learning Support: TDD Tracker",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/.learning_support/tdd_tracker.py",
+            "args": [
+                "red",
+                "CSVリーダー"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Learning Support: Review Scheduler",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/.learning_support/review_scheduler.py",
+            "args": [
+                "--check"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "MCP Server: Debug",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            }
+        }
+    ]
+}
