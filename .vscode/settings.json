@@ -12,11 +12,21 @@
     "python.formatting.provider": "black",
     "python.formatting.blackArgs": [
         "--line-length",
-        "88"
+        "120"
+    ],
+    "python.linting.flake8Args": [
+        "--max-line-length=120"
+    ],
+    "python.linting.pylintArgs": [
+        "--max-line-length=120"
     ],
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
-        "source.organizeImports": "explicit"
+        "source.organizeImports": "explicit",
+        "source.fixAll.markdownlint": "always",
+        "source.fixAll.pylint": "always",
+        "source.fixAll.flake8": "always",
+        "source.fixAll": "always"
     },
     "files.associations": {
         "*.md": "markdown",

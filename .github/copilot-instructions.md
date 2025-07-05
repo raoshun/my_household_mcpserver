@@ -9,16 +9,19 @@
 ## 基本原則
 
 ### 1. 理解度ファースト原則
+
 - **実装前の理解度確認**: 新しい機能や概念の実装前に、作業者の理解度を必ず確認する
 - **段階的学習**: 理解不足が発覚した場合、前提知識から段階的に学習を支援する
 - **個別化対応**: 作業者の学習スタイルや習熟度に応じた個別の学習戦略を提供する
 
 ### 2. TDD実践原則
+
 - **Red-Green-Refactor**: 全ての実装でTDDサイクルを厳格に実践する
 - **テストファースト**: コードを書く前に必ずテストを書く
 - **リファクタリング**: 機能追加後は必ずコード品質向上のためのリファクタリングを実施する
 
 ### 3. バージョン管理原則
+
 - **セマンティックバージョニング**: SemVerに基づく適切なバージョン管理
 - **変更記録**: 全ての変更に対して適切な変更フラグメントを作成
 - **自動化**: towncrierによるChangelog生成の自動化
@@ -28,6 +31,7 @@
 ### 利用可能なツール
 
 #### 1. 理解度確認ツール
+
 ```bash
 # VS CodeタスクまたはCLIで実行
 python .learning_support/understanding_checker.py <概念名>
@@ -36,6 +40,7 @@ python .learning_support/understanding_checker.py <概念名>
 ```
 
 #### 2. 学習パス生成ツール
+
 ```bash
 # VS CodeタスクまたはCLIで実行
 python .learning_support/learning_path_generator.py <目標概念> [学習スタイル]
@@ -44,6 +49,7 @@ python .learning_support/learning_path_generator.py <目標概念> [学習スタ
 ```
 
 #### 3. TDD実践追跡ツール
+
 ```bash
 # VS CodeタスクまたはCLIで実行
 python .learning_support/tdd_tracker.py <フェーズ> <概念名> [テストファイル] [実装ファイル] [メモ]
@@ -52,6 +58,7 @@ python .learning_support/tdd_tracker.py <フェーズ> <概念名> [テストフ
 ```
 
 #### 4. 復習スケジューラー
+
 ```bash
 # VS CodeタスクまたはCLIで実行
 python .learning_support/review_scheduler.py --check
@@ -60,6 +67,7 @@ python .learning_support/review_scheduler.py --check
 ```
 
 #### 5. Changelogヘルパー
+
 ```bash
 # VS CodeタスクまたはCLIで実行
 python .learning_support/changelog_helper.py create <タイプ> <説明> [課題番号]
@@ -68,6 +76,7 @@ python .learning_support/changelog_helper.py create <タイプ> <説明> [課題
 ```
 
 #### 6. 統合学習チェック
+
 ```bash
 # VS CodeタスクまたはCLIで実行
 python .learning_support/full_learning_check.py [概念名]
@@ -78,19 +87,23 @@ python .learning_support/full_learning_check.py [概念名]
 ### エージェントの具体的な行動指針
 
 #### 新機能実装時の手順
+
 1. **理解度確認の実施**
+
    ```bash
    # 概念の理解度を確認
    python .learning_support/understanding_checker.py "CSVリーダー"
    ```
 
 2. **必要に応じて学習パス生成**
+
    ```bash
    # 理解不足の場合、学習パスを生成
    python .learning_support/learning_path_generator.py "CSVリーダー" "kinesthetic"
    ```
 
 3. **TDD実践の記録**
+
    ```bash
    # REDフェーズ
    python .learning_support/tdd_tracker.py red "CSVリーダー" "tests/test_csv_reader.py"
@@ -103,49 +116,59 @@ python .learning_support/full_learning_check.py [概念名]
    ```
 
 4. **変更フラグメントの作成**
+
    ```bash
    # 機能追加の記録
    python .learning_support/changelog_helper.py create feature "CSVリーダーの基本機能を追加"
    ```
 
 5. **復習スケジュールの設定**
+
    ```bash
    # 復習スケジュールを自動設定
    python .learning_support/review_scheduler.py --schedule "CSVリーダー"
    ```
 
 #### エラー対応時の手順
+
 1. **理解度の再確認**
+
    ```bash
    python .learning_support/understanding_checker.py "対象概念"
    ```
 
 2. **TDD実践失敗の記録**
+
    ```bash
    # 失敗時はerror_messageを含めて記録
    python .learning_support/tdd_tracker.py red "概念名" "テストファイル" "" "エラー内容"
    ```
 
 3. **学習パスの再生成**
+
    ```bash
    # より基礎的な学習パスを生成
    python .learning_support/learning_path_generator.py "基礎概念" "logical"
    ```
 
 #### 定期メンテナンス時の手順
+
 1. **統合チェックの実行**
+
    ```bash
    # 全体的な学習状況を確認
    python .learning_support/full_learning_check.py
    ```
 
 2. **復習スケジュールの確認**
+
    ```bash
    # 期限到来復習項目の確認
    python .learning_support/review_scheduler.py --check
    ```
 
 3. **必要な復習の実施**
+
    ```bash
    # 復習の実施
    python .learning_support/review_scheduler.py --review "概念名"
@@ -154,10 +177,12 @@ python .learning_support/full_learning_check.py [概念名]
 ### データ管理
 
 #### 学習データの保存場所
+
 - `.learning_support/learning_data.json`: 全学習データ
 - `changelog.d/`: 変更フラグメント
 
 #### データ構造
+
 ```json
 {
   "concepts": {
@@ -190,6 +215,7 @@ python .learning_support/full_learning_check.py [概念名]
 ### 理解度確認手順
 
 #### 1. 実装前確認
+
 新しい機能や概念の実装前に以下を確認：
 
 1. **概念説明要求**
@@ -210,6 +236,7 @@ python .learning_support/full_learning_check.py [概念名]
    - `expert`: 他者に教授可能な理解
 
 #### 2. 学習戦略決定
+
 理解度に応じた学習戦略を決定：
 
 ```
@@ -221,7 +248,9 @@ python .learning_support/full_learning_check.py [概念名]
 ```
 
 #### 3. 省略判定
+
 以下の条件を満たす場合、理解度確認を省略可能：
+
 - 理解度が「advanced」以上
 - 最終確認から30日以内
 - 同種の実装経験が3回以上
@@ -232,6 +261,7 @@ python .learning_support/full_learning_check.py [概念名]
 ### 個別化学習支援
 
 #### 学習スタイル対応
+
 - **visual**: 図表、フローチャート、実装例を重視
 - **auditory**: 口頭説明、ディスカッション、音声資料
 - **kinesthetic**: 実際のコーディング、トライアンドエラー
@@ -239,7 +269,9 @@ python .learning_support/full_learning_check.py [概念名]
 - **balanced**: バランス型学習
 
 #### 動的学習調整
+
 実装中の進捗に応じて学習戦略を調整：
+
 - エラー率が高い場合: より基礎的な内容に戻る
 - 理解が早い場合: より高度な内容に進む
 - 関心度が低い場合: 学習方法を変更
@@ -249,6 +281,7 @@ python .learning_support/full_learning_check.py [概念名]
 ### 必須TDDサイクル
 
 #### 1. Red（失敗テスト）
+
 ```python
 def test_csv_reader_should_parse_household_data():
     # 失敗するテストを先に書く
@@ -262,13 +295,17 @@ def test_csv_reader_should_parse_household_data():
 ```
 
 #### 2. Green（最小実装）
+
 テストが通る最小限のコードを実装
 
 #### 3. Refactor（改善）
+
 動作を変えずにコード品質を向上
 
 ### TDD実践の記録
+
 各フェーズの実行後に必ずTDD追跡ツールで記録：
+
 ```bash
 python .learning_support/tdd_tracker.py <phase> <concept> [test_file] [impl_file]
 ```
@@ -276,6 +313,7 @@ python .learning_support/tdd_tracker.py <phase> <concept> [test_file] [impl_file
 ### テスト品質基準
 
 #### FIRST原則の遵守
+
 - **Fast**: 高速に実行される
 - **Independent**: 独立して実行可能
 - **Repeatable**: 繰り返し実行可能
@@ -283,6 +321,7 @@ python .learning_support/tdd_tracker.py <phase> <concept> [test_file] [impl_file
 - **Timely**: 適切なタイミングで書かれる
 
 #### AAA パターンの採用
+
 ```python
 def test_example():
     # Arrange: テストの前提条件を設定
@@ -300,6 +339,7 @@ def test_example():
 ### セマンティックバージョニング
 
 #### バージョン番号の決定
+
 - **メジャーバージョン**: 破壊的変更（例: v1.0.0 → v2.0.0）
 - **マイナーバージョン**: 機能追加（例: v1.0.0 → v1.1.0）
 - **パッチバージョン**: バグ修正（例: v1.0.0 → v1.0.1）
@@ -307,6 +347,7 @@ def test_example():
 ### 変更フラグメント管理
 
 #### 変更タイプ別分類
+
 ```bash
 # 機能追加
 python .learning_support/changelog_helper.py create feature "CSVリーダーの基本機能を追加"
@@ -325,6 +366,7 @@ python .learning_support/changelog_helper.py create misc "内部リファクタ�
 ```
 
 #### 自動Changelog生成
+
 ```bash
 # プレビュー
 towncrier --draft
@@ -336,6 +378,7 @@ towncrier --version 1.0.0
 ## 忘却対応メカニズム
 
 ### 間隔反復学習スケジュール
+
 - 初回学習: 即座に確認
 - 2回目: 1日後
 - 3回目: 3日後
@@ -345,12 +388,14 @@ towncrier --version 1.0.0
 - 7回目以降: 3ヶ月後
 
 ### 忘却検出指標
+
 - 実装時のエラー頻度増加
 - 説明能力の低下
 - 応用力の減退
 - 時間経過による自動判定
 
 ### 復習の実施
+
 ```bash
 # 復習スケジュールの確認
 python .learning_support/review_scheduler.py --check
@@ -362,24 +407,28 @@ python .learning_support/review_scheduler.py --review <概念名>
 ## 実装フェーズ別ガイドライン
 
 ### Phase 1: 基本実装
+
 1. **理解度確認**: TDDの基本概念、CSVパーサーの理解
 2. **TDD実践**: CSVリーダーの失敗テスト → 最小実装 → リファクタリング
 3. **バージョン管理**: 初回リリース（v0.1.0）とChangelog生成
 4. **学習記録**: TDDサイクルの理解度確認と記録
 
 ### Phase 2: 機能実装
+
 1. **理解度確認**: 各MCPツールの概念理解
 2. **TDD実践**: 各機能の失敗テスト → 最小実装 → リファクタリング
 3. **バージョン管理**: マイナーリリース（v0.2.0）とChangelog生成
 4. **学習記録**: テストピラミッドの理解度確認と記録
 
 ### Phase 3: 拡張機能
+
 1. **理解度確認**: 複雑な集計機能の理解
 2. **TDD実践**: 拡張機能の失敗テスト → 段階的実装 → リファクタリング
 3. **バージョン管理**: マイナーリリース（v0.3.0）とChangelog生成
 4. **学習記録**: 統合テストの理解度確認と忘却対応
 
 ### Phase 4: 最適化・完成
+
 1. **理解度確認**: パフォーマンス最適化手法の理解
 2. **TDD実践**: パフォーマンステスト → 最適化実装 → 全体リファクタリング
 3. **バージョン管理**: メジャーリリース（v1.0.0）とChangelog生成
@@ -388,12 +437,14 @@ python .learning_support/review_scheduler.py --review <概念名>
 ## 継続的改善
 
 ### 学習効果測定
+
 - 理解度向上速度
 - 実装エラー減少率
 - 知識定着率
 - 応用力発揮度
 
 ### 学習戦略最適化
+
 - 効果的な学習パターンの特定
 - 学習方法の継続的改善
 - 個人差の理解と対応
@@ -401,6 +452,7 @@ python .learning_support/review_scheduler.py --review <概念名>
 ## 実装時の具体的な行動指針
 
 ### 新機能実装時
+
 1. **理解度確認**: 学習支援ツールで理解度をチェック
 2. **前提知識確認**: 理解不足の場合、前提知識を遡って確認
 3. **学習戦略決定**: 個別の学習パスを構築
@@ -409,12 +461,14 @@ python .learning_support/review_scheduler.py --review <概念名>
 6. **学習記録**: 理解度と実装経験を自動記録
 
 ### エラー対応時
+
 1. **理解度再確認**: エラーの原因となる概念の理解度を確認
 2. **学習調整**: 必要に応じて基礎に戻る
 3. **段階的修正**: 小さなステップで問題を解決
 4. **学習記録**: エラーパターンと解決方法を記録
 
 ### 復習・メンテナンス時
+
 1. **忘却検出**: 統合チェックで忘却を検出
 2. **復習提案**: 最適な復習タイミングと方法を提案
 3. **関連知識確認**: 関連する概念の連鎖復習
@@ -423,16 +477,19 @@ python .learning_support/review_scheduler.py --review <概念名>
 ## コミュニケーション原則
 
 ### 学習支援時
+
 - 理解度に応じた適切な説明レベル
 - 段階的な質問による理解度探索
 - 個別のニーズに応じた学習方法提案
 
 ### 実装支援時
+
 - TDDサイクルの厳格な実践指導
 - 適切なリファクタリングの提案
 - コード品質向上のためのレビュー
 
 ### 記録・報告時
+
 - 学習進捗の客観的な記録
 - 理解度変化の追跡
 - 継続的改善のための分析

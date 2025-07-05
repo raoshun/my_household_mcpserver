@@ -66,16 +66,19 @@ chmod +x .learning_support/*.py
 ### コマンドラインを使用する場合
 
 #### 理解度確認
+
 ```bash
 python .learning_support/understanding_checker.py "CSVリーダー"
 ```
 
 #### 学習パス生成
+
 ```bash
 python .learning_support/learning_path_generator.py "SQLiteの複雑なJOINクエリ" kinesthetic
 ```
 
 #### TDD実践記録
+
 ```bash
 # REDフェーズ
 python .learning_support/tdd_tracker.py red "CSVリーダー" "tests/test_csv_reader.py"
@@ -88,6 +91,7 @@ python .learning_support/tdd_tracker.py refactor "CSVリーダー" "tests/test_c
 ```
 
 #### 復習スケジュール確認
+
 ```bash
 # スケジュール確認
 python .learning_support/review_scheduler.py --check
@@ -97,6 +101,7 @@ python .learning_support/review_scheduler.py --review "CSVリーダー"
 ```
 
 #### 変更フラグメント作成
+
 ```bash
 # 機能追加
 python .learning_support/changelog_helper.py create feature "新機能を追加"
@@ -106,6 +111,7 @@ python .learning_support/changelog_helper.py create bugfix "バグを修正"
 ```
 
 #### 統合チェック
+
 ```bash
 # 全体チェック
 python .learning_support/full_learning_check.py
@@ -121,12 +127,14 @@ python .learning_support/full_learning_check.py "CSVリーダー"
 **目的**: 実装前に作業者の理解度を確認し、適切な学習戦略を決定
 
 **機能**:
+
 - 5段階の理解度評価（not_assessed, beginner, intermediate, advanced, expert）
 - 前提知識チェーンの確認
 - TDD実践度の評価
 - 省略判定（条件を満たす場合は確認を省略）
 
 **使用例**:
+
 ```bash
 python .learning_support/understanding_checker.py "pandasライブラリ"
 ```
@@ -136,12 +144,14 @@ python .learning_support/understanding_checker.py "pandasライブラリ"
 **目的**: 個別化された効率的な学習パスを自動生成
 
 **機能**:
+
 - 知識依存関係グラフに基づく学習順序の最適化
 - 学習スタイル別の個別化対応
 - 推定学習時間の算出
 - 練習問題と検証基準の自動生成
 
 **学習スタイル**:
+
 - `visual`: 図表・フローチャート重視
 - `auditory`: 口頭説明・ディスカッション重視
 - `kinesthetic`: 実際のコーディング重視
@@ -149,6 +159,7 @@ python .learning_support/understanding_checker.py "pandasライブラリ"
 - `balanced`: バランス型
 
 **使用例**:
+
 ```bash
 python .learning_support/learning_path_generator.py "MCPサーバ" visual
 ```
@@ -158,17 +169,20 @@ python .learning_support/learning_path_generator.py "MCPサーバ" visual
 **目的**: TDDサイクルの実践を追跡し、実践度を向上
 
 **機能**:
+
 - Red-Green-Refactorサイクルの記録
 - フェーズ別成功率の追跡
 - TDD実践度の自動評価
 - フェーズ別ガイダンスの提供
 
 **TDDフェーズ**:
+
 - `red`: 失敗テストの作成
 - `green`: 最小実装
 - `refactor`: コード品質向上
 
 **使用例**:
+
 ```bash
 python .learning_support/tdd_tracker.py red "データベース操作" "tests/test_database.py"
 ```
@@ -178,12 +192,14 @@ python .learning_support/tdd_tracker.py red "データベース操作" "tests/te
 **目的**: 忘却曲線に基づく効率的な復習スケジュールを管理
 
 **機能**:
+
 - 間隔反復学習スケジュールの自動設定
 - 個別化された復習間隔の計算
 - 期限到来復習項目の自動検出
 - 優先度に基づく復習順序の提案
 
 **復習間隔**:
+
 - 初回: 即座
 - 2回目: 1日後
 - 3回目: 3日後
@@ -193,6 +209,7 @@ python .learning_support/tdd_tracker.py red "データベース操作" "tests/te
 - 7回目以降: 3ヶ月後
 
 **使用例**:
+
 ```bash
 python .learning_support/review_scheduler.py --check
 ```
@@ -202,12 +219,14 @@ python .learning_support/review_scheduler.py --check
 **目的**: towncrierを使用した構造化されたChangelog管理
 
 **機能**:
+
 - 変更フラグメントの自動作成
 - セマンティックバージョニングの提案
 - 変更タイプ別の分類
 - Changelog生成の自動化
 
 **変更タイプ**:
+
 - `feature`: 新機能
 - `bugfix`: バグ修正
 - `doc`: ドキュメント
@@ -215,6 +234,7 @@ python .learning_support/review_scheduler.py --check
 - `misc`: その他
 
 **使用例**:
+
 ```bash
 python .learning_support/changelog_helper.py create feature "新しいMCPツールを追加"
 ```
@@ -224,12 +244,14 @@ python .learning_support/changelog_helper.py create feature "新しいMCPツー�
 **目的**: 学習状況の総合的な確認と推奨事項の提示
 
 **機能**:
+
 - 全概念の学習状況サマリー
 - 理解度・TDD実践度の分布表示
 - 要注意概念の特定
 - 総合的な推奨事項の生成
 
 **使用例**:
+
 ```bash
 python .learning_support/full_learning_check.py
 ```
@@ -295,16 +317,19 @@ python .learning_support/full_learning_check.py
 ### 新機能実装時の推奨ワークフロー
 
 1. **理解度確認**
+
    ```bash
    python .learning_support/understanding_checker.py "新機能名"
    ```
 
 2. **学習パス生成（必要に応じて）**
+
    ```bash
    python .learning_support/learning_path_generator.py "新機能名" kinesthetic
    ```
 
 3. **TDD実践**
+
    ```bash
    # REDフェーズ
    python .learning_support/tdd_tracker.py red "新機能名" "tests/test_new_feature.py"
@@ -317,11 +342,13 @@ python .learning_support/full_learning_check.py
    ```
 
 4. **変更記録**
+
    ```bash
    python .learning_support/changelog_helper.py create feature "新機能の説明"
    ```
 
 5. **復習スケジュール設定**
+
    ```bash
    python .learning_support/review_scheduler.py --schedule "新機能名"
    ```
@@ -329,17 +356,20 @@ python .learning_support/full_learning_check.py
 ### 定期メンテナンス時の推奨ワークフロー
 
 1. **統合チェック**
+
    ```bash
    python .learning_support/full_learning_check.py
    ```
 
 2. **復習実施**
+
    ```bash
    python .learning_support/review_scheduler.py --check
    python .learning_support/review_scheduler.py --review "復習対象概念"
    ```
 
 3. **Changelog生成**
+
    ```bash
    towncrier --draft  # プレビュー
    towncrier --version 1.0.0  # 本番生成
@@ -386,6 +416,7 @@ self.review_intervals = {
 ### よくある問題
 
 1. **学習データが読み込めない**
+
    ```bash
    # データファイルの権限を確認
    ls -la .learning_support/learning_data.json
@@ -395,6 +426,7 @@ self.review_intervals = {
    ```
 
 2. **Pythonパスが見つからない**
+
    ```bash
    # Pythonパスを確認
    which python
@@ -405,6 +437,7 @@ self.review_intervals = {
    ```
 
 3. **VS Codeタスクが実行できない**
+
    ```bash
    # ワークスペースを再読み込み
    # Ctrl+Shift+P -> "Developer: Reload Window"

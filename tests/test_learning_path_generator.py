@@ -1,7 +1,11 @@
-import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.learning_support')))
+import sys
+
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.learning_support"))
+)
 from learning_path_generator import LearningPathGenerator
+
 
 def test_generate_learning_path_red():
     """RED: 学習パス生成の失敗テスト（未登録概念）"""
@@ -11,5 +15,6 @@ def test_generate_learning_path_red():
     assert path.identified_gap == "未知の概念"
     assert path.starting_point == "基礎から学習"
     assert path.steps[0].concept == "基礎から学習"
+
 
 # GREEN/REFACTORはTDDサイクルで順次追加
