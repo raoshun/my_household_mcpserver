@@ -116,6 +116,7 @@ cython_debug/
 # .vscode/settings.json  
 # .vscode/tasks.json
 # .vscode/extensions.json
+.vscode/mcp.json
 
 # 学習支援システム関連
 .learning_support/learning_data.json
