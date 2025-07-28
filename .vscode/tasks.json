@@ -1,232 +1,214 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "Learning Support: Check Understanding",
-            "type": "shell",
-            "command": "python",
-            "args": [
-                ".learning_support/understanding_checker.py",
-                "${input:concept_name}"
-            ],
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Learning Support: Generate Learning Path",
-            "type": "shell",
-            "command": "python",
-            "args": [
-                ".learning_support/learning_path_generator.py",
-                "${input:target_concept}"
-            ],
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Learning Support: Record TDD Practice",
-            "type": "shell",
-            "command": "python",
-            "args": [
-                ".learning_support/tdd_tracker.py",
-                "${input:tdd_phase}",
-                "${input:concept_name}"
-            ],
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Learning Support: Check Review Schedule",
-            "type": "shell",
-            "command": "python",
-            "args": [
-                ".learning_support/review_scheduler.py",
-                "--check"
-            ],
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "TDD: Run Tests (Red Phase)",
-            "type": "shell",
-            "command": "python",
-            "args": [
-                "-m",
-                "pytest",
-                "${input:test_file}",
-                "-v"
-            ],
-            "group": {
-                "kind": "test",
-                "isDefault": true
-            },
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "problemMatcher": [
-                "$python"
-            ]
-        },
-        {
-            "label": "Towncrier: Create Feature Fragment",
-            "type": "shell",
-            "command": "python",
-            "args": [
-                ".learning_support/changelog_helper.py",
-                "create",
-                "feature",
-                "${input:change_description}"
-            ],
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Towncrier: Create Bugfix Fragment",
-            "type": "shell",
-            "command": "python",
-            "args": [
-                ".learning_support/changelog_helper.py",
-                "create",
-                "bugfix",
-                "${input:change_description}"
-            ],
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Towncrier: Generate Changelog",
-            "type": "shell",
-            "command": "towncrier",
-            "args": [
-                "--draft"
-            ],
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Learning Support: Full Check",
-            "type": "shell",
-            "command": "python",
-            "args": [
-                ".learning_support/full_learning_check.py"
-            ],
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "problemMatcher": []
-        }
-    ],
-    "inputs": [
-        {
-            "id": "concept_name",
-            "description": "学習する概念の名前を入力してください",
-            "default": "CSVリーダー",
-            "type": "promptString"
-        },
-        {
-            "id": "target_concept",
-            "description": "目標とする概念を入力してください",
-            "default": "SQLiteの複雑なJOINクエリ",
-            "type": "promptString"
-        },
-        {
-            "id": "tdd_phase",
-            "description": "TDDのフェーズを選択してください",
-            "default": "red",
-            "type": "pickString",
-            "options": [
-                "red",
-                "green",
-                "refactor"
-            ]
-        },
-        {
-            "id": "test_file",
-            "description": "テストファイルのパスを入力してください",
-            "default": "tests/",
-            "type": "promptString"
-        },
-        {
-            "id": "change_description",
-            "description": "変更の説明を入力してください",
-            "default": "新機能を追加",
-            "type": "promptString"
-        }
-    ]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Learning Support: Check Understanding",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        ".learning_support/understanding_checker.py",
+        "${input:concept_name}"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Learning Support: Generate Learning Path",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        ".learning_support/learning_path_generator.py",
+        "${input:target_concept}"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Learning Support: Record TDD Practice",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        ".learning_support/tdd_tracker.py",
+        "${input:tdd_phase}",
+        "${input:concept_name}"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Learning Support: Check Review Schedule",
+      "type": "shell",
+      "command": "python",
+      "args": [".learning_support/review_scheduler.py", "--check"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "TDD: Run Tests (Red Phase)",
+      "type": "shell",
+      "command": "python",
+      "args": ["-m", "pytest", "${input:test_file}", "-v"],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": ["$python"]
+    },
+    {
+      "label": "Towncrier: Create Feature Fragment",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        ".learning_support/changelog_helper.py",
+        "create",
+        "feature",
+        "${input:change_description}"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Towncrier: Create Bugfix Fragment",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        ".learning_support/changelog_helper.py",
+        "create",
+        "bugfix",
+        "${input:change_description}"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Towncrier: Generate Changelog",
+      "type": "shell",
+      "command": "towncrier",
+      "args": ["--draft"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Learning Support: Full Check",
+      "type": "shell",
+      "command": "python",
+      "args": [".learning_support/full_learning_check.py"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "concept_name",
+      "description": "学習する概念の名前を入力してください",
+      "default": "CSVリーダー",
+      "type": "promptString"
+    },
+    {
+      "id": "target_concept",
+      "description": "目標とする概念を入力してください",
+      "default": "SQLiteの複雑なJOINクエリ",
+      "type": "promptString"
+    },
+    {
+      "id": "tdd_phase",
+      "description": "TDDのフェーズを選択してください",
+      "default": "red",
+      "type": "pickString",
+      "options": ["red", "green", "refactor"]
+    },
+    {
+      "id": "test_file",
+      "description": "テストファイルのパスを入力してください",
+      "default": "tests/",
+      "type": "promptString"
+    },
+    {
+      "id": "change_description",
+      "description": "変更の説明を入力してください",
+      "default": "新機能を追加",
+      "type": "promptString"
+    }
+  ]
 }

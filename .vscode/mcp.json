@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "my-learning-assistant": {
+      "command": "/home/shun-h/learning-support-mcp/.venv/bin/python",
+      "args": ["-m", "src.cli_mcp_server"],
+      "cwd": "/home/shun-h/learning-support-mcp"
+    }
+  }
+}

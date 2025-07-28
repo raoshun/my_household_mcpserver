@@ -1,0 +1,52 @@
+bandit>=1.7.5
+
+# コード品質
+black>=23.12.1
+
+# Git hooks and commit tools
+commitizen>=3.13.0
+
+# セキュリティスキャン
+detect-secrets>=1.4.0
+flake8>=6.1.0
+flake8-bugbear>=23.12.15
+flake8-comprehensions>=3.14.0
+flake8-docstrings>=1.7.0
+flake8-simplify>=0.21.0
+ipython>=8.18.1
+isort>=5.12.0
+
+# Markdown処理
+# markdownlint-cli>=0.38.0  # npmパッケージのため、pipでは利用不可
+
+# Jupyter開発サポート（必要に応じて）
+jupyter>=1.0.0
+line-profiler>=4.1.1
+
+# プロファイリング・デバッグ
+memory-profiler>=0.61.0
+mypy>=1.8.0
+myst-parser>=2.0.0
+pdbpp>=0.10.3
+
+# pre-commit
+pre-commit>=3.6.0
+# 開発用依存関係
+# テスト関連
+pytest>=7.4.3
+pytest-asyncio>=0.21.1
+pytest-cov>=4.1.0
+pytest-mock>=3.12.0
+pytest-xdist>=3.5.0
+safety>=2.3.5
+
+# ドキュメント生成
+sphinx>=7.2.6
+sphinx-rtd-theme>=2.0.0
+
+# SQLフォーマッター
+sqlfluff>=2.3.5
+
+# 型ヒント用
+types-python-dateutil>=2.8.19
+types-requests>=2.31.0

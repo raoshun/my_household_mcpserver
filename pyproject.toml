@@ -1,0 +1,207 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "household-mcp-server"
+version = "0.1.0"
+description = "MCP Server for household budget analysis with natural language interface"
+authors = [
+    {name = "Project Team", email = "team@example.com"}
+]
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.11"
+keywords = ["mcp", "household", "budget", "analysis", "ai", "nlp"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business :: Financial",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "fastapi>=0.104.1",
+    "uvicorn[standard]>=0.24.0",
+    "pandas>=2.1.3",
+    "numpy>=1.25.2",
+    "matplotlib>=3.8.2",
+    "plotly>=5.17.0",
+    "pydantic>=2.5.0",
+    "python-dateutil>=2.8.2",
+    "python-multipart>=0.0.6",
+    "sqlalchemy>=2.0.23",
+    "alembic>=1.12.1",
+    "passlib[bcrypt]>=1.7.4",
+    "python-jose[cryptography]>=3.3.0",
+    "aiofiles>=23.2.1",
+    "httpx>=0.25.2",
+    "structlog>=23.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.3",
+    "pytest-asyncio>=0.21.1",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
+    "black>=23.12.1",
+    "isort>=5.12.0",
+    "flake8>=6.1.0",
+    "mypy>=1.8.0",
+    "bandit>=1.7.5",
+    "pre-commit>=3.6.0",
+    "commitizen>=3.13.0",
+]
+
+postgresql = [
+    "psycopg2-binary>=2.9.9",
+    "asyncpg>=0.29.0",
+]
+
+docs = [
+    "sphinx>=7.2.6",
+    "sphinx-rtd-theme>=2.0.0",
+    "myst-parser>=2.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/raoshun/my_household_mcpserver"
+Documentation = "https://github.com/raoshun/my_household_mcpserver/docs"
+Repository = "https://github.com/raoshun/my_household_mcpserver"
+"Bug Tracker" = "https://github.com/raoshun/my_household_mcpserver/issues"
+
+[project.scripts]
+household-mcp = "household_mcp.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+household_mcp = ["py.typed"]
+
+# Black設定
+[tool.black]
+line-length = 88
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # 標準的な除外パターン
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.pytest_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+# isort設定
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["household_mcp"]
+known_third_party = [
+    "fastapi",
+    "pydantic",
+    "pandas",
+    "numpy",
+    "matplotlib",
+    "plotly",
+    "sqlalchemy",
+    "alembic",
+]
+
+# mypy設定
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
+
+# pytest設定
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=src/household_mcp",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "--cov-fail-under=80",
+]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+# Coverage設定
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/.*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+# Bandit設定
+[tool.bandit]
+exclude_dirs = ["tests", "venv", ".venv"]
+skips = ["B101", "B601"]
+
+# Commitizen設定
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "0.1.0"
+tag_format = "v$version"
+version_files = [
+    "pyproject.toml:version",
+    "src/household_mcp/__init__.py:__version__",
+]
+bump_message = "bump: version $current_version → $new_version"
+update_changelog_on_bump = true
