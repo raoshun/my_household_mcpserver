@@ -16,5 +16,5 @@ __pycache__/
 poetry.lock
 
 # Ignore db files
-*.db-*
+*.db*
 *.csv
