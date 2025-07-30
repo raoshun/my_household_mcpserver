@@ -10,4 +10,8 @@ __pycache__/
 
 bandit-report.json
 
+__pycache__/
+*.pyc
+
+poetry.lock
 *.csv
