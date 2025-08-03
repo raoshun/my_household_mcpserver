@@ -9,9 +9,7 @@ package-mode = false
 name = "household-mcp-server"
 version = "0.1.0"
 description = "MCP Server for household budget analysis with natural language interface"
-authors = [
-    {name = "Project Team", email = "team@example.com"}
-]
+authors = [{ name = "Project Team", email = "team@example.com" }]
 license = "MIT"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -47,49 +45,44 @@ dependencies = [
     "mcp[cli]>=1.13.1",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "bandit>=1.7.5",
-    "black>=23.12.1",
-    "commitizen>=3.13.0",
-    "detect-secrets>=1.4.0",
-    "flake8>=6.1.0",
-    "flake8-bugbear>=23.12.15",
-    "flake8-comprehensions>=3.14.0",
-    "flake8-docstrings>=1.7.0",
-    "flake8-simplify>=0.21.0",
-    "ipython>=8.18.1",
-    "isort>=5.12.0",
-    "jupyter>=1.0.0",
-    "line-profiler>=4.1.1",
-    "memory-profiler>=0.61.0",
-    "mypy>=1.8.0",
-    "myst-parser>=2.0.0",
-    "pdbpp>=0.10.3",
-    "pre-commit>=3.6.0",
-    "pytest>=7.4.3",
-    "pytest-asyncio>=0.21.1",
-    "pytest-cov>=4.1.0",
-    "pytest-mock>=3.12.0",
-    "pytest-xdist>=3.5.0",
-    "safety>=2.3.5",
-    "sphinx>=7.2.6",
-    "sphinx-rtd-theme>=2.0.0",
-    "sqlfluff>=2.3.5",
-    "types-python-dateutil>=2.8.19",
-    "types-requests>=2.31.0",
-]
+[tool.poetry.group.dev.dependencies]
+bandit = ">=1.7.5"
+black = ">=23.12.1"
+commitizen = ">=3.13.0"
+detect-secrets = ">=1.4.0"
+flake8 = ">=6.1.0"
+flake8-bugbear = ">=23.12.15"
+flake8-comprehensions = ">=3.14.0"
+flake8-docstrings = ">=1.7.0"
+flake8-simplify = ">=0.21.0"
+ipython = ">=8.18.1"
+isort = ">=5.12.0"
+jupyter = ">=1.0.0"
+line-profiler = ">=4.1.1"
+memory-profiler = ">=0.61.0"
+mypy = ">=1.8.0"
+myst-parser = ">=2.0.0"
+pdbpp = ">=0.10.3"
+pre-commit = ">=3.6.0"
+pytest = ">=7.4.3"
+pytest-asyncio = ">=0.21.1"
+pytest-cov = ">=4.1.0"
+pytest-mock = ">=3.12.0"
+pytest-xdist = ">=3.5.0"
+safety = ">=2.3.5"
+sphinx = ">=7.2.6"
+sphinx-rtd-theme = ">=2.0.0"
+sqlfluff = ">=2.3.5"
+types-python-dateutil = ">=2.8.19"
+types-requests = ">=2.31.0"
 
-postgresql = [
-    "psycopg2-binary>=2.9.9",
-    "asyncpg>=0.29.0",
-]
+[tool.poetry.group.postgresql]
+optional = true
+dependencies = { psycopg2-binary = ">=2.9.9", asyncpg = ">=0.29.0" }
 
-docs = [
-    "sphinx>=7.2.6",
-    "sphinx-rtd-theme>=2.0.0",
-    "myst-parser>=2.0.0",
-]
+[tool.poetry.group.docs]
+optional = true
+dependencies = { sphinx = ">=7.2.6", "sphinx-rtd-theme" = ">=2.0.0", "myst-parser" = ">=2.0.0" }
 
 [project.urls]
 Homepage = "https://github.com/raoshun/my_household_mcpserver"
@@ -192,11 +185,7 @@ markers = [
 # Coverage設定
 [tool.coverage.run]
 source = ["src"]
-omit = [
-    "*/tests/*",
-    "*/__pycache__/*",
-    "*/.*",
-]
+omit = ["*/tests/*", "*/__pycache__/*", "*/.*"]
 
 [tool.coverage.report]
 exclude_lines = [
