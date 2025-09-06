@@ -40,6 +40,7 @@ dependencies = [
     "aiofiles>=23.2.1",
     "httpx>=0.25.2",
     "structlog>=23.2.0",
+    "mcp[cli]>=1.13.1",
 ]
 
 [project.optional-dependencies]
@@ -205,3 +206,8 @@ version_files = [
 ]
 bump_message = "bump: version $current_version → $new_version"
 update_changelog_on_bump = true
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+]
