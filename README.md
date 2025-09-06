@@ -22,25 +22,25 @@
 ## インストール
 
 ```bash
-# 開発環境のセットアップ
-make setup
-
-# または手動で
-pip install -e ".[dev]"
-pre-commit install
+# Poetryを使用した開発環境のセットアップ
+poetry install --with dev
+poetry run pre-commit install
 ```
 
 ## 使用方法
 
 ```bash
 # 開発サーバーの起動
-make run-dev
+poetry run uvicorn household_mcp.server:app --reload
 
 # テストの実行
-make test
+poetry run pytest
 
 # コード品質チェック
-make check-all
+poetry run black .
+poetry run isort .
+poetry run flake8
+poetry run mypy src/
 ```
 
 ## 開発

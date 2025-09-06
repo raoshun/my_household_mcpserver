@@ -4,6 +4,11 @@
       "command": "/home/shun-h/learning-support-mcp/.venv/bin/python",
       "args": ["-m", "src.cli_mcp_server"],
       "cwd": "/home/shun-h/learning-support-mcp"
+    },
+    "my-household-mcp": {
+      "command": "./.venv/bin/python",
+      "args": ["src/household_mcp/server.py"],
+      "env": {}
     }
   }
 }

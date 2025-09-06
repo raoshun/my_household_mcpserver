@@ -10,4 +10,14 @@ __pycache__/
 
 bandit-report.json
 
+__pycache__/
+*.pyc
+
+poetry.lock
+
+# Ignore db files
+*.db*
 *.csv
+*.db*
+R0801: Similar lines in 2 files*
+status --short*/*.sql
