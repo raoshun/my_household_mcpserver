@@ -11,10 +11,10 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 
-def test_server_import():
+def test_server_import() -> bool:
     """サーバーモジュールの読み込みテスト."""
     try:
-        from household_mcp.server import app as _
+        from household_mcp.server import app as _  # noqa: F401
 
         print("✅ サーバーモジュールの読み込み成功")
         return True
@@ -23,7 +23,7 @@ def test_server_import():
         return False
 
 
-def test_database_models():
+def test_database_models() -> bool:
     """データベースモデルのテスト."""
     try:
         from datetime import date
@@ -52,7 +52,7 @@ def test_database_models():
         return False
 
 
-def test_database_connection():
+def test_database_connection() -> bool:
     """データベース接続のテスト."""
     try:
         from household_mcp.database.connection import get_database_connection
@@ -71,7 +71,7 @@ def test_database_connection():
         return False
 
 
-def test_migration_manager():
+def test_migration_manager() -> bool:
     """マイグレーション管理のテスト."""
     try:
         from household_mcp.database.migrations import create_migration_manager
@@ -94,7 +94,7 @@ def test_migration_manager():
         return False
 
 
-def main():
+def main() -> int:
     """メインテスト関数."""
     print("=== 家計簿MCPサーバー テスト開始 ===\n")
 

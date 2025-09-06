@@ -3,7 +3,7 @@
 repos:
   # 基本的なファイルチェック
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
@@ -65,7 +65,7 @@ repos:
 
   # Python 型チェック
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.17.0
+    rev: v1.17.1
     hooks:
       - id: mypy
         args:
@@ -80,7 +80,7 @@ repos:
 
   # Markdown リンター
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.38.0
+    rev: v0.45.0
     hooks:
       - id: markdownlint
         args: ["--fix"]
@@ -96,14 +96,14 @@ repos:
 
   # Docker関連のリンター
   - repo: https://github.com/hadolint/hadolint
-    rev: v2.13.1-beta
+    rev: v2.13.1
     hooks:
       - id: hadolint-docker
         args: ["--ignore", "DL3008", "--ignore", "DL3009"]
 
   # Git commit メッセージの検証
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.8.3
+    rev: v4.8.4
     hooks:
       - id: commitizen
         stages: [commit-msg]
@@ -118,7 +118,7 @@ repos:
 
   # Python docstring フォーマッター
   - repo: https://github.com/PyCQA/docformatter
-    rev: v1.7.8-rc1
+    rev: v1.7.7
     hooks:
       - id: docformatter
         args: [--in-place, --wrap-summaries=88, --wrap-descriptions=88]

@@ -119,8 +119,7 @@ class DatabaseSchema:
         parent_id INTEGER, color TEXT, icon TEXT,
 
         FOREIGN KEY (parent_id) REFERENCES categories(id) )
-        """
-           ,
+        """,
         """
         CREATE TABLE IF NOT EXISTS accounts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -133,8 +132,7 @@ class DatabaseSchema:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
-        """\
-           ,
+        """,
         """CREATE TABLE IF NOT EXISTS transactions ( id INTEGER PRIMARY KEY
         AUTOINCREMENT, date DATE NOT NULL, amount DECIMAL(10,2) NOT NULL, description
         TEXT, category_id INTEGER, account_id INTEGER, type TEXT CHECK(type IN
@@ -143,9 +141,7 @@ class DatabaseSchema:
         REFERENCES categories(id),
 
         FOREIGN KEY (account_id) REFERENCES accounts(id) )
-        """
-
-           ,
+        """,
         """
         CREATE TABLE IF NOT EXISTS budgets (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -156,8 +152,7 @@ class DatabaseSchema:
             end_date DATE,
             FOREIGN KEY (category_id) REFERENCES categories(id)
         )
-        """\
-           ,
+        """,
     ]
 
     # インデックス作成SQL文
@@ -171,15 +166,12 @@ class DatabaseSchema:
     INSERT_DEFAULT_DATA_SQL = [
         """INSERT OR IGNORE INTO categories (name, type) VALUES ('食費', 'expense'),
         ('交通費', 'expense'), ('光熱費', 'expense'), ('娯楽費', 'expense'), ('医療費', 'expense'),
-        ('教育費', 'expense'), ('給与', 'income'), ('副業', 'income'), ('投資収益', 'income')"""
-
-                                                                                     ,
+        ('教育費', 'expense'), ('給与', 'income'), ('副業', 'income'), ('投資収益', 'income')""",
         """
         INSERT OR IGNORE INTO accounts (name, type, initial_balance, current_balance) VALUES
         ('現金', 'cash', 0, 0),
         ('メイン銀行', 'bank', 0, 0)
-        """\
-           ,
+        """,
     ]
 
     @classmethod

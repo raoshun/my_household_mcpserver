@@ -143,15 +143,12 @@ class MigrationManager:
             version="002_enhance_categories",
             description="Add enhanced category features",
             up_sql=[
-                """ALTER TABLE categories ADD COLUMN sort_order INTEGER DEFAULT 0."""
-                                                                                     ,
+                """ALTER TABLE categories ADD COLUMN sort_order INTEGER DEFAULT 0.""",
                 """
                 ALTER TABLE categories ADD COLUMN is_active BOOLEAN DEFAULT 1
-                """\
-                   ,
+                """,
                 """CREATE INDEX IF NOT EXISTS idx_categories_sort_order ON
-                categories(sort_order)"""
-                                         ,
+                categories(sort_order)""",
             ],
             down_sql=[
                 "DROP INDEX IF EXISTS idx_categories_sort_order",
@@ -171,16 +168,13 @@ class MigrationManager:
                 DECIMAL(10,2) NOT NULL, recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
                 FOREIGN KEY (account_id) REFERENCES accounts(id) )
-                """
-                   ,
+                """,
                 """
                 CREATE INDEX IF NOT EXISTS idx_balance_history_account
                 ON account_balance_history(account_id)
-                """\
-                   ,
+                """,
                 """CREATE INDEX IF NOT EXISTS idx_balance_history_date ON
-                account_balance_history(recorded_at)"""
-                                                       ,
+                account_balance_history(recorded_at)""",
             ],
             down_sql=[
                 "DROP TABLE IF EXISTS account_balance_history",
@@ -234,8 +228,7 @@ class MigrationManager:
                 cursor = connection.cursor()
                 cursor.execute(
                     """INSERT INTO schema_migrations (version, description) VALUES (?,
-                    ?)"""
-                         ,
+                    ?)""",
                     (migration.version, migration.description),
                 )
 

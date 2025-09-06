@@ -4,27 +4,19 @@
 """
 
 import logging
+import sqlite3
 from datetime import datetime
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
-from ..database.connection import DatabaseConnection, get_database_connection
-from ..database.models import Transaction
+from ..database.connection import DatabaseConnection
+from ..utils.validators import ValidationError
 
+# ロガー設定
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
-
-
-class DataValidationError(Exception):
-    """データ検証エラー."""
-
-    def __init__(self, message: str):
-        """初期化.
-
-        Args:
-            message: エラーメッセージ
-        """
-        self.message = message
-        super().__init__(self.message)
 
 
 class TransactionManager:
@@ -32,7 +24,7 @@ class TransactionManager:
 
     def __init__(self):
         """初期化."""
-        self.db_connection = get_database_connection()
+        self.db_connection = DatabaseConnection()
 
     def add_transaction(
         self,
@@ -41,89 +33,65 @@ class TransactionManager:
         description: str,
         category_name: str,
         account_name: str,
-        type: str,
+        transaction_type: str,
     ) -> Dict[str, Any]:
         """新しい取引を追加.
 
         Args:
-            date: 取引日 (YYYY-MM-DD形式)
+            date: 日付
             amount: 金額
             description: 説明
             category_name: カテゴリー名
             account_name: アカウント名
-            type: 取引タイプ ('income' or 'expense')
+            transaction_type: 取引タイプ ('income' or 'expense')
 
         Returns:
             追加された取引の情報
-
-        Raises:
-            DataValidationError: データ検証エラー
         """
         try:
-            # データ検証
+            # logger.info("Attempting to add transaction with data: %s", locals())
             self._validate_transaction_data(
-                date, amount, description, category_name, account_name, type
+                date, amount, description, category_name, account_name, transaction_type
             )
 
-            # カテゴリーIDとアカウントIDを取得
-            category_id = self._get_category_id(category_name, type)
-            account_id = self._get_account_id(account_name)
-
-            # 取引データを作成
-            transaction = Transaction(
-                date=datetime.strptime(date, "%Y-%m-%d").date(),
-                amount=Decimal(str(amount)),
-                description=description,
-                category_id=category_id,
-                account_id=account_id,
-                type=type,
-            )
-
-            # データベースに挿入
             with self.db_connection.transaction() as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    """INSERT INTO transactions (date, amount, description, category_id,
-                    account_id, type) VALUES (?, ?, ?, ?, ?, ?)"""
-                                                                  ,
-                    (
-                        transaction.date,
-                        transaction.amount,
-                        transaction.description,
-                        transaction.category_id,
-                        transaction.account_id,
-                        transaction.type,
-                    ),
-                )
-                transaction_id = cursor.lastrowid
-                transaction.id = transaction_id
+                category_id = self._get_category_id(category_name, transaction_type)
+                account_id = self._get_account_id(account_name)
 
-                # アカウント残高を更新
-                self._update_account_balance(conn, account_id, amount, type)
+                insert_query = """
+                    INSERT INTO transactions (date, amount, description, category_id, account_id, type)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """
+                params = (
+                    date,
+                    Decimal(str(amount)),
+                    description,
+                    category_id,
+                    account_id,
+                    transaction_type,
+                )
+
+                cursor = conn.cursor()
+                cursor.execute(insert_query, params)
+                transaction_id = cursor.lastrowid
+
+                self._update_account_balance(conn, account_id, amount, transaction_type)
 
             logger.info("Transaction added successfully: ID=%s", transaction_id)
-
             return {
                 "success": True,
                 "transaction_id": transaction_id,
-                "message": f"取引を追加しました（ID: {transaction_id}）",
-                "data": {
-                    "id": transaction_id,
-                    "date": str(transaction.date),
-                    "amount": float(transaction.amount) if transaction.amount else 0.0,
-                    "description": transaction.description,
-                    "category": category_name,
-                    "account": account_name,
-                    "type": transaction.type,
-                },
+                "message": "取引が正常に追加されました",
             }
-
+        except ValidationError as e:
+            logger.warning("Data validation error: %s", e)
+            return {"success": False, "error": str(e)}
         except Exception as e:
             logger.error("Failed to add transaction: %s", e)
+            # トランザクションの追加に失敗した場合、より詳細なエラー情報を提供
             return {
                 "success": False,
-                "error": str(e),
-                "message": f"取引の追加に失敗しました: {str(e)}",
+                "error": f"予期せぬエラーが発生しました: {e}",
             }
 
     def get_transactions(
@@ -136,97 +104,15 @@ class TransactionManager:
         account_name: Optional[str] = None,
         transaction_type: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """取引一覧を取得.
-
-        Args:
-            limit: 取得件数の上限
-            offset: オフセット
-            start_date: 開始日
-            end_date: 終了日
-            category_name: カテゴリー名でフィルタ
-            account_name: アカウント名でフィルタ
-            transaction_type: 取引タイプでフィルタ
-
-        Returns:
-            取引一覧
-        """
+        """取引一覧を取得."""
         try:
-            # クエリ条件を構築
-            conditions = []
-            params = []
-
-            if start_date:
-                conditions.append("t.date >= ?")
-                params.append(start_date)
-
-            if end_date:
-                conditions.append("t.date <= ?")
-                params.append(end_date)
-
-            if category_name:
-                conditions.append("c.name = ?")
-                params.append(category_name)
-
-            if account_name:
-                conditions.append("a.name = ?")
-                params.append(account_name)
-
-            if transaction_type:
-                conditions.append("t.type = ?")
-                params.append(transaction_type)
-
-            where_clause = ""
-            if conditions:
-                where_clause = "WHERE " + " AND ".join(conditions)
-
-            query = f"""
-                SELECT
-                    t.id, t.date, t.amount, t.description, t.type,
-                    c.name as category_name, a.name as account_name,
-                    t.created_at, t.updated_at
-                FROM transactions t
-                LEFT JOIN categories c ON t.category_id = c.id
-                LEFT JOIN accounts a ON t.account_id = a.id
-                {where_clause}
-                ORDER BY t.date DESC, t.id DESC
-                LIMIT ? OFFSET ?
-            """
-
-            params.extend([limit, offset])
-
-            result = self.db_connection.execute_query(
-                query, tuple(params), fetch_all=True
+            conditions, params = self._build_query_conditions(
+                start_date, end_date, category_name, account_name, transaction_type
             )
+            where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
 
-            transactions = []
-            if result:
-                for row in result:
-                    transactions.append(
-                        {
-                            "id": row[0],
-                            "date": row[1],
-                            "amount": float(row[2]) if row[2] else 0.0,
-                            "description": row[3],
-                            "type": row[4],
-                            "category": row[5],
-                            "account": row[6],
-                            "created_at": row[7],
-                            "updated_at": row[8],
-                        }
-                    )
-
-            # 総件数を取得
-            count_query = f"""
-                SELECT COUNT(*) FROM transactions t
-                LEFT JOIN categories c ON t.category_id = c.id
-                LEFT JOIN accounts a ON t.account_id = a.id
-                {where_clause}
-            """
-
-            count_result = self.db_connection.execute_query(
-                count_query, tuple(params[:-2]), fetch_one=True
-            )
-            total_count = count_result[0] if count_result else 0
+            transactions = self._fetch_transactions(where_clause, params, limit, offset)
+            total_count = self._get_total_transaction_count(where_clause, params)
 
             return {
                 "success": True,
@@ -241,7 +127,6 @@ class TransactionManager:
                 },
                 "message": f"{len(transactions)}件の取引を取得しました",
             }
-
         except Exception as e:
             logger.error("Failed to get transactions: %s", e)
             return {
@@ -250,18 +135,84 @@ class TransactionManager:
                 "message": f"取引の取得に失敗しました: {str(e)}",
             }
 
-    def update_transaction(self, transaction_id: int, **kwargs) -> Dict[str, Any]:
-        """取引を更新.
+    def _build_query_conditions(
+        self,
+        start_date: Optional[str],
+        end_date: Optional[str],
+        category_name: Optional[str],
+        account_name: Optional[str],
+        transaction_type: Optional[str],
+    ) -> tuple[list[str], list[Any]]:
+        conditions = []
+        params = []
+        if start_date:
+            conditions.append("t.date >= ?")
+            params.append(start_date)
+        if end_date:
+            conditions.append("t.date <= ?")
+            params.append(end_date)
+        if category_name:
+            conditions.append("c.name = ?")
+            params.append(category_name)
+        if account_name:
+            conditions.append("a.name = ?")
+            params.append(account_name)
+        if transaction_type:
+            conditions.append("t.type = ?")
+            params.append(transaction_type)
+        return conditions, params
 
-        Args:
-            transaction_id: 取引ID
-            **kwargs: 更新する項目
-
-        Returns:
-            更新結果
+    def _fetch_transactions(
+        self, where_clause: str, params: list[Any], limit: int, offset: int
+    ) -> list[dict[str, Any]]:
+        query = f"""
+            SELECT
+                t.id, t.date, t.amount, t.description, t.type,
+                c.name as category_name, a.name as account_name,
+                t.created_at, t.updated_at
+            FROM transactions t
+            LEFT JOIN categories c ON t.category_id = c.id
+            LEFT JOIN accounts a ON t.account_id = a.id
+            {where_clause}
+            ORDER BY t.date DESC, t.id DESC
+            LIMIT ? OFFSET ?
         """
+        query_params = tuple(params + [limit, offset])
+        result = self.db_connection.execute_query(query, query_params, fetch_all=True)
+
+        transactions = []
+        if result:
+            for row in result:
+                transactions.append(
+                    {
+                        "id": row[0],
+                        "date": row[1],
+                        "amount": float(row[2]) if row[2] else 0.0,
+                        "description": row[3],
+                        "type": row[4],
+                        "category": row[5],
+                        "account": row[6],
+                        "created_at": row[7],
+                        "updated_at": row[8],
+                    }
+                )
+        return transactions
+
+    def _get_total_transaction_count(self, where_clause: str, params: list[Any]) -> int:
+        count_query = f"""
+            SELECT COUNT(*) FROM transactions t
+            LEFT JOIN categories c ON t.category_id = c.id
+            LEFT JOIN accounts a ON t.account_id = a.id
+            {where_clause}
+        """
+        count_result = self.db_connection.execute_query(
+            count_query, tuple(params), fetch_one=True
+        )
+        return count_result[0] if count_result else 0
+
+    def update_transaction(self, transaction_id: int, **kwargs) -> Dict[str, Any]:
+        """取引を更新."""
         try:
-            # 既存の取引を取得
             existing = self._get_transaction_by_id(transaction_id)
             if not existing:
                 return {
@@ -270,38 +221,9 @@ class TransactionManager:
                     "message": f"ID {transaction_id} の取引が見つかりません",
                 }
 
-            # 更新可能フィールドを定義
-            allowed_fields = [
-                "date",
-                "amount",
-                "description",
-                "category_name",
-                "account_name",
-            ]
-            update_fields = []
-            update_params = []
-
-            for field, value in kwargs.items():
-                if field in allowed_fields and value is not None:
-                    if field == "date":
-                        update_fields.append("date = ?")
-                        update_params.append(
-                            datetime.strptime(value, "%Y-%m-%d").date()
-                        )
-                    elif field == "amount":
-                        update_fields.append("amount = ?")
-                        update_params.append(Decimal(str(value)))
-                    elif field == "description":
-                        update_fields.append("description = ?")
-                        update_params.append(value)
-                    elif field == "category_name":
-                        category_id = self._get_category_id(value, existing["type"])
-                        update_fields.append("category_id = ?")
-                        update_params.append(category_id)
-                    elif field == "account_name":
-                        account_id = self._get_account_id(value)
-                        update_fields.append("account_id = ?")
-                        update_params.append(account_id)
+            update_fields, update_params = self._prepare_transaction_update(
+                existing, **kwargs
+            )
 
             if not update_fields:
                 return {
@@ -310,35 +232,16 @@ class TransactionManager:
                     "message": "更新対象のフィールドがありません",
                 }
 
-            # updated_atを追加
-            update_fields.append("updated_at = CURRENT_TIMESTAMP")
-            update_params.append(transaction_id)
-
-            query = f"""
-                UPDATE transactions
-                SET {', '.join(update_fields)}
-                WHERE id = ?
-            """
-
-            with self.db_connection.transaction() as conn:
-                cursor = conn.cursor()
-                cursor.execute(query, tuple(update_params))
-
-                if cursor.rowcount == 0:
-                    return {
-                        "success": False,
-                        "error": "No rows updated",
-                        "message": "取引の更新に失敗しました",
-                    }
+            self._execute_transaction_update(
+                transaction_id, update_fields, update_params
+            )
 
             logger.info("Transaction updated successfully: ID=%s", transaction_id)
-
             return {
                 "success": True,
                 "transaction_id": transaction_id,
                 "message": f"取引を更新しました（ID: {transaction_id}）",
             }
-
         except Exception as e:
             logger.error("Failed to update transaction: %s", e)
             return {
@@ -346,6 +249,60 @@ class TransactionManager:
                 "error": str(e),
                 "message": f"取引の更新に失敗しました: {str(e)}",
             }
+
+    def _prepare_transaction_update(
+        self, existing_transaction: Dict[str, Any], **kwargs
+    ) -> tuple[list[str], list[Any]]:
+        allowed_fields = [
+            "date",
+            "amount",
+            "description",
+            "category_name",
+            "account_name",
+        ]
+        update_fields = []
+        update_params = []
+
+        for field, value in kwargs.items():
+            if field in allowed_fields and value is not None:
+                if field == "date":
+                    update_fields.append("date = ?")
+                    update_params.append(datetime.strptime(value, "%Y-%m-%d").date())
+                elif field == "amount":
+                    update_fields.append("amount = ?")
+                    update_params.append(Decimal(str(value)))
+                elif field == "description":
+                    update_fields.append("description = ?")
+                    update_params.append(value)
+                elif field == "category_name":
+                    category_id = self._get_category_id(
+                        value, existing_transaction["type"]
+                    )
+                    update_fields.append("category_id = ?")
+                    update_params.append(category_id)
+                elif field == "account_name":
+                    account_id = self._get_account_id(value)
+                    update_fields.append("account_id = ?")
+                    update_params.append(account_id)
+        return update_fields, update_params
+
+    def _execute_transaction_update(
+        self, transaction_id: int, update_fields: list[str], update_params: list[Any]
+    ):
+        update_fields.append("updated_at = CURRENT_TIMESTAMP")
+        update_params.append(transaction_id)
+
+        query = f"""
+            UPDATE transactions
+            SET {', '.join(update_fields)}
+            WHERE id = ?
+        """
+
+        with self.db_connection.transaction() as conn:
+            cursor = conn.cursor()
+            cursor.execute(query, tuple(update_params))
+            if cursor.rowcount == 0:
+                raise Exception("取引の更新に失敗しました")
 
     def delete_transaction(self, transaction_id: int) -> Dict[str, Any]:
         """取引を削除.
@@ -415,58 +372,63 @@ class TransactionManager:
         description: str,
         category_name: str,
         account_name: str,
-        type: str,
+        transaction_type: str,
     ) -> None:
         """取引データの検証."""
         if not date:
-            raise DataValidationError("日付は必須です")
+            raise ValidationError("日付は必須です")
 
         try:
             datetime.strptime(date, "%Y-%m-%d")
         except ValueError:
-            raise DataValidationError("日付はYYYY-MM-DD形式で入力してください")
+            raise ValidationError("日付はYYYY-MM-DD形式で入力してください")
 
         if amount is None or amount <= 0:
-            raise DataValidationError("金額は正の数値である必要があります")
+            raise ValidationError("金額は正の数値である必要があります")
 
         if not description or not description.strip():
-            raise DataValidationError("説明は必須です")
+            raise ValidationError("説明は必須です")
 
-        if type not in ["income", "expense"]:
-            raise DataValidationError(
+        if transaction_type not in ["income", "expense"]:
+            raise ValidationError(
                 "取引タイプは 'income' または 'expense' である必要があります"
             )
 
         if not category_name or not category_name.strip():
-            raise DataValidationError("カテゴリー名は必須です")
+            raise ValidationError("カテゴリー名は必須です")
 
         if not account_name or not account_name.strip():
-            raise DataValidationError("アカウント名は必須です")
+            raise ValidationError("アカウント名は必須です")
 
     def _get_category_id(self, category_name: str, transaction_type: str) -> int:
-        """カテゴリー名からIDを取得（存在しない場合は作成）."""
+        """カテゴリーIDを取得、存在しない場合は作成.
+
+        Args:
+            category_name: カテゴリー名
+            transaction_type: 取引タイプ
+
+        Returns:
+            カテゴリーID
+        """
         query = "SELECT id FROM categories WHERE name = ? AND type = ?"
         result = self.db_connection.execute_query(
             query, (category_name, transaction_type), fetch_one=True
         )
-
         if result:
             return result[0]
-
-        # カテゴリーが存在しない場合は作成
-        with self.db_connection.transaction() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                "INSERT INTO categories (name, type) VALUES (?, ?)",
-                (category_name, transaction_type),
-            )
-            last_id = cursor.lastrowid
-            if last_id is None:
-                raise DataValidationError("カテゴリーの作成に失敗しました")
-            return last_id
+        else:
+            # カテゴリーが存在しない場合は新規作成
+            insert_query = "INSERT INTO categories (name, type) VALUES (?, ?)"
+            with self.db_connection.transaction() as conn:
+                cursor = conn.cursor()
+                cursor.execute(insert_query, (category_name, transaction_type))
+                category_id = cursor.lastrowid
+                if category_id is None:
+                    raise ValidationError("カテゴリーの作成に失敗しました")
+                return category_id
 
     def _get_account_id(self, account_name: str) -> int:
-        """アカウント名からIDを取得（存在しない場合はエラー）."""
+        """アカウントIDを取得（存在しない場合はエラー）."""
         query = "SELECT id FROM accounts WHERE name = ?"
         result = self.db_connection.execute_query(
             query, (account_name,), fetch_one=True
@@ -475,7 +437,30 @@ class TransactionManager:
         if result:
             return result[0]
 
-        raise DataValidationError(f"アカウント '{account_name}' が見つかりません")
+        raise ValidationError(f"アカウント '{account_name}' が見つかりません")
+
+    def _update_account_balance(
+        self,
+        conn: sqlite3.Connection,
+        account_id: int,
+        amount: float,
+        transaction_type: str,
+    ):
+        """アカウント残高を更新.
+
+        Args:
+            conn: データベース接続
+            account_id: アカウントID
+            amount: 金額
+            transaction_type: 取引タイプ
+        """
+        if transaction_type == "income":
+            update_query = "UPDATE accounts SET balance = balance + ? WHERE id = ?"
+        else:
+            update_query = "UPDATE accounts SET balance = balance - ? WHERE id = ?"
+
+        cursor = conn.cursor()
+        cursor.execute(update_query, (Decimal(str(amount)), account_id))
 
     def _get_transaction_by_id(self, transaction_id: int) -> Optional[Dict[str, Any]]:
         """IDで取引を取得."""
@@ -507,24 +492,6 @@ class TransactionManager:
 
         return None
 
-    def _update_account_balance(
-        self, connection, account_id: int, amount: float, transaction_type: str
-    ) -> None:
-        """アカウント残高を更新."""
-        # 収入の場合は残高を増やし、支出の場合は残高を減らす
-        balance_change = amount if transaction_type == "income" else -amount
-
-        cursor = connection.cursor()
-        cursor.execute(
-            """
-            UPDATE accounts
-            SET current_balance = current_balance + ?
-            WHERE id = ?
-            """\
-               ,
-            (Decimal(str(balance_change)), account_id),
-        )
-
 
 # グローバルなTransactionManagerインスタンス
 _transaction_manager: Optional[TransactionManager] = None
@@ -545,7 +512,7 @@ class CategoryManager:
 
     def __init__(self):
         """初期化."""
-        self.db_connection = get_database_connection()
+        self.db_connection = DatabaseConnection()
 
     def get_categories(self, category_type: Optional[str] = None) -> Dict[str, Any]:
         """カテゴリー一覧を取得.
@@ -617,12 +584,12 @@ class CategoryManager:
         try:
             # 入力検証
             if category_type not in ["income", "expense"]:
-                raise DataValidationError(
+                raise ValidationError(
                     "カテゴリータイプは 'income' または 'expense' である必要があります"
                 )
 
             if not name or not name.strip():
-                raise DataValidationError("カテゴリー名は必須です")
+                raise ValidationError("カテゴリー名は必須です")
 
             # 同名カテゴリーの存在確認
             existing = self.db_connection.execute_query(
@@ -643,8 +610,7 @@ class CategoryManager:
                 cursor = connection.cursor()
                 cursor.execute(
                     """INSERT INTO categories (name, type, parent_id, color, icon)
-                    VALUES (?, ?, ?, ?, ?)"""
-                                             ,
+                    VALUES (?, ?, ?, ?, ?)""",
                     (name.strip(), category_type, parent_id, color, icon),
                 )
 
@@ -656,7 +622,7 @@ class CategoryManager:
                 "category_id": category_id,
             }
 
-        except DataValidationError as e:
+        except ValidationError as e:
             return {"success": False, "error": "VALIDATION_ERROR", "message": e.message}
         except Exception as e:
             logger.error("Failed to add category: %s", e)
@@ -707,7 +673,7 @@ class CategoryManager:
                 "income",
                 "expense",
             ]:
-                raise DataValidationError(
+                raise ValidationError(
                     "カテゴリータイプは 'income' または 'expense' である必要があります"
                 )
 
@@ -730,7 +696,7 @@ class CategoryManager:
                 "updated_fields": list(update_fields.keys()),
             }
 
-        except DataValidationError as e:
+        except ValidationError as e:
             return {"success": False, "error": "VALIDATION_ERROR", "message": e.message}
         except Exception as e:
             logger.error("Failed to update category: %s", e)
@@ -834,7 +800,7 @@ class AccountManager:
         Args:
             db_connection: データベース接続オブジェクト。Noneの場合はデフォルトを使用
         """
-        self.db_connection = db_connection or get_database_connection()
+        self.db_connection = db_connection or DatabaseConnection()
 
     def add_account(
         self,
@@ -889,8 +855,7 @@ class AccountManager:
                 cursor = connection.cursor()
                 cursor.execute(
                     """INSERT INTO accounts (name, type, initial_balance,
-                    current_balance, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?)"""
-                                                                                        ,
+                    current_balance, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?)""",
                     (
                         name.strip(),
                         account_type,
@@ -1035,44 +1000,9 @@ class AccountManager:
                     "message": f"アカウントID {account_id} が見つかりません",
                 }
 
-            # 更新フィールドの準備
-            update_fields = {}
-
-            if name is not None:
-                if not name.strip():
-                    return {
-                        "success": False,
-                        "error": "VALIDATION_ERROR",
-                        "message": "アカウント名は必須です",
-                    }
-
-                # 名前の重複チェック（自分以外）
-                name_check = self.db_connection.execute_query(
-                    "SELECT id FROM accounts WHERE name = ? AND id != ?",
-                    (name.strip(), account_id),
-                    fetch_one=True,
-                )
-
-                if name_check:
-                    return {
-                        "success": False,
-                        "error": "DUPLICATE_NAME",
-                        "message": f"アカウント名 '{name.strip()}' は既に存在します",
-                    }
-
-                update_fields["name"] = name.strip()
-
-            if account_type is not None:
-                if account_type not in ["bank", "cash", "credit", "investment"]:
-                    return {
-                        "success": False,
-                        "error": "VALIDATION_ERROR",
-                        "message": "アカウント種別は bank, cash, credit, investment のいずれかである必要があります",
-                    }
-                update_fields["type"] = account_type
-
-            if is_active is not None:
-                update_fields["is_active"] = is_active
+            update_fields = self._prepare_account_update_fields(
+                account_id, name, account_type, is_active
+            )
 
             if not update_fields:
                 return {
@@ -1081,26 +1011,16 @@ class AccountManager:
                     "message": "更新する項目がありません",
                 }
 
-            # 更新日時を追加
-            update_fields["updated_at"] = datetime.now()
-
-            # アカウント更新
-            with self.db_connection.transaction() as connection:
-                cursor = connection.cursor()
-
-                set_clause = ", ".join(
-                    [f"{field} = ?" for field in update_fields.keys()]
-                )
-                values = list(update_fields.values()) + [account_id]
-
-                cursor.execute(f"UPDATE accounts SET {set_clause} WHERE id = ?", values)
+            self._execute_account_update(account_id, update_fields)
 
             return {
                 "success": True,
-                "message": f"アカウント '{existing[1]}' を更新しました",
+                "message": f"アカウント '{existing['name']}' を更新しました",
                 "updated_fields": list(update_fields.keys()),
             }
 
+        except ValidationError as e:
+            return {"success": False, "error": "VALIDATION_ERROR", "message": str(e)}
         except Exception as e:
             logger.error("Failed to update account: %s", e)
             return {
@@ -1108,6 +1028,47 @@ class AccountManager:
                 "error": str(e),
                 "message": "アカウントの更新に失敗しました",
             }
+
+    def _prepare_account_update_fields(
+        self,
+        account_id: int,
+        name: Optional[str],
+        account_type: Optional[str],
+        is_active: Optional[bool],
+    ) -> Dict[str, Any]:
+        update_fields = {}
+        if name is not None:
+            if not name.strip():
+                raise ValidationError("アカウント名は必須です")
+            name_check = self.db_connection.execute_query(
+                "SELECT id FROM accounts WHERE name = ? AND id != ?",
+                (name.strip(), account_id),
+                fetch_one=True,
+            )
+            if name_check:
+                raise ValidationError(f"アカウント名 '{name.strip()}' は既に存在します")
+            update_fields["name"] = name.strip()
+
+        if account_type is not None:
+            if account_type not in ["bank", "cash", "credit", "investment"]:
+                raise ValidationError(
+                    "アカウント種別は bank, cash, credit, investment のいずれかである必要があります"
+                )
+            update_fields["type"] = account_type
+
+        if is_active is not None:
+            update_fields["is_active"] = is_active
+
+        return update_fields
+
+    def _execute_account_update(self, account_id: int, update_fields: Dict[str, Any]):
+        update_fields["updated_at"] = datetime.now()
+        set_clause = ", ".join([f"{field} = ?" for field in update_fields.keys()])
+        values = list(update_fields.values()) + [account_id]
+
+        with self.db_connection.transaction() as connection:
+            cursor = connection.cursor()
+            cursor.execute(f"UPDATE accounts SET {set_clause} WHERE id = ?", values)
 
     def delete_account(self, account_id: int) -> Dict[str, Any]:
         """アカウントを削除.
@@ -1133,7 +1094,7 @@ class AccountManager:
                     "message": f"アカウントID {account_id} が見つかりません",
                 }
 
-            # 使用中かチェック（取引で使用されているか）
+            # 関連する取引がないかチェック
             transaction_count = self.db_connection.execute_query(
                 "SELECT COUNT(*) FROM transactions WHERE account_id = ?",
                 (account_id,),

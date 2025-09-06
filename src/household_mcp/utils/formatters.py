@@ -54,14 +54,11 @@ class DataFormatter:
 
             # 通貨記号の追加
             if include_symbol:
-                if currency_code == "JPY":
-                    return f"¥{formatted}"
-                elif currency_code == "USD":
-                    return f"${formatted}"
-                elif currency_code == "EUR":
-                    return f"€{formatted}"
-                else:
-                    return f"{formatted} {currency_code}"
+                symbol_map = {"JPY": "¥", "USD": "$", "EUR": "€"}
+                symbol = symbol_map.get(currency_code)
+                if symbol:
+                    return f"{symbol}{formatted}"
+                return f"{formatted} {currency_code}"
 
             return formatted
 
@@ -99,18 +96,14 @@ class DataFormatter:
             elif isinstance(date_obj, datetime):
                 date_obj = date_obj.date()
 
-            if format_type == "default":
-                return f"{date_obj.year}年{date_obj.month:02d}月{date_obj.day:02d}日"
-            elif format_type == "short":
-                return date_obj.strftime("%Y/%m/%d")
-            elif format_type == "iso":
-                return date_obj.strftime("%Y-%m-%d")
-            elif format_type == "jp":
-                return f"{date_obj.month}月{date_obj.day}日"
-            elif format_type == "jp_year":
-                return f"{date_obj.year}年{date_obj.month}月{date_obj.day}日"
-            else:
-                return str(date_obj)
+            format_map = {
+                "default": f"{date_obj.year}年{date_obj.month:02d}月{date_obj.day:02d}日",
+                "short": date_obj.strftime("%Y/%m/%d"),
+                "iso": date_obj.strftime("%Y-%m-%d"),
+                "jp": f"{date_obj.month}月{date_obj.day}日",
+                "jp_year": f"{date_obj.year}年{date_obj.month}月{date_obj.day}日",
+            }
+            return format_map.get(format_type, str(date_obj))
 
         except (ValueError, TypeError):
             return str(date_obj)
