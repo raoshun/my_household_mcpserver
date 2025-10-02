@@ -8,8 +8,8 @@ from typing import List, Optional, Sequence, Tuple
 
 import pandas as pd
 
-from ..dataloader import load_csv_for_months
-from ..exceptions import AnalysisError
+from ..dataloader import load_csv_for_months, month_csv_path
+from ..exceptions import AnalysisError, DataSourceError
 from ..utils.query_parser import TrendQuery
 
 MonthTuple = Tuple[int, int]
@@ -33,6 +33,7 @@ class CategoryTrendAnalyzer:
     def __init__(self, *, src_dir: str = "data") -> None:
         self._src_dir = src_dir
         self._cache: dict[Tuple[MonthTuple, ...], pd.DataFrame] = {}
+        self._cache_signature: dict[Tuple[MonthTuple, ...], Tuple[Tuple[str, float], ...]] = {}
 
     def metrics_for_query(self, query: TrendQuery) -> List[TrendMetrics]:
         """Return metrics for the given query parameters."""
@@ -84,13 +85,21 @@ class CategoryTrendAnalyzer:
         return top["category"].tolist()
 
     def _get_aggregated(self, months: Tuple[MonthTuple, ...]) -> pd.DataFrame:
-        if months not in self._cache:
-            df = load_csv_for_months(months, src_dir=self._src_dir)
-            if df.empty:
-                raise AnalysisError("指定された期間のデータが存在しません")
-            aggregated = self._aggregate_dataframe(df)
-            self._cache[months] = aggregated
-        return self._cache[months].copy()
+        signature = self._compute_signature(months)
+
+        cached = self._cache.get(months)
+        cached_signature = self._cache_signature.get(months)
+        if cached is not None and cached_signature == signature:
+            return cached.copy()
+
+        df = load_csv_for_months(months, src_dir=self._src_dir)
+        if df.empty:
+            raise AnalysisError("指定された期間のデータが存在しません")
+
+        aggregated = self._aggregate_dataframe(df)
+        self._cache[months] = aggregated
+        self._cache_signature[months] = signature
+        return aggregated.copy()
 
     @staticmethod
     def _aggregate_dataframe(df: pd.DataFrame) -> pd.DataFrame:
@@ -172,8 +181,30 @@ class CategoryTrendAnalyzer:
         """Invalidate cached aggregated DataFrames."""
 
         self._cache.clear()
+        self._cache_signature.clear()
 
     def cache_size(self) -> int:
         """Return the number of cached month combinations."""
 
         return len(self._cache)
+
+    def _compute_signature(self, months: Tuple[MonthTuple, ...]) -> Tuple[Tuple[str, float], ...]:
+        """Return a signature based on CSV paths and their modification times."""
+
+        signature: list[Tuple[str, float]] = []
+        for year, month in months:
+            try:
+                path = month_csv_path(year, month, src_dir=self._src_dir)
+            except DataSourceError:
+                raise
+            except Exception as exc:  # pragma: no cover - defensive guard
+                raise DataSourceError(f"CSV ファイルの検出中にエラーが発生しました: {exc}") from exc
+
+            try:
+                stat = path.stat()
+            except FileNotFoundError as exc:
+                raise DataSourceError(f"CSV ファイルが見つかりません: {path}") from exc
+
+            signature.append((str(path), stat.st_mtime))
+
+        return tuple(signature)
