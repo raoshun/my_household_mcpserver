@@ -62,5 +62,3 @@ __all__ = [
     "format_category_trend_response",
     "trend_metrics_to_dict",
 ]
-
-# End of file

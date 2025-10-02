@@ -1,9 +1,14 @@
-from typing import Union
-from fastmcp import FastMCP, Context
+from typing import Optional
+
+from fastmcp import FastMCP
 
 from household_mcp.dataloader import (
     iter_available_months,
     load_csv_from_month,
+)
+from household_mcp.tools import (
+    category_trend_summary,
+    get_category_trend,
 )
 
 # サーバを初期化
@@ -72,6 +77,29 @@ def get_household_categories() -> dict[str, list[str]]:
         mids = sorted(group["中項目"].dropna().astype(str).unique())
         groups[str(name)] = mids
     return groups
+
+
+@mcp.resource("data://category_trend_summary")
+def get_category_trend_summary() -> dict:
+    """トレンド分析用のカテゴリ集計結果を返す。"""
+
+    return category_trend_summary(src_dir="data")
+
+
+@mcp.tool("get_category_trend")
+def run_get_category_trend(
+    category: Optional[str] = None,
+    start_month: Optional[str] = None,
+    end_month: Optional[str] = None,
+) -> dict:
+    """カテゴリ別の支出トレンドを取得する MCP ツール。"""
+
+    return get_category_trend(
+        category=category,
+        start_month=start_month,
+        end_month=end_month,
+        src_dir="data",
+    )
 
 
 # 実行処理
