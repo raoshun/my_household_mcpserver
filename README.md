@@ -1,47 +1,86 @@
 # Household MCP Server
 
-家計簿分析をAIエージェントとの自然言語会話で行うためのMCP（Model Context Protocol）サーバーです。
+家計簿CSVをインメモリで分析し、AIエージェントとの自然言語会話に必要な情報を提供する MCP（Model Context Protocol）サーバーです。
 
 ## 概要
 
-このプロジェクトは、家計簿データの分析をAIエージェントとの自然言語会話で実現するMCPサーバーを提供します。ユーザーは複雑なクエリ言語を学ぶことなく、日常会話で家計データの洞察を得ることができます。
+このプロジェクトは、ローカルの家計簿CSV（`data/` 配下）を pandas で分析し、AI エージェントからの自然言語リクエストに応答する MCP サーバーを提供します。ユーザーは複雑なクエリ言語を学ぶことなく、日常会話で家計データの洞察を得ることができます。
 
 ## 主な機能
 
-- **自然言語インターフェース**: 日本語での家計分析
-- **データ管理**: 取引データ、カテゴリー、アカウントの管理
-- **分析機能**: トレンド分析、異常検知、予算管理
-- **レポート生成**: 月次・年次レポートの自動生成
-- **プライバシー保護**: ローカル処理によるデータセキュリティ
+- **自然言語インターフェース**: 日本語でカテゴリ別・期間別の支出推移を確認
+- **トレンド分析**: 月次集計、前月比・前年同月比・12か月移動平均の計算
+- **カテゴリハイライト**: 指定期間で支出が大きいカテゴリを自動抽出
+- **ローカル完結設計**: CSV ファイルをローカルで読み込み、外部通信なしで解析
 
 ## 要件
 
-- Python 3.11以上
-- SQLite（デフォルト）またはPostgreSQL
+- Python 3.12 以上（`uv` を推奨）
+- 家計簿 CSV ファイル（`data/収入・支出詳細_YYYY-MM-DD_YYYY-MM-DD.csv` 形式）
 
 ## インストール
 
 ```bash
-# Poetryを使用した開発環境のセットアップ
-poetry install --with dev
-poetry run pre-commit install
+# 推奨: uv を用いたインストール
+uv pip install -e ".[dev]"
+
+# 代替: Poetry を使用する場合
+# poetry install --with dev
+
+# pre-commit フックの有効化
+pre-commit install
 ```
 
 ## 使用方法
 
+### MCP サーバーの起動
+
 ```bash
-# 開発サーバーの起動
-poetry run uvicorn household_mcp.server:app --reload
+# MCP サーバー起動
+python -m src.server
 
-# テストの実行
-poetry run pytest
+# テスト実行
+uv run pytest  # または poetry run pytest
 
-# コード品質チェック
-poetry run black .
-poetry run isort .
-poetry run flake8
-poetry run mypy src/
+# コード品質チェック例
+uv run black .
+uv run isort .
+uv run flake8
+uv run mypy src/
 ```
+
+### 利用可能な MCP リソース / ツール
+
+| 名称 | 種別 | 説明 |
+| --- | --- | --- |
+| `data://category_hierarchy` | Resource | 大項目→中項目のカテゴリ辞書 |
+| `data://available_months` | Resource | CSV から検出した利用可能年月 |
+| `data://category_trend_summary` | Resource | 直近 12 か月のカテゴリ別トレンド情報 |
+| `get_monthly_household` | Tool | 指定年月の支出明細一覧 |
+| `get_category_trend` | Tool | 指定カテゴリ or 上位カテゴリのトレンド解説 |
+
+### サンプル応答
+
+```json
+{
+  "category": "食費",
+  "start_month": "2025-06",
+  "end_month": "2025-07",
+  "text": "食費の 2025年06月〜2025年07月 の推移です。...",
+  "metrics": [
+    {"month": "2025-06", "amount": -62500, "month_over_month": null},
+    {"month": "2025-07", "amount": -58300, "month_over_month": -0.067}
+  ]
+}
+```
+
+### テスト
+
+```bash
+uv run pytest
+```
+
+カバレッジ閾値 80% を満たすと成功です。
 
 ## 開発
 
