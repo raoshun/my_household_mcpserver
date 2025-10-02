@@ -1,564 +1,260 @@
-# 家計簿分析MCPサーバ 設計書
+# 家計簿分析 MCP サーバー設計書
+
+- **バージョン**: 0.2.0
+- **更新日**: 2025-10-03
+- **作成者**: GitHub Copilot (AI assistant)
+- **対象要件**: [requirements.md](./requirements.md) に記載の FR-001〜FR-003、NFR-001〜NFR-004
+
+---
 
 ## 1. システムアーキテクチャ
 
-### 1.1 全体アーキテクチャ
+### 1.1 全体像
 
 ```text
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   AIエージェント  │◄──►│  MCPサーバー     │◄──►│  データベース    │
-│   (Claude等)    │    │  (家計簿分析)    │    │  (SQLite)      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                              │
-                              ▼
-                       ┌─────────────────┐
-                       │  分析エンジン    │
-                       │  (pandas,       │
-                       │   matplotlib)   │
-                       └─────────────────┘
+┌──────────────┐   MCPプロトコル   ┌─────────────────────┐
+│  LLMクライアント │ ◄─────────────► │ 家計簿分析 MCP サーバ │
+└──────────────┘                  └────────┬────────────┘
+                                                │
+                                                │ pandas DataFrame
+                                                ▼
+                                      ┌────────────────────────┐
+                                      │  CSV データ / ローカルFS │
+                                      └────────────────────────┘
 ```
 
-### 1.2 MCPサーバーコンポーネント
+- サーバーは `fastmcp.FastMCP` を利用し、LLM クライアントと標準入出力経由で通信する。
+- データソースは `data/` 配下の家計簿 CSV ファイル（全てローカル）。外部 DB やネットワーク通信は行わない。
+- 解析ロジックは pandas/numpy によるインメモリ処理で完結する。
 
-- **接続管理**: AIエージェントとの通信
-- **クエリ処理**: 自然言語の意図解析
-- **データアクセス**: データベース操作
-- **分析エンジン**: 統計・可視化処理
-- **応答生成**: 結果の自然言語化
+### 1.2 コンポーネント構成
+
+| コンポーネント | 主な責務 | 主な実装 | 対応要件 |
+| --- | --- | --- | --- |
+| MCP Server | リソース/ツール定義とリクエスト分岐 | `src/server.py` | 全要件 |
+| Data Loader | CSV ファイルの読み込みと前処理 | `src/household_mcp/dataloader.py` | FR-001〜FR-003 |
+| Trend Analyzer | 月次指標計算モジュール（今後追加） | `src/household_mcp/analysis/trends.py` *(予定)* | FR-001 |
+| Query Resolver | 質問パラメータ解釈ユーティリティ | `src/household_mcp/utils/query_parser.py` *(予定)* | FR-002, FR-003 |
+| Formatter | 数値書式・テキスト生成 | `src/household_mcp/utils/formatters.py` *(予定)* | NFR-001 |
 
 ### 1.3 技術スタック
 
-#### 1.3.1 開発環境
+| 区分 | 採用技術 | 備考 |
+| --- | --- | --- |
+| 言語 | Python 3.12 (uv 管理) | `pyproject.toml` 参照 |
+| MCP 実装 | `fastmcp` | 既存コードで使用 |
+| データ処理 | pandas, numpy | CSV の集計と指標算出 |
+| フォーマット | Python 標準 `locale`, `decimal` など | 数値の桁区切り、丸め |
+| テスト | pytest | 今後テスト追加予定 |
 
-- **言語**: Python 3.11+
-- **フレームワーク**: FastAPI (MCPサーバー)
-- **データベース**: SQLite (開発), PostgreSQL (本番)
-- **データ分析**: pandas, numpy, scipy
-- **可視化**: matplotlib, plotly
-- **テスト**: pytest, pytest-asyncio
+---
 
-#### 1.3.2 依存ライブラリ
+## 2. データ設計
 
-```python
-# requirements.txt
-fastapi==0.104.1
-uvicorn==0.24.0
-pandas==2.1.3
-numpy==1.25.2
-matplotlib==3.8.2
-plotly==5.17.0
-pydantic==2.5.0
-python-dateutil==2.8.2
-pytest==7.4.3
-pytest-asyncio==0.21.1
-mcp-python==0.1.0
-```
+### 2.1 データソース
 
-## 2. データベース設計
+- **ファイル位置**: `data/収入・支出詳細_YYYY-MM-DD_YYYY-MM-DD.csv`
+- **エンコーディング**: `cp932`
+- **主要カラム**:
+  - `計算対象` (0/1)
+  - `金額（円）` (負の値で支出を表す)
+  - `大項目` / `大分類`
+  - `中項目` / `中分類`
+  - `日付`
 
-### 2.1 ERD（Entity Relationship Diagram）
+### 2.2 読み込みフロー
 
-```text
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   accounts      │    │  transactions   │    │   categories    │
-├─────────────────┤    ├─────────────────┤    ├─────────────────┤
-│ id (PK)         │◄──┤ account_id (FK) │    │ id (PK)         │
-│ name            │    │ id (PK)         │◄──┤ name            │
-│ type            │    │ date            │    │ type            │
-│ initial_balance │    │ amount          │    │ parent_id (FK)  │
-│ current_balance │    │ description     │    │ color           │
-│ currency        │    │ category_id(FK) │    │ icon            │
-│ is_active       │    │ type            │    └─────────────────┘
-└─────────────────┘    │ created_at      │
-                       │ updated_at      │
-                       └─────────────────┘
-                               │
-                               ▼
-                       ┌─────────────────┐
-                       │    budgets      │
-                       ├─────────────────┤
-                       │ id (PK)         │
-                       │ category_id(FK) │
-                       │ amount          │
-                       │ period_type     │
-                       │ start_date      │
-                       │ end_date        │
-                       └─────────────────┘
-```
+1. `load_csv_from_month(year, month, src_dir="data")` を通じて pandas DataFrame を取得。
+2. 引数に応じて対象期間の CSV を結合し、`計算対象 == 1` かつ `金額（円） < 0` の行にフィルタリング。
+3. 型定義: 金額は `Int64`、カテゴリ列は pandas Categorical として読み込む。
+4. 将来のトレンド分析では、列名の揺れ (`大項目` / `大分類`) を吸収するマッピングを実装する。
 
-### 2.2 テーブル定義
+### 2.3 データ検証
 
-#### 2.2.1 取引テーブル (transactions)
+- 欠損値: カテゴリまたは金額が欠落している行は分析対象から除外。
+- 重複: 同一日・同金額・同カテゴリの重複は保持（家計簿の明細として許容）。
+- 利用可能月一覧: `get_available_months()` で 2025 年 1〜12 月を提供（現状はハードコーディング、将来自動検出予定）。
 
-```sql
-CREATE TABLE transactions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    date DATE NOT NULL,
-    amount DECIMAL(10,2) NOT NULL,
-    description TEXT,
-    category_id INTEGER,
-    account_id INTEGER,
-    type TEXT CHECK(type IN ('income', 'expense')),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (category_id) REFERENCES categories(id),
-    FOREIGN KEY (account_id) REFERENCES accounts(id)
-);
+---
 
--- インデックス
-CREATE INDEX idx_transactions_date ON transactions(date);
-CREATE INDEX idx_transactions_category ON transactions(category_id);
-CREATE INDEX idx_transactions_account ON transactions(account_id);
-CREATE INDEX idx_transactions_type ON transactions(type);
-```
+## 3. MCP リソース / ツール設計
 
-#### 2.2.2 カテゴリーテーブル (categories)
+### 3.1 既存リソース・ツール
 
-```sql
-CREATE TABLE categories (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
-    type TEXT CHECK(type IN ('income', 'expense')),
-    parent_id INTEGER,
-    color TEXT,
-    icon TEXT,
-    FOREIGN KEY (parent_id) REFERENCES categories(id)
-);
+| 名称 | 種別 | 概要 | 返却値 |
+| --- | --- | --- | --- |
+| `data://category_hierarchy` | Resource | 大項目→中項目の階層辞書 | `dict[str, list[str]]` |
+| `data://household_categories` | Resource | カテゴリ一覧（`category_hierarchy` と同等） | `dict[str, list[str]]` |
+| `data://available_months` | Resource | 利用可能な年月の静的リスト | `list[dict]` |
+| `get_monthly_household` | Tool | 指定年月の明細一覧 | `list[dict]` |
 
--- デフォルトカテゴリーの挿入
-INSERT INTO categories (name, type) VALUES
-('食費', 'expense'),
-('交通費', 'expense'),
-('光熱費', 'expense'),
-('娯楽費', 'expense'),
-('給与', 'income'),
-('副業', 'income');
-```
+### 3.2 追加予定リソース/ツール（トレンド分析）
 
-#### 2.2.3 アカウントテーブル (accounts)
+| 名称 | 種別 | 役割 | 主な入力パラメータ | 対応要件 |
+| --- | --- | --- | --- | --- |
+| `data://category_trend_summary` | Resource | 直近 12 か月のカテゴリ別指標を返す API | なし（サーバ内部で最新期間を判定） | FR-001 |
+| `get_category_trend` | Tool | 質問に応じたカテゴリ/月範囲のトレンド解説を返す | `category`, `start_month`, `end_month`（任意） | FR-002, FR-003 |
 
-```sql
-CREATE TABLE accounts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    type TEXT CHECK(type IN ('bank', 'credit', 'cash', 'investment')),
-    initial_balance DECIMAL(10,2) DEFAULT 0,
-    current_balance DECIMAL(10,2) DEFAULT 0,
-    currency TEXT DEFAULT 'JPY',
-    is_active BOOLEAN DEFAULT 1
-);
+- トレンド計算結果は辞書（カテゴリ × 月）で保持し、ツール側でテキスト整形して返す。
+- MCP クライアント（LLM）が自然言語入力を解析し、該当パラメータを渡す想定。パラメータが不足する場合はサーバー側で補完ロジックを適用する。
 
--- デフォルトアカウントの挿入
-INSERT INTO accounts (name, type, initial_balance, current_balance) VALUES
-('現金', 'cash', 0, 0),
-('メイン銀行', 'bank', 0, 0);
-```
+---
 
-#### 2.2.4 予算テーブル (budgets)
+## 4. トレンド分析設計
 
-```sql
-CREATE TABLE budgets (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    category_id INTEGER,
-    amount DECIMAL(10,2) NOT NULL,
-    period_type TEXT CHECK(period_type IN ('monthly', 'yearly')),
-    start_date DATE,
-    end_date DATE,
-    FOREIGN KEY (category_id) REFERENCES categories(id)
-);
-```
+### 4.1 コンポーネント詳細
 
-## 3. MCPツール設計
+- **CategoryTrendAnalyzer** (`analysis/trends.py`, 予定)
+  - 直近 12 か月分の CSV を読み込み、カテゴリ別の月次支出を集計。
+  - 指標: 金額、前月比、12か月移動平均、前年同月比。
+- **MonthCategoryResolver** (`utils/query_parser.py`, 予定)
+  - 自然言語で指定された期間やカテゴリを構造化パラメータに変換。
+  - 不足時は利用可能月一覧から最新 12 か月をデフォルト適用。
+- **TrendResponseFormatter** (`utils/formatters.py`, 予定)
+  - 指標値をフォーマットし、自然言語応答テンプレートに埋め込む。
 
-### 3.1 データ操作ツール
-
-#### 3.1.1 add_transaction
-
-```python
-{
-    "name": "add_transaction",
-    "description": "新しい取引を追加",
-    "inputSchema": {
-        "type": "object",
-        "properties": {
-            "date": {"type": "string", "format": "date"},
-            "amount": {"type": "number"},
-            "description": {"type": "string"},
-            "category": {"type": "string"},
-            "account": {"type": "string"},
-            "type": {"type": "string", "enum": ["income", "expense"]}
-        },
-        "required": ["date", "amount", "type"]
-    }
-}
-```
-
-#### 3.1.2 update_transaction
-
-```python
-{
-    "name": "update_transaction",
-    "description": "既存取引の更新",
-    "inputSchema": {
-        "type": "object",
-        "properties": {
-            "transaction_id": {"type": "integer"},
-            "date": {"type": "string", "format": "date"},
-            "amount": {"type": "number"},
-            "description": {"type": "string"},
-            "category": {"type": "string"},
-            "account": {"type": "string"},
-            "type": {"type": "string", "enum": ["income", "expense"]}
-        },
-        "required": ["transaction_id"]
-    }
-}
-```
-
-#### 3.1.3 get_transactions
-
-```python
-{
-    "name": "get_transactions",
-    "description": "取引データの取得",
-    "inputSchema": {
-        "type": "object",
-        "properties": {
-            "start_date": {"type": "string", "format": "date"},
-            "end_date": {"type": "string", "format": "date"},
-            "category": {"type": "string"},
-            "account": {"type": "string"},
-            "limit": {"type": "integer", "default": 100}
-        }
-    }
-}
-```
-
-### 3.2 分析ツール
-
-#### 3.2.1 analyze_spending_by_category
-
-```python
-{
-    "name": "analyze_spending_by_category",
-    "description": "カテゴリー別支出分析",
-    "inputSchema": {
-        "type": "object",
-        "properties": {
-            "period": {"type": "string", "enum": ["month", "year", "custom"]},
-            "start_date": {"type": "string", "format": "date"},
-            "end_date": {"type": "string", "format": "date"},
-            "chart_type": {"type": "string", "enum": ["pie", "bar", "line"]}
-        },
-        "required": ["period"]
-    }
-}
-```
-
-#### 3.2.2 analyze_income_expense_trend
-
-```python
-{
-    "name": "analyze_income_expense_trend",
-    "description": "収支トレンド分析",
-    "inputSchema": {
-        "type": "object",
-        "properties": {
-            "period": {"type": "string"},
-            "granularity": {"type": "string", "enum": ["daily", "weekly", "monthly"]}
-        },
-        "required": ["period"]
-    }
-}
-```
-
-#### 3.2.3 detect_anomalies
-
-```python
-{
-    "name": "detect_anomalies",
-    "description": "支出異常の検知",
-    "inputSchema": {
-        "type": "object",
-        "properties": {
-            "sensitivity": {"type": "string", "enum": ["low", "medium", "high"]},
-            "period": {"type": "string"}
-        },
-        "required": ["period"]
-    }
-}
-```
-
-### 3.3 レポートツール
-
-#### 3.3.1 generate_monthly_report
-
-```python
-{
-    "name": "generate_monthly_report",
-    "description": "月次レポート生成",
-    "inputSchema": {
-        "type": "object",
-        "properties": {
-            "year": {"type": "integer"},
-            "month": {"type": "integer", "minimum": 1, "maximum": 12},
-            "format": {"type": "string", "enum": ["summary", "detailed"]}
-        },
-        "required": ["year", "month"]
-    }
-}
-```
-
-## 4. プロジェクト構造
-
-### 4.1 ディレクトリ構造
+### 4.2 処理手順
 
 ```text
-my_household_mcpserver/
-├── src/
-│   ├── household_mcp/
-│   │   ├── __init__.py
-│   │   ├── server.py          # MCPサーバーのメイン
-│   │   ├── database/
-│   │   │   ├── __init__.py
-│   │   │   ├── models.py      # データモデル定義
-│   │   │   ├── connection.py  # DB接続管理
-│   │   │   └── migrations.py  # マイグレーション
-│   │   ├── tools/
-│   │   │   ├── __init__.py
-│   │   │   ├── data_tools.py      # データ操作ツール
-│   │   │   ├── analysis_tools.py  # 分析ツール
-│   │   │   └── report_tools.py    # レポートツール
-│   │   ├── analysis/
-│   │   │   ├── __init__.py
-│   │   │   ├── statistics.py  # 統計分析
-│   │   │   ├── trends.py      # トレンド分析
-│   │   │   └── anomalies.py   # 異常検知
-│   │   └── utils/
-│   │       ├── __init__.py
-│   │       ├── formatters.py  # データフォーマット
-│   │       └── validators.py  # バリデーション
-├── tests/
-│   ├── unit/
-│   ├── integration/
-│   └── fixtures/
-├── docs/
-│   ├── api.md
-│   └── usage.md
-├── requirements.txt
-├── requirements-dev.txt
-├── pyproject.toml
-├── README.md
-└── setup.py
+1. get_category_trend が {category?, start_month?, end_month?} を受け取る
+2. MonthCategoryResolver が対象カテゴリ・期間を確定
+3. CategoryTrendAnalyzer が対象月の DataFrame を取得
+4. pandas groupby で月次合計を計算し、指標列（前月比/前年比/移動平均）を付与
+5. TrendResponseFormatter が指標をテキストに整形
+6. MCP ツールの戻り値として LLM に返却
 ```
 
-```json
-### 4.2 設定ファイル
+### 4.3 指標計算ロジック（擬似コード）
 
-#### 4.2.1 pyproject.toml
+```python
+import numpy as np
 
-```toml
-[build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "household-mcp-server"
-version = "0.1.0"
-description = "MCP Server for household budget analysis"
-authors = [{name = "Project Team", email = "team@example.com"}]
-license = {text = "MIT"}
-readme = "README.md"
-requires-python = ">=3.11"
-
-dependencies = [
-    "fastapi>=0.104.1",
-    "uvicorn>=0.24.0",
-    "pandas>=2.1.3",
-    "numpy>=1.25.2",
-    "matplotlib>=3.8.2",
-    "plotly>=5.17.0",
-    "pydantic>=2.5.0",
-    "python-dateutil>=2.8.2",
-    "sqlite3-python",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.4.3",
-    "pytest-asyncio>=0.21.1",
-    "black>=23.0.0",
-    "isort>=5.12.0",
-    "flake8>=6.0.0",
-    "mypy>=1.5.0",
-]
-
-[tool.black]
-line-length = 88
-target-version = ['py311']
-
-[tool.isort]
-profile = "black"
-multi_line_output = 3
-line_length = 88
-
-[tool.mypy]
-python_version = "3.11"
-strict = true
+def compute_metrics(df: pd.DataFrame) -> pd.DataFrame:
+    monthly = (
+        df.groupby(["年月", "カテゴリ"], as_index=False)["金額"].sum()
+          .sort_values(["カテゴリ", "年月"])
+    )
+    monthly["前月比"] = monthly.groupby("カテゴリ")["金額"].pct_change()
+    monthly["移動平均"] = monthly.groupby("カテゴリ")["金額"].transform(
+        lambda s: s.rolling(12, min_periods=1).mean()
+    )
+    monthly["前年比"] = monthly.groupby("カテゴリ")["金額"].pct_change(periods=12)
+    return monthly
 ```
 
-## 5. データフロー設計
+- 指標は `%` に換算して小数第 1 位で丸め、`format_percentage` ユーティリティで整形。
+- 前年同月が存在しない場合は `None` を設定し、応答では "N/A" を表示。
+- 移動平均はデータ不足時に利用可能な範囲のみで計算。
 
-### 5.1 基本的なデータフロー
+### 4.4 応答テンプレート例
 
 ```text
-1. AIエージェント → MCPサーバー (自然言語クエリ)
-2. MCPサーバー → クエリ解析 (意図理解)
-3. クエリ解析 → データベース (SQLクエリ実行)
-4. データベース → 分析エンジン (生データ)
-5. 分析エンジン → レスポンス生成 (分析結果)
-6. レスポンス生成 → AIエージェント (構造化レスポンス)
+食費カテゴリの 2025年06月〜2025年07月の推移です。
+- 2025年06月: 62,500円
+- 2025年07月: 58,300円 （前月比 -6.7%, 前年同月比 +3.2%）
+- 12か月平均: 60,480円
 ```
 
-### 5.2 エラーハンドリング設計
+- カテゴリ未指定の場合は、支出額上位 3 カテゴリを降順で列挙。
+- データ不足時は「過去 {n} か月分のデータで計算しました」と注記する。
+
+### 4.5 エラー処理とフォールバック
+
+| ケース | 例外 | メッセージ方針 |
+| --- | --- | --- |
+| 対象 CSV が見つからない | `FileNotFoundError` → `DataSourceError` | 「データファイルが見つかりません」 |
+| 指定カテゴリが存在しない | `ValidationError` | 「該当カテゴリが見つかりません」 |
+| データ不足で指標計算不可 | `AnalysisError` | 「対象期間のデータが不足しています」 |
+
+---
+
+## 5. エラーハンドリング設計
 
 ```python
 class HouseholdMCPError(Exception):
     """Base exception for household MCP server"""
-    pass
+
 
 class ValidationError(HouseholdMCPError):
-    """Data validation error"""
-    pass
+    """Invalid user input or unsupported category."""
 
-class DatabaseError(HouseholdMCPError):
-    """Database operation error"""
-    pass
 
-class AnalysisError(HouseholdMCP):
-    """Analysis computation error"""
-    pass
+class DataSourceError(HouseholdMCPError):
+    """CSV ファイルの読み込み失敗時に使用。"""
+
+
+class AnalysisError(HouseholdMCPError):
+    """指標計算やデータ前処理でのエラー。"""
 ```
 
-## 6. セキュリティ設計
+- MCP ツール/リソース内で例外が発生した場合、メッセージと共に失敗レスポンスを返し、LLM がユーザーに通知できるようにする。
 
-### 6.1 データ暗号化
+---
 
-- データベースファイルの暗号化（SQLCipher使用）
-- 機密情報のハッシュ化
-- 通信の暗号化（TLS）
+## 6. 非機能要件への対応
 
-### 6.2 アクセス制御
+| 要件 | 設計対応 |
+| --- | --- |
+| NFR-001 (応答表現) | `format_currency` と `format_percentage` で桁区切り・丸めを統一する。 |
+| NFR-002 (パフォーマンス) | pandas 処理は 12 か月分の明細（数千行想定）を 1 秒以内で完了し、結果を簡易キャッシュに保持する。 |
+| NFR-003 (信頼性) | 例外クラスを通じて原因別メッセージを返却し、CSV 読み込み時には対象ファイル名をログに記録。 |
+| NFR-004 (セキュリティ) | 全処理をローカル内で完結させ、ログにも個人情報を残さない。外部通信は行わない。 |
 
-```python
-# 認証機能
-class AuthService:
-    def authenticate(self, credentials: dict) -> bool
-    def authorize(self, user: User, operation: str) -> bool
-    def create_session(self, user: User) -> Session
-```
+---
 
-### 6.3 ログ設計
+## 7. テスト方針
 
-```python
-# ログ設定
-LOGGING_CONFIG = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'standard': {
-            'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
-        },
-    },
-    'handlers': {
-        'default': {
-            'level': 'INFO',
-            'formatter': 'standard',
-            'class': 'logging.StreamHandler',
-        },
-        'file': {
-            'level': 'DEBUG',
-            'formatter': 'standard',
-            'class': 'logging.FileHandler',
-            'filename': 'household_mcp.log',
-        },
-    },
-    'loggers': {
-        '': {
-            'handlers': ['default', 'file'],
-            'level': 'DEBUG',
-            'propagate': False
-        }
-    }
-}
-```
+### 7.1 単体テスト
 
-## 7. パフォーマンス設計
+- `tests/unit/test_dataloader.py` — 月/年指定パターンごとの読み込み検証。
+- `tests/unit/analysis/test_trends.py` — `compute_metrics` の数値検証（TS-001〜TS-003）。
+- `tests/unit/tools/test_get_category_trend.py` — パラメータ別のレスポンス生成テスト（TS-004〜TS-006）。
 
-### 7.1 データベース最適化
+### 7.2 統合テスト
 
-- 適切なインデックス設計
-- クエリの最適化
-- 接続プーリング
+- `tests/integration/test_trend_pipeline.py` — 12 か月ダミー CSV を用いたエンドツーエンド検証（TS-007〜TS-009）。
 
-### 7.2 キャッシュ戦略
+### 7.3 品質ゲート
 
-```python
-# キャッシュレイヤー
-class CacheService:
-    def get(self, key: str) -> Optional[Any]
-    def set(self, key: str, value: Any, ttl: int = 3600) -> None
-    def delete(self, key: str) -> None
-```
+- `uv run pytest tests/unit` を最小スモークとして用意し、主要メトリクスのリグレッションを検知する。
 
-### 7.3 非同期処理
+---
 
-```python
-# 非同期処理での実装
-import asyncio
-from fastapi import FastAPI
-from contextlib import asynccontextmanager
+## 8. プロジェクト構造（現状 + 追加予定）
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # 起動時の処理
-    await initialize_database()
-    yield
-    # 終了時の処理
-    await cleanup_database()
-
-app = FastAPI(lifespan=lifespan)
-```
-
-## 8. テスト設計
-
-### 8.1 テスト戦略
-
-- **Unit Tests**: 各コンポーネントの単体テスト
-- **Integration Tests**: コンポーネント間の統合テスト
-- **End-to-End Tests**: 全体フローのテスト
-- **Performance Tests**: 性能テスト
-
-### 8.2 テストデータ設計
-
-```python
-# テストフィクスチャ
-@pytest.fixture
-def sample_transactions():
-    return [
-        {
-            "date": "2025-07-01",
-            "amount": 5000,
-            "description": "食費",
-            "category": "食費",
-            "type": "expense"
-        },
-        # ... more test data
-    ]
+```text
+my_household_mcpserver/
+├── data/
+├── src/
+│   ├── household_mcp/
+│   │   ├── __init__.py
+│   │   ├── dataloader.py
+│   │   ├── analysis/
+│   │   │   ├── __init__.py
+│   │   │   └── trends.py        # ★ 新規追加予定
+│   │   ├── tools/
+│   │   │   ├── __init__.py
+│   │   │   └── trend_tool.py    # ★ 新規追加予定
+│   │   └── utils/
+│   │       ├── __init__.py
+│   │       ├── formatters.py    # ★ 新規追加予定
+│   │       └── query_parser.py  # ★ 新規追加予定
+│   └── server.py
+├── requirements.md
+├── design.md
+├── tasks.md
+└── ...
 ```
 
 ---
 
-**作成日**: 2025年7月29日  
-**バージョン**: 1.0  
-**技術責任者**: 開発チーム
+## 9. 変更履歴
+
+| 日付 | バージョン | 概要 |
+| --- | --- | --- |
+| 2025-07-29 | 1.0 | 旧バージョン（DB 前提の構成） |
+| 2025-10-03 | 0.2.0 | CSV 前提アーキテクチャに刷新、トレンド分析設計を追加 |
+
+---
+
+以上。
