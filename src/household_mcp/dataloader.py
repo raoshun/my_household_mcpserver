@@ -34,6 +34,9 @@ class HouseholdDataLoader:
     def __init__(self, src_dir: str | Path = "data") -> None:
         self._config = LoaderConfig(src_dir=self._resolve_src_dir(src_dir))
         self._month_cache: dict[MonthTuple, tuple[pd.DataFrame, float]] = {}
+        # キャッシュ統計
+        self._cache_hits: int = 0
+        self._cache_misses: int = 0
 
     def month_csv_path(self, year: int, month: int) -> Path:
         return self._config.src_dir / self._make_filename(year, month)
@@ -68,7 +71,9 @@ class HouseholdDataLoader:
             raise DataSourceError(f"CSV ファイルが見つかりません: {path}") from exc
         cached = self._month_cache.get(key)
         if cached and cached[1] == mtime:
+            self._cache_hits += 1
             return cached[0].copy()
+        self._cache_misses += 1
         df = self.load(year=year, month=month)
         self._month_cache[key] = (df, mtime)
         return df.copy()
@@ -173,9 +178,19 @@ class HouseholdDataLoader:
 
     def clear_cache(self) -> None:
         self._month_cache.clear()
+        self._cache_hits = 0
+        self._cache_misses = 0
 
     def cache_size(self) -> int:
         return len(self._month_cache)
+
+    def cache_stats(self) -> dict[str, int]:
+        """キャッシュ統計情報を返す (ヒット/ミス/サイズ)。"""
+        return {
+            "hits": self._cache_hits,
+            "misses": self._cache_misses,
+            "size": len(self._month_cache),
+        }
 
 
 def month_csv_path(year: int, month: int, src_dir: str = "data") -> Path:
