@@ -22,24 +22,20 @@ classifiers = [
 ]
 
 dependencies = [
-    "fastapi==0.116.1",
-    "uvicorn>=0.34,<0.36",
+    # Minimum runtime set required for current functionality (CSV loading, analysis, MCP exposure)
     "pandas>=2.1.4",
     "numpy>=1.26.0",
-    "matplotlib==3.8.2",
-    "plotly==5.17.0",
-    "pydantic>=2.11,<3",
-    "python-dateutil==2.8.2",
-    "python-multipart>=0.0.6",
-    "sqlalchemy>=2.0.23",
-    "alembic>=1.12.1",
-    "passlib[bcrypt]>=1.7.4",
-    "python-jose[cryptography]>=3.3.0",
-    "aiofiles>=23.2.1",
-    "httpx>=0.25.2",
-    "structlog>=23.2.0",
     "mcp[cli]>=1.13.1",
 ]
+
+[project.optional-dependencies]
+# Kept as optionals to avoid forcing heavy/unnecessary installs for the current CLI/MCP use-case.
+web = ["fastapi==0.116.1", "uvicorn>=0.34,<0.36", "pydantic>=2.11,<3", "python-multipart>=0.0.6"]
+viz = ["matplotlib==3.8.2", "plotly==5.17.0"]
+db = ["sqlalchemy>=2.0.23", "alembic>=1.12.1"]
+auth = ["passlib[bcrypt]>=1.7.4", "python-jose[cryptography]>=3.3.0"]
+io = ["aiofiles>=23.2.1", "httpx>=0.25.2"]
+logging = ["structlog>=23.2.0"]
 
 [project.urls]
 Homepage = "https://github.com/raoshun/my_household_mcpserver"
