@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
-from typing import Optional, Union, Sequence, TYPE_CHECKING
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
+from typing import TYPE_CHECKING, Optional, Sequence, Union
 
 NumberLike = Union[int, float, Decimal]
 
@@ -16,7 +16,11 @@ def _to_decimal(value: NumberLike | str) -> Decimal:
         return value
     try:
         return Decimal(str(value))
-    except (InvalidOperation, ValueError, TypeError) as exc:  # pragma: no cover - defensive
+    except (
+        InvalidOperation,
+        ValueError,
+        TypeError,
+    ) as exc:  # pragma: no cover - defensive
         raise ValueError(f"Invalid numeric value: {value!r}") from exc
 
 
@@ -59,9 +63,21 @@ def format_category_trend_response(
 
     for metric in metrics:
         amount_text = format_currency(abs(metric.amount))
-        mom_text = format_percentage(metric.month_over_month) if metric.month_over_month is not None else "N/A"
-        yoy_text = format_percentage(metric.year_over_year) if metric.year_over_year is not None else "N/A"
-        avg_value = abs(metric.moving_average) if include_average and metric.moving_average is not None else None
+        mom_text = (
+            format_percentage(metric.month_over_month)
+            if metric.month_over_month is not None
+            else "N/A"
+        )
+        yoy_text = (
+            format_percentage(metric.year_over_year)
+            if metric.year_over_year is not None
+            else "N/A"
+        )
+        avg_value = (
+            abs(metric.moving_average)
+            if include_average and metric.moving_average is not None
+            else None
+        )
         avg_text = format_currency(avg_value) if include_average else ""
 
         detail = f"- {metric.month:%Y年%m月}: {amount_text} （前月比 {mom_text}, 前年同月比 {yoy_text}"

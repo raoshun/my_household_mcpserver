@@ -35,11 +35,15 @@ class CategoryTrendAnalyzer:
     互換性: 旧来の ``CategoryTrendAnalyzer(src_dir=...)`` も引き続き利用可能。
     """
 
-    def __init__(self, *, src_dir: str = "data", loader: HouseholdDataLoader | None = None) -> None:
+    def __init__(
+        self, *, src_dir: str = "data", loader: HouseholdDataLoader | None = None
+    ) -> None:
         # 優先: 明示的に渡された loader / フォールバック: src_dir から新規作成
         self._loader: HouseholdDataLoader = loader or HouseholdDataLoader(src_dir)
         self._cache: dict[Tuple[MonthTuple, ...], pd.DataFrame] = {}
-        self._cache_signature: dict[Tuple[MonthTuple, ...], Tuple[Tuple[str, float], ...]] = {}
+        self._cache_signature: dict[
+            Tuple[MonthTuple, ...], Tuple[Tuple[str, float], ...]
+        ] = {}
 
     # 互換用プロパティ
     @property
@@ -56,7 +60,9 @@ class CategoryTrendAnalyzer:
         if query.category:
             metrics_df = metrics_df[metrics_df["category"] == query.category]
             if metrics_df.empty:
-                raise AnalysisError(f"カテゴリ {query.category!r} のデータが見つかりません")
+                raise AnalysisError(
+                    f"カテゴリ {query.category!r} のデータが見つかりません"
+                )
 
         return self._to_metrics(metrics_df)
 
@@ -88,7 +94,8 @@ class CategoryTrendAnalyzer:
         metrics_df = self._get_aggregated(month_pairs)
 
         totals = (
-            metrics_df.groupby("category", as_index=False)["amount"].sum()
+            metrics_df.groupby("category", as_index=False)["amount"]
+            .sum()
             .sort_values("amount")
         )
         # 金額は負の値（支出）なので、絶対値降順で上位カテゴリを決定
@@ -116,7 +123,8 @@ class CategoryTrendAnalyzer:
     @staticmethod
     def _aggregate_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         grouped = (
-            df.groupby(["年月", "カテゴリ"], as_index=False)["金額（円）"].sum()
+            df.groupby(["年月", "カテゴリ"], as_index=False)["金額（円）"]
+            .sum()
             .rename(columns={"カテゴリ": "category", "金額（円）": "amount"})
         )
         if grouped.empty:
@@ -125,16 +133,12 @@ class CategoryTrendAnalyzer:
         grouped.sort_values(["category", "年月"], inplace=True)
 
         grouped["month_key"] = grouped["年月"].dt.strftime("%Y-%m")
-        grouped["month_over_month"] = (
-            grouped.groupby("category")["amount"].pct_change()
+        grouped["month_over_month"] = grouped.groupby("category")["amount"].pct_change()
+        grouped["moving_average"] = grouped.groupby("category")["amount"].transform(
+            lambda s: s.rolling(window=12, min_periods=1).mean()
         )
-        grouped["moving_average"] = (
-            grouped.groupby("category")["amount"].transform(
-                lambda s: s.rolling(window=12, min_periods=1).mean()
-            )
-        )
-        grouped["year_over_year"] = (
-            grouped.groupby("category")["amount"].pct_change(periods=12)
+        grouped["year_over_year"] = grouped.groupby("category")["amount"].pct_change(
+            periods=12
         )
 
         return grouped
@@ -153,13 +157,19 @@ class CategoryTrendAnalyzer:
                     month=month_date,
                     amount=int(row["amount"]),
                     month_over_month=(
-                        float(row["month_over_month"]) if pd.notna(row["month_over_month"]) else None
+                        float(row["month_over_month"])
+                        if pd.notna(row["month_over_month"])
+                        else None
                     ),
                     year_over_year=(
-                        float(row["year_over_year"]) if pd.notna(row["year_over_year"]) else None
+                        float(row["year_over_year"])
+                        if pd.notna(row["year_over_year"])
+                        else None
                     ),
                     moving_average=(
-                        float(row["moving_average"]) if pd.notna(row["moving_average"]) else None
+                        float(row["moving_average"])
+                        if pd.notna(row["moving_average"])
+                        else None
                     ),
                 )
             )
@@ -200,7 +210,9 @@ class CategoryTrendAnalyzer:
 
         return len(self._cache)
 
-    def _compute_signature(self, months: Tuple[MonthTuple, ...]) -> Tuple[Tuple[str, float], ...]:
+    def _compute_signature(
+        self, months: Tuple[MonthTuple, ...]
+    ) -> Tuple[Tuple[str, float], ...]:
         """Return a signature based on CSV paths and their modification times."""
 
         signature: list[Tuple[str, float]] = []
@@ -213,7 +225,9 @@ class CategoryTrendAnalyzer:
             except DataSourceError:
                 raise
             except Exception as exc:  # pragma: no cover - defensive guard
-                raise DataSourceError(f"CSV 署名計算中にエラーが発生しました: {exc}") from exc
+                raise DataSourceError(
+                    f"CSV 署名計算中にエラーが発生しました: {exc}"
+                ) from exc
 
             signature.append((str(path), stat.st_mtime))
 

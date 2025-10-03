@@ -3,15 +3,12 @@ from typing import Optional
 from fastmcp import FastMCP
 
 from household_mcp.dataloader import HouseholdDataLoader
-from household_mcp.tools import (
-    category_trend_summary,
-    get_category_trend,
-)
+from household_mcp.tools import category_trend_summary, get_category_trend
 
 # サーバを初期化 & DataLoader インスタンス生成
 mcp = FastMCP("my_household_mcp")
 data_loader = HouseholdDataLoader(src_dir="data")
- 
+
 
 @mcp.resource("data://category_hierarchy")
 def get_category_hierarchy() -> dict[str, list[str]]:
@@ -22,6 +19,7 @@ def get_category_hierarchy() -> dict[str, list[str]]:
         dict[str, list[str]]: カテゴリの階層構造(大項目: [中項目1, 中項目2, ...])を表す辞書
     """
     return data_loader.category_hierarchy(year=2025, month=7)
+
 
 # 家計簿から指定した年月の収支を取得するツール
 

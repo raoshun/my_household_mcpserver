@@ -43,7 +43,9 @@ class HouseholdDataLoader:
         """Public accessor for source directory (read-only)."""
         return self._config.src_dir
 
-    def load(self, year: Optional[int] = None, month: Optional[int] = None) -> pd.DataFrame:
+    def load(
+        self, year: Optional[int] = None, month: Optional[int] = None
+    ) -> pd.DataFrame:
         base_dir = self._config.src_dir
         if year is None:
             files = sorted(base_dir.glob("*.csv"))
@@ -89,7 +91,9 @@ class HouseholdDataLoader:
         for year, month in sorted(detected):
             yield year, month
 
-    def category_hierarchy(self, *, year: int | None = None, month: int | None = None) -> dict[str, list[str]]:
+    def category_hierarchy(
+        self, *, year: int | None = None, month: int | None = None
+    ) -> dict[str, list[str]]:
         if year is None or month is None:
             months = list(self.iter_available_months())
             if not months:
@@ -108,13 +112,17 @@ class HouseholdDataLoader:
         if not base_path.exists():
             raise DataSourceError(f"データディレクトリが見つかりません: {base_path}")
         if not base_path.is_dir():
-            raise DataSourceError(f"データディレクトリがディレクトリではありません: {base_path}")
+            raise DataSourceError(
+                f"データディレクトリがディレクトリではありません: {base_path}"
+            )
         return base_path
 
     @staticmethod
     def _make_filename(year: int, month: int) -> str:
         end_day = calendar.monthrange(year, month)[1]
-        return f"収入・支出詳細_{year}-{month:02d}-01_{year}-{month:02d}-{end_day:02d}.csv"
+        return (
+            f"収入・支出詳細_{year}-{month:02d}-01_{year}-{month:02d}-{end_day:02d}.csv"
+        )
 
     @staticmethod
     def _read_csv(path: Path) -> pd.DataFrame:
@@ -125,15 +133,25 @@ class HouseholdDataLoader:
 
     @staticmethod
     def _normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
-        df = df.rename(columns={alias: canonical for alias, canonical in COLUMN_ALIASES.items() if alias in df.columns})
+        df = df.rename(
+            columns={
+                alias: canonical
+                for alias, canonical in COLUMN_ALIASES.items()
+                if alias in df.columns
+            }
+        )
         missing = REQUIRED_COLUMNS - set(df.columns)
         if missing:
-            raise DataSourceError(f"必要な列が不足しています: {', '.join(sorted(missing))}")
+            raise DataSourceError(
+                f"必要な列が不足しています: {', '.join(sorted(missing))}"
+            )
         for column in CATEGORY_COLUMNS:
             if column not in df.columns:
                 raise DataSourceError(f"カテゴリ列 {column} が存在しません")
         df["計算対象"] = pd.to_numeric(df["計算対象"], errors="coerce").astype("Int64")
-        df["金額（円）"] = pd.to_numeric(df["金額（円）"], errors="coerce").astype("Int64")
+        df["金額（円）"] = pd.to_numeric(df["金額（円）"], errors="coerce").astype(
+            "Int64"
+        )
         df["日付"] = pd.to_datetime(df["日付"], errors="coerce")
         if df["日付"].isna().any():
             raise DataSourceError("日付列に解析できない値が含まれています")
@@ -164,18 +182,24 @@ def month_csv_path(year: int, month: int, src_dir: str = "data") -> Path:
     return HouseholdDataLoader(src_dir).month_csv_path(year, month)
 
 
-def load_csv_from_month(year: Optional[int], month: Optional[int], src_dir: str = "data") -> pd.DataFrame:  # pragma: no cover
+def load_csv_from_month(
+    year: Optional[int], month: Optional[int], src_dir: str = "data"
+) -> pd.DataFrame:  # pragma: no cover
     return HouseholdDataLoader(src_dir).load(year=year, month=month)
 
 
-def load_csv_for_months(months: Sequence[MonthTuple], src_dir: str = "data") -> pd.DataFrame:  # pragma: no cover
+def load_csv_for_months(
+    months: Sequence[MonthTuple], src_dir: str = "data"
+) -> pd.DataFrame:  # pragma: no cover
     return HouseholdDataLoader(src_dir).load_many(months)
 
 
-def iter_available_months(src_dir: str = "data") -> Iterable[MonthTuple]:  # pragma: no cover
+def iter_available_months(
+    src_dir: str = "data",
+) -> Iterable[MonthTuple]:  # pragma: no cover
     return HouseholdDataLoader(src_dir).iter_available_months()
 
- 
+
 __all__ = [
     "HouseholdDataLoader",
     "LoaderConfig",
