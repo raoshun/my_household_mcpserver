@@ -10,7 +10,7 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 from ..database.connection import DatabaseConnection
-from ..utils.validators import ValidationError
+from ..exceptions import ValidationError
 
 # ロガー設定
 logging.basicConfig(

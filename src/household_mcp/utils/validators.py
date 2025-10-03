@@ -9,20 +9,10 @@ from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any, Dict, List, Optional, Union
 
-
-class ValidationError(Exception):
-    """バリデーションエラー."""
-
-    def __init__(self, message: str, field: Optional[str] = None):
-        """初期化.
-
-        Args:
-            message: エラーメッセージ
-            field: エラーが発生したフィールド名
-        """
-        self.message = message
-        self.field = field
-        super().__init__(self.message)
+# NOTE: ValidationError is now unified and provided by household_mcp.exceptions.
+# This module previously defined its own version; we import the canonical one
+# which also supports an optional ``field`` attribute for backward compatibility.
+from ..exceptions import ValidationError
 
 
 class DataValidator:
