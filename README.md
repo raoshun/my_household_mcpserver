@@ -51,13 +51,13 @@ uv run mypy src/
 
 ### 利用可能な MCP リソース / ツール
 
-| 名称 | 種別 | 説明 |
-| --- | --- | --- |
-| `data://category_hierarchy` | Resource | 大項目→中項目のカテゴリ辞書 |
-| `data://available_months` | Resource | CSV から検出した利用可能年月 |
-| `data://category_trend_summary` | Resource | 直近 12 か月のカテゴリ別トレンド情報 |
-| `get_monthly_household` | Tool | 指定年月の支出明細一覧 |
-| `get_category_trend` | Tool | 指定カテゴリ or 上位カテゴリのトレンド解説 |
+| 名称                            | 種別     | 説明                                       |
+| ------------------------------- | -------- | ------------------------------------------ |
+| `data://category_hierarchy`     | Resource | 大項目→中項目のカテゴリ辞書                |
+| `data://available_months`       | Resource | CSV から検出した利用可能年月               |
+| `data://category_trend_summary` | Resource | 直近 12 か月のカテゴリ別トレンド情報       |
+| `get_monthly_household`         | Tool     | 指定年月の支出明細一覧                     |
+| `get_category_trend`            | Tool     | 指定カテゴリ or 上位カテゴリのトレンド解説 |
 
 ### サンプル応答
 
