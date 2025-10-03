@@ -24,6 +24,17 @@
 # 推奨: uv を用いたインストール
 uv pip install -e ".[dev]"
 
+# 必要に応じてオプション機能を追加
+uv pip install -e ".[web,viz,db,auth,io,logging]"
+# 例: Web API 機能を使う場合
+uv pip install -e ".[web]"
+# 例: グラフ描画や可視化を使う場合
+uv pip install -e ".[viz]"
+# 例: DB連携や認証が必要な場合
+uv pip install -e ".[db,auth]"
+# 例: ロギング強化（structlog）
+uv pip install -e ".[logging]"
+
 # 代替: Poetry を使用する場合
 # poetry install --with dev
 
