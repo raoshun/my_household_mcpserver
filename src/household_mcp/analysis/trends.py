@@ -8,7 +8,7 @@ from typing import List, Optional, Sequence, Tuple
 
 import pandas as pd
 
-from ..dataloader import load_csv_for_months, month_csv_path
+from ..dataloader import HouseholdDataLoader
 from ..exceptions import AnalysisError, DataSourceError
 from ..utils.query_parser import TrendQuery
 
@@ -28,12 +28,24 @@ class TrendMetrics:
 
 
 class CategoryTrendAnalyzer:
-    """Aggregate household CSV data into monthly trend metrics."""
+    """Aggregate household CSV data into monthly trend metrics.
 
-    def __init__(self, *, src_dir: str = "data") -> None:
-        self._src_dir = src_dir
+    DI 対応: 既存の `src_dir` だけでなく、任意の ``HouseholdDataLoader`` を
+    直接注入できるようにしテスト容易性・柔軟性を高める。
+    互換性: 旧来の ``CategoryTrendAnalyzer(src_dir=...)`` も引き続き利用可能。
+    """
+
+    def __init__(self, *, src_dir: str = "data", loader: HouseholdDataLoader | None = None) -> None:
+        # 優先: 明示的に渡された loader / フォールバック: src_dir から新規作成
+        self._loader: HouseholdDataLoader = loader or HouseholdDataLoader(src_dir)
         self._cache: dict[Tuple[MonthTuple, ...], pd.DataFrame] = {}
         self._cache_signature: dict[Tuple[MonthTuple, ...], Tuple[Tuple[str, float], ...]] = {}
+
+    # 互換用プロパティ
+    @property
+    def src_dir(self) -> str:
+        # 互換用公開アクセサ
+        return str(self._loader.src_dir)
 
     def metrics_for_query(self, query: TrendQuery) -> List[TrendMetrics]:
         """Return metrics for the given query parameters."""
@@ -91,8 +103,8 @@ class CategoryTrendAnalyzer:
         cached_signature = self._cache_signature.get(months)
         if cached is not None and cached_signature == signature:
             return cached.copy()
-
-        df = load_csv_for_months(months, src_dir=self._src_dir)
+        # Loader DI 経由でロード (内部で HouseholdDataLoader の月次キャッシュ活用)
+        df = self._loader.load_many(months)
         if df.empty:
             raise AnalysisError("指定された期間のデータが存在しません")
 
@@ -194,16 +206,14 @@ class CategoryTrendAnalyzer:
         signature: list[Tuple[str, float]] = []
         for year, month in months:
             try:
-                path = month_csv_path(year, month, src_dir=self._src_dir)
-            except DataSourceError:
-                raise
-            except Exception as exc:  # pragma: no cover - defensive guard
-                raise DataSourceError(f"CSV ファイルの検出中にエラーが発生しました: {exc}") from exc
-
-            try:
+                path = self._loader.month_csv_path(year, month)
                 stat = path.stat()
             except FileNotFoundError as exc:
                 raise DataSourceError(f"CSV ファイルが見つかりません: {path}") from exc
+            except DataSourceError:
+                raise
+            except Exception as exc:  # pragma: no cover - defensive guard
+                raise DataSourceError(f"CSV 署名計算中にエラーが発生しました: {exc}") from exc
 
             signature.append((str(path), stat.st_mtime))
 

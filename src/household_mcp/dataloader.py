@@ -38,6 +38,11 @@ class HouseholdDataLoader:
     def month_csv_path(self, year: int, month: int) -> Path:
         return self._config.src_dir / self._make_filename(year, month)
 
+    @property
+    def src_dir(self) -> Path:
+        """Public accessor for source directory (read-only)."""
+        return self._config.src_dir
+
     def load(self, year: Optional[int] = None, month: Optional[int] = None) -> pd.DataFrame:
         base_dir = self._config.src_dir
         if year is None:

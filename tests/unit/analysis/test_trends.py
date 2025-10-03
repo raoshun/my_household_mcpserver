@@ -8,7 +8,8 @@ import pandas as pd
 import pytest
 
 from household_mcp.analysis import CategoryTrendAnalyzer
-from household_mcp.analysis import trends as trends_module
+from pathlib import Path
+import tempfile
 from household_mcp.analysis.trends import TrendMetrics
 from household_mcp.utils.query_parser import TrendQuery
 
@@ -24,13 +25,31 @@ def sample_dataframe() -> pd.DataFrame:
     )
 
 
-@pytest.fixture()
-def analyzer(monkeypatch: pytest.MonkeyPatch, sample_dataframe: pd.DataFrame) -> CategoryTrendAnalyzer:
-    def fake_loader(months, src_dir="data"):
-        return sample_dataframe.copy()
+class _FakeLoader:
+    def __init__(self, df: pd.DataFrame):
+        self._df = df
+        self._tmpdir = Path(tempfile.mkdtemp(prefix="trend-test-"))
 
-    monkeypatch.setattr(trends_module, "load_csv_for_months", fake_loader)
-    return CategoryTrendAnalyzer(src_dir="data")
+    def load_many(self, months):
+        # 実際は months に基づくフィルタも可能だがテストでは完全コピーで十分
+        return self._df.copy()
+
+    def month_csv_path(self, year, month):
+        # Analyzer のシグネチャ計算用に空ファイルを生成
+        end_file = self._tmpdir / f"{year}-{month:02d}.csv"
+        if not end_file.exists():
+            end_file.touch()
+        return end_file
+
+    @property
+    def src_dir(self):  # pragma: no cover
+        return self._tmpdir
+
+
+@pytest.fixture()
+def analyzer(sample_dataframe: pd.DataFrame) -> CategoryTrendAnalyzer:
+    fake = _FakeLoader(sample_dataframe)
+    return CategoryTrendAnalyzer(loader=fake)
 
 
 def test_metrics_for_category(analyzer: CategoryTrendAnalyzer) -> None:
