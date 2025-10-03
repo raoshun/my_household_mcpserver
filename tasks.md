@@ -9,32 +9,35 @@
 
 ## フェーズ0: 既存基盤の棚卸し (Day 1)
 
-- [ ] **TASK-000**: 現行コード/データの確認
-  - [ ] `src/server.py` の既存 MCP リソース/ツールの挙動を確認（FR-001）
-  - [ ] `data/` 配下 CSV の構造と列揺れの差異を棚卸し（FR-001）
-  - [ ] 既存ユーティリティの再利用可否を評価（NFR-003）
+- [x] **TASK-000**: 現行コード/データの確認
+  - [x] `src/server.py` の既存 MCP リソース/ツールの挙動を確認（FR-001）
+  - [x] `data/` 配下 CSV の構造と列揺れの差異を棚卸し（FR-001）
+  - [x] 既存ユーティリティの再利用可否を評価（NFR-003）
+    - DataLoader リファクタ & クラス化済み
+    - レガシー `validators.py` / `data_tools.py` 削除済み（クリーンアップ）
 
 ---
 
 ## フェーズ1: インフラ・ユーティリティ整備 (Week 1)
 
-- [ ] **TASK-101**: 例外クラスとロギング基盤の整備（NFR-003）
-  - [ ] `src/household_mcp/exceptions.py` を新設し、`HouseholdMCPError` などを実装
-  - [ ] ログフォーマッタ設定と CSV 取得失敗時の詳細ログ出力を追加
+- [x] **TASK-101**: 例外クラスとロギング基盤の整備（NFR-003）
+  - [x] `src/household_mcp/exceptions.py` を新設し、`HouseholdMCPError`, `ValidationError`, `DataSourceError`, `AnalysisError` 実装
+  - [ ] ログフォーマッタ設定（未着手 / ロギング extra に移行予定）
 
-- [ ] **TASK-102**: データ読み込みユーティリティの強化（FR-001, NFR-002）
-  - [ ] `load_csv_from_month` に列名マッピングと Categorical 型設定を実装
-  - [ ] 12 か月分のバルク読み込みヘルパーを追加
-  - [ ] 欠損値フィルタリングと対象外データの除外
+- [x] **TASK-102**: データ読み込みユーティリティの強化（FR-001, NFR-002）
+  - [x] 列名マッピングと Categorical 型設定を実装（`_normalize_columns`）
+  - [x] バルク読み込みヘルパー `load_many` 追加
+  - [x] 欠損/対象外フィルタリング実装（`_post_process`）
+  - [x] 月次キャッシュ + mtime 検知機構追加（拡張: `cache_stats` / hits & misses）
 
-- [ ] **TASK-103**: フォーマットユーティリティの追加（NFR-001）
-  - [ ] `src/household_mcp/utils/formatters.py` で `format_currency`, `format_percentage` を実装
-  - [ ] ロケール依存を排除した桁区切り/丸めロジックを作成
+- [x] **TASK-103**: フォーマットユーティリティの追加（NFR-001）
+  - [x] `format_currency`, `format_percentage`, 集計レスポンス整形関数実装
+  - [x] 例外ハンドリングによるフォールバック（`format_percentage` の NaN → N/A）
 
-- [ ] **TASK-104**: クエリ解析ユーティリティの追加（FR-002, FR-003）
-  - [ ] `src/household_mcp/utils/query_parser.py` を作成し、カテゴリ/期間の解釈ロジックを実装
-  - [ ] 利用可能月リストを参照したデフォルト決定ロジックを追加
-  - [ ] 不正パラメータ時に `ValidationError` を送出
+- [x] **TASK-104**: クエリ解析ユーティリティの追加（FR-002, FR-003）
+  - [x] `resolve_trend_query` による期間 & カテゴリ解釈
+  - [x] 利用可能月のソート/キー化ユーティリティ
+  - [x] 検証失敗時 `ValidationError` 送出を確認
 
 ---
 
@@ -87,6 +90,11 @@
   - [ ] CI で `uv run pytest` を実行するワークフローを準備
   - [ ] 主要関数に型ヒントと docstring を追加
 
+### 追加テスト進捗
+- [x] DataLoader キャッシュ差分テスト (`test_cache_behaviour`)
+- [x] キャッシュ統計テスト (`test_loader_cache_stats`) 追加（ヒット/ミス/リセット）
+- [x] 異常系（欠損列/カテゴリ欠如/無効ディレクトリ）テスト拡張
+
 ---
 
 ## フェーズ5: ドキュメント & 運用準備 (Week 5)
@@ -123,6 +131,25 @@
 - [ ] 数値フォーマット仕様の一貫性を維持（NFR-001）
 - [ ] 例外メッセージがユーザーにとって分かりやすいかレビュー（NFR-003）
 - [ ] データはすべてローカル処理で完結しているか確認（NFR-004）
+
+---
+
+## 追加タスク（メンテナンス / 改善）
+
+- [ ] **TASK-M01**: 依存最小化ポリシー文書化（README に optional extras 追記）
+- [ ] **TASK-M02**: `logging` extra 選択時の構成ヘルパー追加（structlog 初期化）
+- [ ] **TASK-M03**: Analyzer 側キャッシュ統計インターフェース統一 (`CategoryTrendAnalyzer.cache_stats`) 追加
+- [ ] **TASK-M04**: 例外メッセージ多言語方針（現在: 日/英 混在）整理
+- [ ] **TASK-M05**: CI ワークフロー (lint + test + coverage) 追加
+
+---
+
+## 進捗ログ
+
+| 日付 | 内容 |
+| ---- | ---- |
+| 2025-10-03 | DataLoader リファクタ・例外統一・追加カバレッジテスト |
+| 2025-10-04 | レガシーコード削除 / 依存最小化 / キャッシュ統計追加 / tasks.md 更新 |
 
 ---
 
