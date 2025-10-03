@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
+import tempfile
 from datetime import date
+from pathlib import Path
 
 import pandas as pd
 import pytest
 
 from household_mcp.analysis import CategoryTrendAnalyzer
-from pathlib import Path
-import tempfile
 from household_mcp.analysis.trends import TrendMetrics
 from household_mcp.utils.query_parser import TrendQuery
 
@@ -18,7 +18,9 @@ from household_mcp.utils.query_parser import TrendQuery
 def sample_dataframe() -> pd.DataFrame:
     return pd.DataFrame(
         {
-            "年月": pd.to_datetime(["2025-06-01", "2025-07-01", "2025-06-01", "2025-07-01"]),
+            "年月": pd.to_datetime(
+                ["2025-06-01", "2025-07-01", "2025-06-01", "2025-07-01"]
+            ),
             "カテゴリ": ["食費", "食費", "交通", "交通"],
             "金額（円）": [-6000, -5000, -2000, -3000],
         }
