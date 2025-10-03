@@ -2,20 +2,16 @@ from typing import Optional
 
 from fastmcp import FastMCP
 
-from household_mcp.dataloader import (
-    iter_available_months,
-    load_csv_from_month,
-)
+from household_mcp.dataloader import HouseholdDataLoader
 from household_mcp.tools import (
     category_trend_summary,
     get_category_trend,
 )
 
-# サーバを初期化
+# サーバを初期化 & DataLoader インスタンス生成
 mcp = FastMCP("my_household_mcp")
-
-# 家計簿のカテゴリの階層構造を取得するリソース
-
+data_loader = HouseholdDataLoader(src_dir="data")
+ 
 
 @mcp.resource("data://category_hierarchy")
 def get_category_hierarchy() -> dict[str, list[str]]:
@@ -25,14 +21,7 @@ def get_category_hierarchy() -> dict[str, list[str]]:
     Returns:
         dict[str, list[str]]: カテゴリの階層構造(大項目: [中項目1, 中項目2, ...])を表す辞書
     """
-    # データディレクトリから対象月のCSVを読み込む
-    df = load_csv_from_month(year=2025, month=7, src_dir="data")
-
-    groups: dict[str, list[str]] = {}
-    for name, group in df.groupby("大項目"):
-        mids = sorted(group["中項目"].dropna().astype(str).unique())
-        groups[str(name)] = mids
-    return groups
+    return data_loader.category_hierarchy(year=2025, month=7)
 
 # 家計簿から指定した年月の収支を取得するツール
 
@@ -49,7 +38,7 @@ def get_monthly_household(year: int, month: int) -> list[dict]:
     Returns:
         list[dict]: 支出のリスト
     """
-    df = load_csv_from_month(year, month, src_dir="data")
+    df = data_loader.load_month(year, month)
     return df.to_dict(orient="records")
 
 
@@ -57,7 +46,7 @@ def get_monthly_household(year: int, month: int) -> list[dict]:
 def get_available_months() -> list[dict[str, int]]:
     """利用可能な月のリストを CSV ファイルから動的に検出して返す。"""
 
-    months = list(iter_available_months(src_dir="data"))
+    months = list(data_loader.iter_available_months())
     return [{"year": year, "month": month} for year, month in months]
 
 
@@ -69,14 +58,7 @@ def get_household_categories() -> dict[str, list[str]]:
     Returns:
         dict[str, list[str]]: カテゴリの階層構造(大項目: [中項目1, 中項目2, ...])を表す辞書
     """
-    # データディレクトリから対象月のCSVを読み込む
-    df = load_csv_from_month(year=2025, month=7, src_dir="data")
-
-    groups: dict[str, list[str]] = {}
-    for name, group in df.groupby("大項目"):
-        mids = sorted(group["中項目"].dropna().astype(str).unique())
-        groups[str(name)] = mids
-    return groups
+    return data_loader.category_hierarchy(year=2025, month=7)
 
 
 @mcp.resource("data://category_trend_summary")

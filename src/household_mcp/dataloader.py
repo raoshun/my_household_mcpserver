@@ -170,7 +170,7 @@ def load_csv_for_months(months: Sequence[MonthTuple], src_dir: str = "data") -> 
 def iter_available_months(src_dir: str = "data") -> Iterable[MonthTuple]:  # pragma: no cover
     return HouseholdDataLoader(src_dir).iter_available_months()
 
-
+ 
 __all__ = [
     "HouseholdDataLoader",
     "LoaderConfig",
