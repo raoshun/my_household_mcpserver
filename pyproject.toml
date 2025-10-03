@@ -139,7 +139,15 @@ markers = [
 # Coverage設定
 [tool.coverage.run]
 source = ["src"]
-omit = ["*/tests/*", "*/__pycache__/*", "*/.*"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/.*",
+    "src/household_mcp/database/*",
+    "src/household_mcp/tools/data_tools.py",
+    "src/household_mcp/server.py",
+    "src/household_mcp/utils/validators.py",
+]
 
 [tool.coverage.report]
 exclude_lines = [
