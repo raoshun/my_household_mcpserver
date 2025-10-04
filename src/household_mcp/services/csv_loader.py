@@ -1,6 +1,8 @@
-import pandas as pd
 from pathlib import Path
 from typing import Optional
+
+import pandas as pd
+
 
 def load_csv(path: Path, encoding: str = "shift_jis") -> Optional[pd.DataFrame]:
     try:
