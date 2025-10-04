@@ -257,4 +257,308 @@ my_household_mcpserver/
 
 ---
 
+## 10. 画像生成・ストリーミング機能設計
+
+### 10.1 アーキテクチャ拡張
+
+要件 FR-004〜FR-006 に対応するため、既存アーキテクチャに以下のコンポーネントを追加する：
+
+```text
+┌──────────────┐   MCPプロトコル   ┌─────────────────────┐
+│  LLMクライアント │ ◄─────────────► │ 家計簿分析 MCP サーバ │
+└──────────────┘                  └────────┬────────────┘
+                                                │
+                                                ├─ pandas DataFrame
+                                                │
+                          HTTP Streaming     ├─ Chart Generator ──┐
+                      ◄──────────────────────┤                      │
+                                                │                      ▼
+                                                │              ┌────────────┐
+                                                │              │ Image Buffer │
+                                                ▼              └────────────┘
+                                      ┌────────────────────────┐
+                                      │  CSV データ / ローカルFS │
+                                      └────────────────────────┘
+```
+
+### 10.2 新規コンポーネント
+
+| コンポーネント | 主な責務 | 実装ファイル | 対応要件 |
+| --- | --- | --- | --- |
+| Chart Generator | matplotlib/plotlyによるグラフ画像生成 | `src/household_mcp/visualization/chart_generator.py` | FR-004 |
+| Image Streamer | HTTPストリーミングによる画像配信 | `src/household_mcp/streaming/image_streamer.py` | FR-005 |
+| Tool Extensions | 既存MCPツールの引数拡張とルーティング | `src/household_mcp/tools/enhanced_tools.py` | FR-006 |
+| HTTP Server | FastAPI/uvicornによるHTTPエンドポイント | `src/household_mcp/server/http_server.py` | FR-005 |
+
+### 10.3 技術スタック拡張
+
+| 区分 | 追加技術 | 用途 | 備考 |
+| --- | --- | --- | --- |
+| 画像生成 | matplotlib 3.8+ | グラフ描画ライブラリ | 日本語フォント対応 |
+| 画像生成 | pillow 10.0+ | 画像処理・形式変換 | PNG/JPEG出力 |
+| HTTP Server | FastAPI 0.100+ | RESTful API・ストリーミング | 非同期処理対応 |
+| HTTP Server | uvicorn 0.23+ | ASGI アプリケーションサーバー | 開発・本番両用 |
+| 画像フォーマット | io.BytesIO | メモリ内画像データ処理 | Python標準ライブラリ |
+
+### 10.4 MCPツール拡張設計
+
+#### 10.4.1 引数拡張仕様
+
+既存ツール `get_monthly_household` と `get_category_trend` を以下のように拡張：
+
+```python
+@dataclass
+class ToolParameters:
+    # 既存引数（後方互換性維持）
+    year: int
+    month: int
+    category: Optional[str] = None
+    
+    # 新規引数
+    output_format: Literal["text", "image"] = "text"
+    graph_type: Optional[Literal["bar", "line", "pie", "area"]] = None
+    image_size: str = "800x600"
+    image_format: Literal["png", "svg"] = "png"
+```
+
+#### 10.4.2 ルーティング設計
+
+```python
+def enhanced_get_monthly_household(**params) -> Union[str, dict]:
+    if params.get("output_format") == "image":
+        # 画像生成パスへ分岐
+        chart_data = prepare_chart_data(**params)
+        image_url = generate_and_stream_chart(chart_data, **params)
+        return {
+            "type": "image",
+            "url": image_url,
+            "alt_text": f"家計簿グラフ - {params['year']}年{params['month']}月"
+        }
+    else:
+        # 従来のテキスト出力
+        return generate_text_response(**params)
+```
+
+### 10.5 画像生成設計
+
+#### 10.5.1 ChartGenerator クラス
+
+```python
+class ChartGenerator:
+    def __init__(self, font_path: Optional[str] = None):
+        self.font_path = font_path or self._detect_japanese_font()
+        
+    def create_monthly_pie_chart(self, data: pd.DataFrame, **options) -> BytesIO:
+        """月次支出の円グラフ生成"""
+        
+    def create_category_trend_line(self, data: pd.DataFrame, **options) -> BytesIO:
+        """カテゴリ別推移の線グラフ生成"""
+        
+    def create_comparison_bar_chart(self, data: pd.DataFrame, **options) -> BytesIO:
+        """比較棒グラフ生成"""
+```
+
+#### 10.5.2 グラフタイプ別設計
+
+| グラフタイプ | 適用ツール | データ構造 | 実装方針 |
+| --- | --- | --- | --- |
+| `pie` | `get_monthly_household` | カテゴリ別支出金額 | matplotlib.pyplot.pie() |
+| `bar` | `get_monthly_household` | カテゴリ別支出金額 | matplotlib.pyplot.bar() |
+| `line` | `get_category_trend` | 月次推移データ | matplotlib.pyplot.plot() |
+| `area` | `get_category_trend` | 月次推移データ | matplotlib.pyplot.fill_between() |
+
+#### 10.5.3 日本語フォント対応
+
+```python
+def _detect_japanese_font(self) -> str:
+    """システム内の日本語フォントを自動検出"""
+    candidates = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",  # Linux
+        "/System/Library/Fonts/Hiragino Sans GB.ttc",      # macOS  
+        "C:/Windows/Fonts/msgothic.ttc",                   # Windows
+    ]
+    for font_path in candidates:
+        if os.path.exists(font_path):
+            return font_path
+    return None  # システムデフォルトを使用
+```
+
+### 10.6 HTTPストリーミング設計
+
+#### 10.6.1 FastAPI エンドポイント
+
+```python
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+
+app = FastAPI()
+
+@app.get("/api/charts/{chart_id}")
+async def stream_chart(chart_id: str):
+    """生成済み画像のストリーミング配信"""
+    image_buffer = chart_cache.get(chart_id)
+    if not image_buffer:
+        raise HTTPException(404, "Chart not found")
+        
+    return StreamingResponse(
+        io.BytesIO(image_buffer),
+        media_type="image/png",
+        headers={"Content-Disposition": f"inline; filename=chart_{chart_id}.png"}
+    )
+```
+
+#### 10.6.2 チャンクストリーミング
+
+```python
+async def stream_image_chunks(image_data: bytes, chunk_size: int = 8192):
+    """画像データを分割してストリーミング"""
+    for i in range(0, len(image_data), chunk_size):
+        chunk = image_data[i:i + chunk_size]
+        yield chunk
+        await asyncio.sleep(0.01)  # CPU負荷軽減
+```
+
+#### 10.6.3 キャッシュ戦略
+
+```python
+from cachetools import TTLCache
+import hashlib
+
+class ChartCache:
+    def __init__(self, max_size: int = 50, ttl: int = 3600):
+        self.cache = TTLCache(maxsize=max_size, ttl=ttl)
+    
+    def get_key(self, params: dict) -> str:
+        """パラメータからキャッシュキーを生成"""
+        key_str = json.dumps(params, sort_keys=True)
+        return hashlib.md5(key_str.encode()).hexdigest()
+    
+    def get(self, key: str) -> Optional[bytes]:
+        return self.cache.get(key)
+    
+    def set(self, key: str, image_data: bytes):
+        self.cache[key] = image_data
+```
+
+### 10.7 統合フロー設計
+
+#### 10.7.1 画像生成・配信フロー
+
+```text
+1. MCPクライアント → get_monthly_household(output_format="image")
+2. Enhanced Tool → データ取得・前処理
+3. ChartGenerator → matplotlib でグラフ生成
+4. ChartCache → 生成画像をメモリキャッシュ
+5. HTTP Server → ユニークURLを生成・返却
+6. MCPクライアント → 返却されたURLにHTTPリクエスト
+7. Image Streamer → キャッシュから画像を取得・ストリーミング配信
+```
+
+#### 10.7.2 エラーハンドリング拡張
+
+```python
+class ChartGenerationError(HouseholdMCPError):
+    """グラフ生成時のエラー"""
+
+class StreamingError(HouseholdMCPError):
+    """HTTPストリーミング時のエラー"""
+
+# フォールバック処理
+def safe_generate_chart(data, **params):
+    try:
+        return generate_chart(data, **params)
+    except ChartGenerationError:
+        # テキスト形式にフォールバック
+        return generate_text_response(data, **params)
+```
+
+### 10.8 非機能要件対応
+
+#### 10.8.1 パフォーマンス対応（NFR-005, NFR-006）
+
+| 要件 | 実装方針 |
+| --- | --- |
+| 画像生成3秒以内 | matplotlib の描画設定最適化、データサイズ制限 |
+| メモリ50MB以下 | 生成後の即座開放、BytesIO使用 |
+| 転送1MB/秒以上 | 非同期ストリーミング、適切なチャンクサイズ |
+| 同時接続5件 | FastAPI の並行処理、コネクションプール |
+
+#### 10.8.2 画像品質対応（NFR-007）
+
+```python
+# matplotlib 設定
+plt.rcParams.update({
+    'font.size': 12,
+    'axes.titlesize': 16,
+    'axes.labelsize': 14,
+    'figure.figsize': (10, 6),
+    'figure.dpi': 100,
+    'savefig.dpi': 150,
+    'savefig.bbox': 'tight'
+})
+
+# 配色パレット
+CATEGORY_COLORS = [
+    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', 
+    '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'
+]
+```
+
+### 10.9 プロジェクト構造拡張
+
+```text
+my_household_mcpserver/
+├── src/
+│   ├── household_mcp/
+│   │   ├── visualization/
+│   │   │   ├── __init__.py
+│   │   │   ├── chart_generator.py    # ★ 新規
+│   │   │   └── styles.py             # ★ 新規
+│   │   ├── streaming/
+│   │   │   ├── __init__.py
+│   │   │   ├── image_streamer.py     # ★ 新規
+│   │   │   └── cache.py              # ★ 新規
+│   │   ├── server/
+│   │   │   ├── __init__.py
+│   │   │   └── http_server.py        # ★ 新規
+│   │   └── tools/
+│   │       └── enhanced_tools.py     # ★ 新規
+├── fonts/                            # ★ 新規
+│   └── NotoSansCJK-Regular.ttc
+└── tests/
+    ├── unit/
+    │   ├── test_chart_generator.py   # ★ 新規
+    │   └── test_image_streamer.py    # ★ 新規
+    └── integration/
+        └── test_streaming_pipeline.py # ★ 新規
+```
+
+### 10.10 設定・環境変数
+
+```python
+# src/household_mcp/config.py
+@dataclass
+class StreamingConfig:
+    http_host: str = "localhost"
+    http_port: int = 8080
+    chart_cache_size: int = 50
+    chart_cache_ttl: int = 3600
+    chunk_size: int = 8192
+    max_image_size: str = "1920x1080"
+    default_image_format: str = "png"
+    font_path: Optional[str] = None
+```
+
+---
+
+## 11. 変更履歴
+
+| 日付 | バージョン | 概要 |
+| --- | --- | --- |
+| 2025-07-29 | 1.0 | 旧バージョン（DB 前提の構成） |
+| 2025-10-03 | 0.2.0 | CSV 前提アーキテクチャに刷新、トレンド分析設計を追加 |
+| 2025-10-04 | 0.3.0 | 画像生成・HTTPストリーミング機能設計を追加 |
+
+---
+
 以上。
