@@ -121,8 +121,18 @@ class ChartGenerator:
                 font_prop = fm.FontProperties(fname=self.font_path)
                 font_name = font_prop.get_name()
                 
-                # Set as default font
+                # Set as default font (family and sans-serif)
                 plt.rcParams['font.family'] = font_name
+                plt.rcParams['font.sans-serif'] = [
+                    font_name,
+                    'Noto Sans CJK JP',
+                    'Noto Sans CJK',
+                    'IPAPGothic',
+                    'Yu Gothic',
+                    'Meiryo',
+                    'MS Gothic',
+                    'DejaVu Sans'
+                ]
             except Exception:
                 # Fallback to system default
                 pass
@@ -197,6 +207,12 @@ class ChartGenerator:
             
             # Create pie chart
             colors = self._get_colors(len(chart_data))
+            font_prop = None
+            if self.font_path:
+                try:
+                    font_prop = fm.FontProperties(fname=self.font_path)
+                except Exception:
+                    font_prop = None
             wedges, texts, autotexts = ax.pie(
                 chart_data['amount'],
                 labels=chart_data['category'],
@@ -205,13 +221,16 @@ class ChartGenerator:
                 startangle=90,
                 counterclock=False
             )
-            
             # Styling
             for autotext in autotexts:
                 autotext.set_color('white')
                 autotext.set_weight('bold')
-            
-            ax.set_title(title, fontsize=16, fontweight='bold', pad=20)
+                if font_prop:
+                    autotext.set_fontproperties(font_prop)
+            for text in texts:
+                if font_prop:
+                    text.set_fontproperties(font_prop)
+            ax.set_title(title, fontsize=16, fontweight='bold', pad=20, fontproperties=font_prop if font_prop else None)
             
             # Equal aspect ratio ensures that pie is drawn as a circle
             ax.axis('equal')
@@ -283,17 +302,21 @@ class ChartGenerator:
             )
             
             # Set x-axis labels
+            font_prop = None
+            if self.font_path:
+                try:
+                    font_prop = fm.FontProperties(fname=self.font_path)
+                except Exception:
+                    font_prop = None
             ax.set_xticks(range(len(trend_data)))
-            ax.set_xticklabels(trend_data[time_col], rotation=45)
-            
+            ax.set_xticklabels(trend_data[time_col], rotation=45, fontproperties=font_prop if font_prop else None)
             # Set title
             if not title:
                 title = f"{category or 'カテゴリ'}の推移" if category else "支出推移"
-            ax.set_title(title, fontsize=16, fontweight='bold', pad=20)
-            
+            ax.set_title(title, fontsize=16, fontweight='bold', pad=20, fontproperties=font_prop if font_prop else None)
             # Set labels
-            ax.set_xlabel('期間', fontsize=12)
-            ax.set_ylabel('金額 (円)', fontsize=12)
+            ax.set_xlabel('期間', fontsize=12, fontproperties=font_prop if font_prop else None)
+            ax.set_ylabel('金額 (円)', fontsize=12, fontproperties=font_prop if font_prop else None)
             
             # Add grid
             ax.grid(True, alpha=0.3)
@@ -362,21 +385,25 @@ class ChartGenerator:
             
             # Create horizontal bar chart
             colors = self._get_colors(len(chart_data))
+            font_prop = None
+            if self.font_path:
+                try:
+                    font_prop = fm.FontProperties(fname=self.font_path)
+                except Exception:
+                    font_prop = None
             bars = ax.barh(
                 chart_data[category_col],
                 chart_data[amount_col],
                 color=colors
             )
-            
             # Add value labels on bars
             for bar in bars:
                 width = bar.get_width()
                 ax.text(width, bar.get_y() + bar.get_height()/2, 
                        f'{int(width):,}円',
-                       ha='left', va='center', fontweight='bold')
-            
-            ax.set_title(title, fontsize=16, fontweight='bold', pad=20)
-            ax.set_xlabel('金額 (円)', fontsize=12)
+                       ha='left', va='center', fontweight='bold', fontproperties=font_prop if font_prop else None)
+            ax.set_title(title, fontsize=16, fontweight='bold', pad=20, fontproperties=font_prop if font_prop else None)
+            ax.set_xlabel('金額 (円)', fontsize=12, fontproperties=font_prop if font_prop else None)
             
             # Format x-axis
             ax.xaxis.set_major_formatter(plt.FuncFormatter(

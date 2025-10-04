@@ -1,9 +1,8 @@
 import io
 import pandas as pd
 import pytest
-from src.household_mcp.visualization.chart_generator import ChartGenerator
-from src.household_mcp.exceptions import ChartGenerationError
-
+from household_mcp.visualization.chart_generator import ChartGenerator
+from household_mcp.exceptions import ChartGenerationError
 
 
 def sample_pie_data():
@@ -28,27 +27,31 @@ def sample_bar_data():
 
 
 def test_create_monthly_pie_chart():
-    gen = ChartGenerator()
+    font_path = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
+    gen = ChartGenerator(font_path=font_path)
     buf = gen.create_monthly_pie_chart(sample_pie_data(), title="テスト円グラフ")
     assert isinstance(buf, io.BytesIO)
     assert buf.getbuffer().nbytes > 0
 
 
 def test_create_category_trend_line():
-    gen = ChartGenerator()
+    font_path = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
+    gen = ChartGenerator(font_path=font_path)
     buf = gen.create_category_trend_line(sample_line_data(), category="食費", title="推移テスト")
     assert isinstance(buf, io.BytesIO)
     assert buf.getbuffer().nbytes > 0
 
 
 def test_create_comparison_bar_chart():
-    gen = ChartGenerator()
+    font_path = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
+    gen = ChartGenerator(font_path=font_path)
     buf = gen.create_comparison_bar_chart(sample_bar_data(), title="比較棒グラフ")
     assert isinstance(buf, io.BytesIO)
     assert buf.getbuffer().nbytes > 0
 
 
 def test_invalid_data_raises():
-    gen = ChartGenerator()
+    font_path = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
+    gen = ChartGenerator(font_path=font_path)
     with pytest.raises(ChartGenerationError):
         gen.create_monthly_pie_chart(pd.DataFrame({'foo': [1], 'bar': [2]}))
