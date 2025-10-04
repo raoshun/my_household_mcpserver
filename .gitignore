@@ -14,6 +14,7 @@ __pycache__/
 *.pyc
 
 poetry.lock
+uv.lock
 
 # Ignore db files
 *.db*
@@ -21,3 +22,4 @@ poetry.lock
 *.db*
 R0801: Similar lines in 2 files*
 status --short*/*.sql
+.coverage
