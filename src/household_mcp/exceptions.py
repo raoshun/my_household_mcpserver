@@ -30,3 +30,11 @@ class DataSourceError(HouseholdMCPError):
 
 class AnalysisError(HouseholdMCPError):
     """Raised when analytical computations cannot be completed (e.g., lack of data)."""
+
+
+class ChartGenerationError(HouseholdMCPError):
+    """Raised when chart/visualization generation fails."""
+
+
+class StreamingError(HouseholdMCPError):
+    """Raised when HTTP streaming operations fail."""
