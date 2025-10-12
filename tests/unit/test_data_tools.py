@@ -1,8 +1,11 @@
+import sqlite3
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 import pytest
 
 from household_mcp.database.connection import DatabaseConnection
+from household_mcp.exceptions import ValidationError
 from household_mcp.tools.data_tools import (
     AccountManager,
     CategoryManager,
@@ -166,3 +169,157 @@ def test_add_transaction_validation_errors(managers, bad):
     date, amount, desc, cat, acc, typ = bad
     res = tm.add_transaction(date, amount, desc, cat, acc, typ)
     assert res["success"] is False
+
+
+# Error Handling Tests for Phase 3
+def test_account_manager_database_errors(temp_db):
+    """Test database error handling in AccountManager."""
+    acc = AccountManager(db_connection=temp_db)
+
+    # Test database connection error simulation with add_account (returns dict)
+    with patch.object(temp_db, "transaction") as mock_transaction:
+        mock_transaction.side_effect = sqlite3.Error("Database connection failed")
+
+        result = acc.add_account("TestAccount", "cash", initial_balance=1000.0)
+        assert result["success"] is False
+        assert "Database connection failed" in result["error"]
+
+
+def test_transaction_manager_nonexistent_account(managers):
+    """Test TransactionManager with non-existent account reference."""
+    _, _, tm = managers
+
+    # Try to add transaction with non-existent account
+    result = tm.add_transaction(
+        date="2024-01-01",
+        amount=1000,
+        description="Test",
+        category_name="食費",
+        account_name="NonExistentAccount",
+        transaction_type="expense",
+    )
+    assert result["success"] is False
+    assert "アカウント 'NonExistentAccount' が見つかりません" in result["error"]
+
+
+def test_transaction_manager_invalid_date_format(managers):
+    """Test TransactionManager with invalid date format."""
+    acc, _, tm = managers
+
+    # Create account first
+    acc.add_account("TestAccount", "cash", initial_balance=1000.0)
+
+    # Test invalid date format - should trigger exception in datetime parsing
+    with patch("household_mcp.tools.data_tools.datetime") as mock_datetime:
+        mock_datetime.strptime.side_effect = ValueError("Invalid date format")
+
+        result = tm.add_transaction(
+            date="invalid-date",
+            amount=100,
+            description="Test",
+            category_name="食費",
+            account_name="TestAccount",
+            transaction_type="expense",
+        )
+        assert result["success"] is False
+        assert "日付はYYYY-MM-DD形式で入力してください" in result["error"]
+
+
+def test_transaction_manager_get_transactions_database_error(managers):
+    """Test get_transactions with database error."""
+    _, _, tm = managers
+
+    with patch.object(tm.db_connection, "execute_query") as mock_execute:
+        mock_execute.side_effect = sqlite3.Error("Query execution failed")
+
+        result = tm.get_transactions()
+        assert result["success"] is False
+        assert "取引の取得に失敗しました" in result["message"]
+
+
+def test_category_manager_constraint_violation(temp_db):
+    """Test CategoryManager database constraint violations."""
+    cat = CategoryManager()
+    cat.db_connection = temp_db
+
+    # Create category first
+    cat.add_category("TestCategory", "expense")
+
+    # Try to create duplicate - should trigger constraint error
+    with patch.object(temp_db, "transaction") as mock_transaction:
+        mock_conn = Mock()
+        mock_cursor = Mock()
+        mock_cursor.execute.side_effect = sqlite3.IntegrityError(
+            "UNIQUE constraint failed"
+        )
+        mock_conn.cursor.return_value = mock_cursor
+        mock_transaction.return_value.__enter__.return_value = mock_conn
+
+        result = cat.add_category("TestCategory", "expense")
+        assert result["success"] is False
+
+
+def test_account_manager_update_nonexistent_account(managers):
+    """Test updating non-existent account."""
+    acc, _, _ = managers
+
+    result = acc.update_account(999999, name="UpdatedName")
+    assert result["success"] is False
+    assert "NOT_FOUND" in result["error"]
+
+
+def test_transaction_manager_delete_nonexistent(managers):
+    """Test deleting non-existent transaction."""
+    _, _, tm = managers
+
+    result = tm.delete_transaction(999999)
+    assert result["success"] is False
+    assert "Transaction not found" in result["error"]
+
+
+def test_transaction_update_with_invalid_category(managers):
+    """Test transaction update with invalid category reference."""
+    acc, _, tm = managers
+
+    # Setup: create account and transaction
+    acc.add_account("TestAccount", "cash", initial_balance=1000.0)
+    result = tm.add_transaction(
+        date="2024-01-01",
+        amount=100,
+        description="Test",
+        category_name="食費",
+        account_name="TestAccount",
+        transaction_type="expense",
+    )
+    transaction_id = result["transaction_id"]
+
+    # Test update with account that doesn't exist
+    result = tm.update_transaction(
+        transaction_id=transaction_id, account_name="NonExistentAccount"
+    )
+    assert result["success"] is False
+    assert "アカウント 'NonExistentAccount' が見つかりません" in result["error"]
+
+
+def test_category_creation_database_error(temp_db):
+    """Test category creation with database error during insert."""
+    tm = TransactionManager()
+    tm.db_connection = temp_db
+
+    # Mock category creation failure
+    with patch.object(tm, "_get_category_id") as mock_get_cat:
+        mock_get_cat.side_effect = ValidationError("カテゴリーの作成に失敗しました")
+
+        # Setup account first
+        acc = AccountManager(db_connection=temp_db)
+        acc.add_account("TestAccount", "cash", initial_balance=1000.0)
+
+        result = tm.add_transaction(
+            date="2024-01-01",
+            amount=100,
+            description="Test",
+            category_name="NewCategory",
+            account_name="TestAccount",
+            transaction_type="expense",
+        )
+        assert result["success"] is False
