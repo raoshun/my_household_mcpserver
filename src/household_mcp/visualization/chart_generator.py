@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Chart generation module for household budget visualization.
 
 This module provides ChartGenerator class for creating various types of charts

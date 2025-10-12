@@ -31,9 +31,9 @@ jobs:
         run: |
           uv venv
 
-      - name: Install dependencies (minimal)
+      - name: Install dependencies (with web & visualization)
         run: |
-          uv pip install -e .[dev]
+          uv pip install -e .[dev,web,visualization]
 
       - name: Run tests
         run: |
