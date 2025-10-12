@@ -29,23 +29,23 @@
 
 ### 1.2 コンポーネント構成
 
-| コンポーネント | 主な責務 | 主な実装 | 対応要件 |
-| --- | --- | --- | --- |
-| MCP Server | リソース/ツール定義とリクエスト分岐 | `src/server.py` | 全要件 |
-| Data Loader | CSV ファイルの読み込みと前処理 | `src/household_mcp/dataloader.py` | FR-001〜FR-003 |
-| Trend Analyzer | 月次指標計算モジュール（今後追加） | `src/household_mcp/analysis/trends.py` *(予定)* | FR-001 |
-| Query Resolver | 質問パラメータ解釈ユーティリティ | `src/household_mcp/utils/query_parser.py` *(予定)* | FR-002, FR-003 |
-| Formatter | 数値書式・テキスト生成 | `src/household_mcp/utils/formatters.py` *(予定)* | NFR-001 |
+| コンポーネント | 主な責務                            | 主な実装                                           | 対応要件       |
+| -------------- | ----------------------------------- | -------------------------------------------------- | -------------- |
+| MCP Server     | リソース/ツール定義とリクエスト分岐 | `src/server.py`                                    | 全要件         |
+| Data Loader    | CSV ファイルの読み込みと前処理      | `src/household_mcp/dataloader.py`                  | FR-001〜FR-003 |
+| Trend Analyzer | 月次指標計算モジュール（今後追加）  | `src/household_mcp/analysis/trends.py` *(予定)*    | FR-001         |
+| Query Resolver | 質問パラメータ解釈ユーティリティ    | `src/household_mcp/utils/query_parser.py` *(予定)* | FR-002, FR-003 |
+| Formatter      | 数値書式・テキスト生成              | `src/household_mcp/utils/formatters.py` *(予定)*   | NFR-001        |
 
 ### 1.3 技術スタック
 
-| 区分 | 採用技術 | 備考 |
-| --- | --- | --- |
-| 言語 | Python 3.12 (uv 管理) | `pyproject.toml` 参照 |
-| MCP 実装 | `fastmcp` | 既存コードで使用 |
-| データ処理 | pandas, numpy | CSV の集計と指標算出 |
-| フォーマット | Python 標準 `locale`, `decimal` など | 数値の桁区切り、丸め |
-| テスト | pytest | 今後テスト追加予定 |
+| 区分         | 採用技術                             | 備考                  |
+| ------------ | ------------------------------------ | --------------------- |
+| 言語         | Python 3.12 (uv 管理)                | `pyproject.toml` 参照 |
+| MCP 実装     | `fastmcp`                            | 既存コードで使用      |
+| データ処理   | pandas, numpy                        | CSV の集計と指標算出  |
+| フォーマット | Python 標準 `locale`, `decimal` など | 数値の桁区切り、丸め  |
+| テスト       | pytest                               | 今後テスト追加予定    |
 
 ---
 
@@ -81,19 +81,19 @@
 
 ### 3.1 既存リソース・ツール
 
-| 名称 | 種別 | 概要 | 返却値 |
-| --- | --- | --- | --- |
-| `data://category_hierarchy` | Resource | 大項目→中項目の階層辞書 | `dict[str, list[str]]` |
+| 名称                          | 種別     | 概要                                        | 返却値                 |
+| ----------------------------- | -------- | ------------------------------------------- | ---------------------- |
+| `data://category_hierarchy`   | Resource | 大項目→中項目の階層辞書                     | `dict[str, list[str]]` |
 | `data://household_categories` | Resource | カテゴリ一覧（`category_hierarchy` と同等） | `dict[str, list[str]]` |
-| `data://available_months` | Resource | 利用可能な年月の静的リスト | `list[dict]` |
-| `get_monthly_household` | Tool | 指定年月の明細一覧 | `list[dict]` |
+| `data://available_months`     | Resource | 利用可能な年月の静的リスト                  | `list[dict]`           |
+| `get_monthly_household`       | Tool     | 指定年月の明細一覧                          | `list[dict]`           |
 
 ### 3.2 追加予定リソース/ツール（トレンド分析）
 
-| 名称 | 種別 | 役割 | 主な入力パラメータ | 対応要件 |
-| --- | --- | --- | --- | --- |
-| `data://category_trend_summary` | Resource | 直近 12 か月のカテゴリ別指標を返す API | なし（サーバ内部で最新期間を判定） | FR-001 |
-| `get_category_trend` | Tool | 質問に応じたカテゴリ/月範囲のトレンド解説を返す | `category`, `start_month`, `end_month`（任意） | FR-002, FR-003 |
+| 名称                            | 種別     | 役割                                            | 主な入力パラメータ                             | 対応要件       |
+| ------------------------------- | -------- | ----------------------------------------------- | ---------------------------------------------- | -------------- |
+| `data://category_trend_summary` | Resource | 直近 12 か月のカテゴリ別指標を返す API          | なし（サーバ内部で最新期間を判定）             | FR-001         |
+| `get_category_trend`            | Tool     | 質問に応じたカテゴリ/月範囲のトレンド解説を返す | `category`, `start_month`, `end_month`（任意） | FR-002, FR-003 |
 
 - トレンド計算結果は辞書（カテゴリ × 月）で保持し、ツール側でテキスト整形して返す。
 - MCP クライアント（LLM）が自然言語入力を解析し、該当パラメータを渡す想定。パラメータが不足する場合はサーバー側で補完ロジックを適用する。
@@ -160,11 +160,11 @@ def compute_metrics(df: pd.DataFrame) -> pd.DataFrame:
 
 ### 4.5 エラー処理とフォールバック
 
-| ケース | 例外 | メッセージ方針 |
-| --- | --- | --- |
-| 対象 CSV が見つからない | `FileNotFoundError` → `DataSourceError` | 「データファイルが見つかりません」 |
-| 指定カテゴリが存在しない | `ValidationError` | 「該当カテゴリが見つかりません」 |
-| データ不足で指標計算不可 | `AnalysisError` | 「対象期間のデータが不足しています」 |
+| ケース                   | 例外                                    | メッセージ方針                       |
+| ------------------------ | --------------------------------------- | ------------------------------------ |
+| 対象 CSV が見つからない  | `FileNotFoundError` → `DataSourceError` | 「データファイルが見つかりません」   |
+| 指定カテゴリが存在しない | `ValidationError`                       | 「該当カテゴリが見つかりません」     |
+| データ不足で指標計算不可 | `AnalysisError`                         | 「対象期間のデータが不足しています」 |
 
 ---
 
@@ -193,12 +193,12 @@ class AnalysisError(HouseholdMCPError):
 
 ## 6. 非機能要件への対応
 
-| 要件 | 設計対応 |
-| --- | --- |
-| NFR-001 (応答表現) | `format_currency` と `format_percentage` で桁区切り・丸めを統一する。 |
+| 要件                     | 設計対応                                                                                         |
+| ------------------------ | ------------------------------------------------------------------------------------------------ |
+| NFR-001 (応答表現)       | `format_currency` と `format_percentage` で桁区切り・丸めを統一する。                            |
 | NFR-002 (パフォーマンス) | pandas 処理は 12 か月分の明細（数千行想定）を 1 秒以内で完了し、結果を簡易キャッシュに保持する。 |
-| NFR-003 (信頼性) | 例外クラスを通じて原因別メッセージを返却し、CSV 読み込み時には対象ファイル名をログに記録。 |
-| NFR-004 (セキュリティ) | 全処理をローカル内で完結させ、ログにも個人情報を残さない。外部通信は行わない。 |
+| NFR-003 (信頼性)         | 例外クラスを通じて原因別メッセージを返却し、CSV 読み込み時には対象ファイル名をログに記録。       |
+| NFR-004 (セキュリティ)   | 全処理をローカル内で完結させ、ログにも個人情報を残さない。外部通信は行わない。                   |
 
 ---
 
@@ -250,10 +250,10 @@ my_household_mcpserver/
 
 ## 9. 変更履歴
 
-| 日付 | バージョン | 概要 |
-| --- | --- | --- |
-| 2025-07-29 | 1.0 | 旧バージョン（DB 前提の構成） |
-| 2025-10-03 | 0.2.0 | CSV 前提アーキテクチャに刷新、トレンド分析設計を追加 |
+| 日付       | バージョン | 概要                                                 |
+| ---------- | ---------- | ---------------------------------------------------- |
+| 2025-07-29 | 1.0        | 旧バージョン（DB 前提の構成）                        |
+| 2025-10-03 | 0.2.0      | CSV 前提アーキテクチャに刷新、トレンド分析設計を追加 |
 
 ---
 
@@ -275,7 +275,7 @@ my_household_mcpserver/
                                                 │                      ▼
                                                 │              ┌────────────┐
                                                 │              │ Image Buffer │
-                                                ▼              └────────────┘
+                                                └──────────────┘
                                       ┌────────────────────────┐
                                       │  CSV データ / ローカルFS │
                                       └────────────────────────┘
@@ -283,22 +283,22 @@ my_household_mcpserver/
 
 ### 10.2 新規コンポーネント
 
-| コンポーネント | 主な責務 | 実装ファイル | 対応要件 |
-| --- | --- | --- | --- |
-| Chart Generator | matplotlib/plotlyによるグラフ画像生成 | `src/household_mcp/visualization/chart_generator.py` | FR-004 |
-| Image Streamer | HTTPストリーミングによる画像配信 | `src/household_mcp/streaming/image_streamer.py` | FR-005 |
-| Tool Extensions | 既存MCPツールの引数拡張とルーティング | `src/household_mcp/tools/enhanced_tools.py` | FR-006 |
-| HTTP Server | FastAPI/uvicornによるHTTPエンドポイント | `src/household_mcp/server/http_server.py` | FR-005 |
+| コンポーネント  | 主な責務                                | 実装ファイル                                         | 対応要件 |
+| --------------- | --------------------------------------- | ---------------------------------------------------- | -------- |
+| Chart Generator | matplotlib/plotlyによるグラフ画像生成   | `src/household_mcp/visualization/chart_generator.py` | FR-004   |
+| Image Streamer  | HTTPストリーミングによる画像配信        | `src/household_mcp/streaming/image_streamer.py`      | FR-005   |
+| Tool Extensions | 既存MCPツールの引数拡張とルーティング   | `src/household_mcp/tools/enhanced_tools.py`          | FR-006   |
+| HTTP Server     | FastAPI/uvicornによるHTTPエンドポイント | `src/household_mcp/server/http_server.py`            | FR-005   |
 
 ### 10.3 技術スタック拡張
 
-| 区分 | 追加技術 | 用途 | 備考 |
-| --- | --- | --- | --- |
-| 画像生成 | matplotlib 3.8+ | グラフ描画ライブラリ | 日本語フォント対応 |
-| 画像生成 | pillow 10.0+ | 画像処理・形式変換 | PNG/JPEG出力 |
-| HTTP Server | FastAPI 0.100+ | RESTful API・ストリーミング | 非同期処理対応 |
-| HTTP Server | uvicorn 0.23+ | ASGI アプリケーションサーバー | 開発・本番両用 |
-| 画像フォーマット | io.BytesIO | メモリ内画像データ処理 | Python標準ライブラリ |
+| 区分             | 追加技術        | 用途                          | 備考                 |
+| ---------------- | --------------- | ----------------------------- | -------------------- |
+| 画像生成         | matplotlib 3.8+ | グラフ描画ライブラリ          | 日本語フォント対応   |
+| 画像生成         | pillow 10.0+    | 画像処理・形式変換            | PNG/JPEG出力         |
+| HTTP Server      | FastAPI 0.100+  | RESTful API・ストリーミング   | 非同期処理対応       |
+| HTTP Server      | uvicorn 0.23+   | ASGI アプリケーションサーバー | 開発・本番両用       |
+| 画像フォーマット | io.BytesIO      | メモリ内画像データ処理        | Python標準ライブラリ |
 
 ### 10.4 MCPツール拡張設計
 
@@ -360,12 +360,12 @@ class ChartGenerator:
 
 #### 10.5.2 グラフタイプ別設計
 
-| グラフタイプ | 適用ツール | データ構造 | 実装方針 |
-| --- | --- | --- | --- |
-| `pie` | `get_monthly_household` | カテゴリ別支出金額 | matplotlib.pyplot.pie() |
-| `bar` | `get_monthly_household` | カテゴリ別支出金額 | matplotlib.pyplot.bar() |
-| `line` | `get_category_trend` | 月次推移データ | matplotlib.pyplot.plot() |
-| `area` | `get_category_trend` | 月次推移データ | matplotlib.pyplot.fill_between() |
+| グラフタイプ | 適用ツール              | データ構造         | 実装方針                         |
+| ------------ | ----------------------- | ------------------ | -------------------------------- |
+| `pie`        | `get_monthly_household` | カテゴリ別支出金額 | matplotlib.pyplot.pie()          |
+| `bar`        | `get_monthly_household` | カテゴリ別支出金額 | matplotlib.pyplot.bar()          |
+| `line`       | `get_category_trend`    | 月次推移データ     | matplotlib.pyplot.plot()         |
+| `area`       | `get_category_trend`    | 月次推移データ     | matplotlib.pyplot.fill_between() |
 
 #### 10.5.3 日本語フォント対応
 
@@ -476,12 +476,12 @@ def safe_generate_chart(data, **params):
 
 #### 10.8.1 パフォーマンス対応（NFR-005, NFR-006）
 
-| 要件 | 実装方針 |
-| --- | --- |
+| 要件            | 実装方針                                      |
+| --------------- | --------------------------------------------- |
 | 画像生成3秒以内 | matplotlib の描画設定最適化、データサイズ制限 |
-| メモリ50MB以下 | 生成後の即座開放、BytesIO使用 |
-| 転送1MB/秒以上 | 非同期ストリーミング、適切なチャンクサイズ |
-| 同時接続5件 | FastAPI の並行処理、コネクションプール |
+| メモリ50MB以下  | 生成後の即座開放、BytesIO使用                 |
+| 転送1MB/秒以上  | 非同期ストリーミング、適切なチャンクサイズ    |
+| 同時接続5件     | FastAPI の並行処理、コネクションプール        |
 
 #### 10.8.2 画像品質対応（NFR-007）
 
@@ -553,11 +553,11 @@ class StreamingConfig:
 
 ## 11. 変更履歴
 
-| 日付 | バージョン | 概要 |
-| --- | --- | --- |
-| 2025-07-29 | 1.0 | 旧バージョン（DB 前提の構成） |
-| 2025-10-03 | 0.2.0 | CSV 前提アーキテクチャに刷新、トレンド分析設計を追加 |
-| 2025-10-04 | 0.3.0 | 画像生成・HTTPストリーミング機能設計を追加 |
+| 日付       | バージョン | 概要                                                 |
+| ---------- | ---------- | ---------------------------------------------------- |
+| 2025-07-29 | 1.0        | 旧バージョン（DB 前提の構成）                        |
+| 2025-10-03 | 0.2.0      | CSV 前提アーキテクチャに刷新、トレンド分析設計を追加 |
+| 2025-10-04 | 0.3.0      | 画像生成・HTTPストリーミング機能設計を追加           |
 
 ---
 
