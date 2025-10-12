@@ -7,12 +7,25 @@ transport configurations.
 """
 
 import argparse
+import warnings
 from typing import Optional
 
 from fastmcp import FastMCP
 
 from household_mcp.dataloader import HouseholdDataLoader
 from household_mcp.tools import category_trend_summary, get_category_trend
+
+# Suppress third-party deprecation warnings at runtime
+warnings.filterwarnings(
+    "ignore",
+    category=DeprecationWarning,
+    module="dateutil.*",
+)
+warnings.filterwarnings(
+    "ignore",
+    message="datetime.datetime.utcfromtimestamp.*is deprecated",
+    category=DeprecationWarning,
+)
 
 # コマンドライン引数で transport を受け取る
 parser = argparse.ArgumentParser()
