@@ -301,13 +301,19 @@ class DataValidator:
         Raises:
             ValidationError: データが無効な場合
         """
-        validated = {}
+        validated: Dict[str, Any] = {}
 
         # 日付の検証
-        validated["date"] = cls.validate_date(data.get("date"), "date")
+        date_value = data.get("date")
+        if date_value is None:
+            raise ValidationError("日付は必須です", "date")
+        validated["date"] = cls.validate_date(date_value, "date")
 
         # 金額の検証
-        validated["amount"] = cls.validate_amount(data.get("amount"), "amount")
+        amount_value = data.get("amount")
+        if amount_value is None:
+            raise ValidationError("金額は必須です", "amount")
+        validated["amount"] = cls.validate_amount(amount_value, "amount")
 
         # 説明の検証
         validated["description"] = cls.validate_string(
@@ -353,7 +359,7 @@ class DataValidator:
         Raises:
             ValidationError: データが無効な場合
         """
-        validated = {}
+        validated: Dict[str, Any] = {}
 
         # 名前の検証
         validated["name"] = cls.validate_string(
@@ -392,7 +398,7 @@ class DataValidator:
         Raises:
             ValidationError: データが無効な場合
         """
-        validated = {}
+        validated: Dict[str, Any] = {}
 
         # 名前の検証
         validated["name"] = cls.validate_string(
@@ -428,7 +434,12 @@ def validate_bulk_data(
     Returns:
         検証結果
     """
-    results = {"valid_count": 0, "error_count": 0, "errors": [], "validated_data": []}
+    results: Dict[str, Any] = {
+        "valid_count": 0,
+        "error_count": 0,
+        "errors": [],
+        "validated_data": [],
+    }
 
     validator_map = {
         "transaction": DataValidator.validate_transaction_data,

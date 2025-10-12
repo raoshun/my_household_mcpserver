@@ -8,7 +8,7 @@ import io
 import os
 import sys
 import warnings
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Sequence, Tuple
 
 import pandas as pd
 
@@ -16,6 +16,10 @@ try:
     import matplotlib
     import matplotlib.font_manager as fm
     import matplotlib.pyplot as plt
+    from matplotlib.axes import Axes
+    from matplotlib.figure import Figure
+    from matplotlib.text import Text
+    from matplotlib.ticker import FuncFormatter
 
     HAS_VISUALIZATION_DEPS = True
 except ImportError:
@@ -98,7 +102,7 @@ class ChartGenerator:
         )
 
     def create_monthly_pie_chart(
-        self, data: pd.DataFrame, title: str = "月次支出構成", **options
+        self, data: pd.DataFrame, title: str = "月次支出構成", **options: Any
     ) -> io.BytesIO:
         """Create pie chart for monthly expense breakdown.
 
@@ -161,7 +165,7 @@ class ChartGenerator:
         data: pd.DataFrame,
         category: Optional[str] = None,
         title: Optional[str] = None,
-        **options,
+        **options: Any,
     ) -> io.BytesIO:
         """Create line chart for category trend over time.
 
@@ -293,7 +297,7 @@ class ChartGenerator:
         return None
 
     def create_comparison_bar_chart(
-        self, data: pd.DataFrame, title: str = "カテゴリ別比較", **options
+        self, data: pd.DataFrame, title: str = "カテゴリ別比較", **options: Any
     ) -> io.BytesIO:
         """Create bar chart for category comparison."""
         try:
@@ -457,7 +461,7 @@ class ChartGenerator:
         return category_col, amount_col
 
     def _render_bar_value_labels(
-        self, ax: "plt.Axes", bars, font_prop: Optional["fm.FontProperties"]
+        self, ax: Axes, bars: Sequence[Any], font_prop: Optional[fm.FontProperties]
     ) -> None:
         """Render value labels at the end of horizontal bars."""
         for b in bars:
@@ -472,11 +476,11 @@ class ChartGenerator:
                 fontproperties=font_prop if font_prop else None,
             )
 
-    def _apply_currency_formatter(self, ax: "plt.Axes") -> None:
+    def _apply_currency_formatter(self, ax: Axes) -> None:
         """Apply thousands separator + 円 unit to X axis."""
-        ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f"{int(x):,}円"))
+        ax.xaxis.set_major_formatter(FuncFormatter(lambda x, p: f"{int(x):,}円"))
 
-    def _get_font_properties(self) -> Optional["fm.FontProperties"]:
+    def _get_font_properties(self) -> Optional[fm.FontProperties]:
         """Create FontProperties from configured font_path if available."""
         if not self.font_path:
             return None
@@ -486,19 +490,22 @@ class ChartGenerator:
             return None
 
     def _style_pie_labels(
-        self, texts, autotexts, font_prop: Optional["fm.FontProperties"]
+        self,
+        texts: List[Text],
+        autotexts: List[Text],
+        font_prop: Optional[fm.FontProperties],
     ) -> None:
         """Apply styling to pie chart labels and autopct texts."""
         for autotext in autotexts:
             autotext.set_color("white")
-            autotext.set_weight("bold")
+            autotext.set_fontweight("bold")
             if font_prop:
                 autotext.set_fontproperties(font_prop)
         for text in texts:
             if font_prop:
                 text.set_fontproperties(font_prop)
 
-    def _save_figure_to_buffer(self, fig: "plt.Figure") -> io.BytesIO:
+    def _save_figure_to_buffer(self, fig: Figure) -> io.BytesIO:
         """Save the figure to a BytesIO buffer as PNG and return it."""
         buffer = io.BytesIO()
         fig.savefig(buffer, format="png", dpi=150, bbox_inches="tight")
@@ -506,7 +513,7 @@ class ChartGenerator:
         plt.close(fig)
         return buffer
 
-    def _create_figure(self, size_str: str) -> Tuple["plt.Figure", "plt.Axes"]:
+    def _create_figure(self, size_str: str) -> Tuple[Figure, Axes]:
         """Create a matplotlib figure/axes with the given pixel size string."""
         width, height = self._parse_image_size(size_str)
         fig, ax = plt.subplots(figsize=(width / 100, height / 100))
@@ -559,11 +566,11 @@ class ChartGenerator:
 
     def _configure_trend_axes(
         self,
-        fig: "plt.Figure",
-        ax: "plt.Axes",
+        fig: Figure,
+        ax: Axes,
         trend_data: pd.DataFrame,
         time_col: str,
-        font_prop: Optional["fm.FontProperties"],
+        font_prop: Optional[fm.FontProperties],
     ) -> None:
         """Configure axes for trend line chart with readable labels."""
         # X ticks and labels

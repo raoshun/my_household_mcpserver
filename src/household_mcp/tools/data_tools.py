@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class TransactionManager:
     """取引データ管理クラス."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """初期化."""
         self.db_connection = DatabaseConnection()
 
@@ -143,8 +143,8 @@ class TransactionManager:
         account_name: Optional[str],
         transaction_type: Optional[str],
     ) -> tuple[list[str], list[Any]]:
-        conditions = []
-        params = []
+        conditions: list[str] = []
+        params: list[Any] = []
         if start_date:
             conditions.append("t.date >= ?")
             params.append(start_date)
@@ -167,18 +167,18 @@ class TransactionManager:
     ) -> list[dict[str, Any]]:
         # Bandit: where_clause is internally constructed from parameterized conditions; no user-supplied identifiers
         # nosec B608
-        query = f"""
-            SELECT
-                t.id, t.date, t.amount, t.description, t.type,
-                c.name as category_name, a.name as account_name,
-                t.created_at, t.updated_at
-            FROM transactions t
-            LEFT JOIN categories c ON t.category_id = c.id
-            LEFT JOIN accounts a ON t.account_id = a.id
-            {where_clause}
-            ORDER BY t.date DESC, t.id DESC
-            LIMIT ? OFFSET ?
-        """
+        query = (
+            "SELECT\n"
+            "    t.id, t.date, t.amount, t.description, t.type,\n"
+            "    c.name as category_name, a.name as account_name,\n"
+            "    t.created_at, t.updated_at\n"
+            "FROM transactions t\n"
+            "LEFT JOIN categories c ON t.category_id = c.id\n"
+            "LEFT JOIN accounts a ON t.account_id = a.id\n"
+            f"{where_clause}\n"
+            "ORDER BY t.date DESC, t.id DESC\n"
+            "LIMIT ? OFFSET ?\n"
+        )  # nosec B608: where_clause is built from whitelisted fields; parameters are bound
         query_params = tuple(params + [limit, offset])
         result = self.db_connection.execute_query(query, query_params, fetch_all=True)
 
@@ -203,18 +203,18 @@ class TransactionManager:
     def _get_total_transaction_count(self, where_clause: str, params: list[Any]) -> int:
         # Bandit: where_clause is internally constructed from parameterized conditions; no user-supplied identifiers
         # nosec B608
-        count_query = f"""
-            SELECT COUNT(*) FROM transactions t
-            LEFT JOIN categories c ON t.category_id = c.id
-            LEFT JOIN accounts a ON t.account_id = a.id
-            {where_clause}
-        """
+        count_query = (
+            "SELECT COUNT(*) FROM transactions t\n"
+            "LEFT JOIN categories c ON t.category_id = c.id\n"
+            "LEFT JOIN accounts a ON t.account_id = a.id\n"
+            f"{where_clause}\n"
+        )  # nosec B608: safe dynamic clause from validated fields
         count_result = self.db_connection.execute_query(
             count_query, tuple(params), fetch_one=True
         )
         return count_result[0] if count_result else 0
 
-    def update_transaction(self, transaction_id: int, **kwargs) -> Dict[str, Any]:
+    def update_transaction(self, transaction_id: int, **kwargs: Any) -> Dict[str, Any]:
         """取引を更新."""
         try:
             existing = self._get_transaction_by_id(transaction_id)
@@ -255,7 +255,7 @@ class TransactionManager:
             }
 
     def _prepare_transaction_update(
-        self, existing_transaction: Dict[str, Any], **kwargs
+        self, existing_transaction: Dict[str, Any], **kwargs: Any
     ) -> tuple[list[str], list[Any]]:
         allowed_fields = [
             "date",
@@ -264,8 +264,8 @@ class TransactionManager:
             "category_name",
             "account_name",
         ]
-        update_fields = []
-        update_params = []
+        update_fields: list[str] = []
+        update_params: list[Any] = []
 
         for field, value in kwargs.items():
             if field in allowed_fields and value is not None:
@@ -292,17 +292,17 @@ class TransactionManager:
 
     def _execute_transaction_update(
         self, transaction_id: int, update_fields: list[str], update_params: list[Any]
-    ):
+    ) -> None:
         update_fields.append("updated_at = CURRENT_TIMESTAMP")
         update_params.append(transaction_id)
 
         # Bandit: update_fields are pre-validated field names from allowed list
         # nosec B608
-        query = f"""
-            UPDATE transactions
-            SET {', '.join(update_fields)}
-            WHERE id = ?
-        """
+        query = (
+            "UPDATE transactions\n"
+            f"SET {', '.join(update_fields)}\n"
+            "WHERE id = ?\n"
+        )  # nosec B608: update_fields are whitelisted column names
 
         with self.db_connection.transaction() as conn:
             cursor = conn.cursor()
@@ -421,7 +421,7 @@ class TransactionManager:
             query, (category_name, transaction_type), fetch_one=True
         )
         if result:
-            return result[0]
+            return int(result[0])
         else:
             # カテゴリーが存在しない場合は新規作成
             insert_query = "INSERT INTO categories (name, type) VALUES (?, ?)"
@@ -441,7 +441,7 @@ class TransactionManager:
         )
 
         if result:
-            return result[0]
+            return int(result[0])
 
         raise ValidationError(f"アカウント '{account_name}' が見つかりません")
 
@@ -451,7 +451,7 @@ class TransactionManager:
         account_id: int,
         amount: float,
         transaction_type: str,
-    ):
+    ) -> None:
         """アカウント残高を更新.
 
         Args:
@@ -520,7 +520,7 @@ def get_transaction_manager() -> TransactionManager:
 class CategoryManager:
     """カテゴリー管理クラス."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """初期化."""
         self.db_connection = DatabaseConnection()
 
@@ -535,7 +535,7 @@ class CategoryManager:
         """
         try:
             query = "SELECT id, name, type, parent_id, color, icon FROM categories"
-            params = []
+            params: list[Any] = []
 
             if category_type:
                 query += " WHERE type = ?"
@@ -642,7 +642,7 @@ class CategoryManager:
                 "message": "カテゴリーの追加に失敗しました",
             }
 
-    def update_category(self, category_id: int, **kwargs) -> Dict[str, Any]:
+    def update_category(self, category_id: int, **kwargs: Any) -> Dict[str, Any]:
         """カテゴリーを更新.
 
         Args:
@@ -907,7 +907,7 @@ class AccountManager:
         """
         try:
             query = "SELECT * FROM accounts WHERE 1=1"
-            params = []
+            params: list[Any] = []
 
             if account_type:
                 query += " AND type = ?"
@@ -1055,7 +1055,7 @@ class AccountManager:
         account_type: Optional[str],
         is_active: Optional[bool],
     ) -> Dict[str, Any]:
-        update_fields = {}
+        update_fields: Dict[str, Any] = {}
         if name is not None:
             if not name.strip():
                 raise ValidationError("アカウント名は必須です")
@@ -1080,7 +1080,9 @@ class AccountManager:
 
         return update_fields
 
-    def _execute_account_update(self, account_id: int, update_fields: Dict[str, Any]):
+    def _execute_account_update(
+        self, account_id: int, update_fields: Dict[str, Any]
+    ) -> None:
         update_fields["updated_at"] = datetime.now()
         set_clause = ", ".join([f"{field} = ?" for field in update_fields.keys()])
         values = list(update_fields.values()) + [account_id]

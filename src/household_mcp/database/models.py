@@ -28,16 +28,10 @@ class Transaction:
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """バリデーションと自動設定."""
         if self.type is not None and self.type not in ["income", "expense"]:
             raise ValueError("Type must be 'income' or 'expense'")
-
-        if self.amount is not None and not isinstance(self.amount, Decimal):
-            self.amount = Decimal(str(self.amount))
-
-        if self.date is not None and isinstance(self.date, str):
-            self.date = datetime.strptime(self.date, "%Y-%m-%d").date()
 
 
 @dataclass
@@ -51,7 +45,7 @@ class Category:
     color: Optional[str] = None
     icon: Optional[str] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """バリデーション."""
         if self.type is not None and self.type not in ["income", "expense"]:
             raise ValueError("Type must be 'income' or 'expense'")
@@ -69,17 +63,11 @@ class Account:
     currency: str = "JPY"
     is_active: bool = True
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """バリデーションと自動設定."""
         valid_types = ["bank", "credit", "cash", "investment"]
         if self.type is not None and self.type not in valid_types:
             raise ValueError(f"Type must be one of: {', '.join(valid_types)}")
-
-        if not isinstance(self.initial_balance, Decimal):
-            self.initial_balance = Decimal(str(self.initial_balance))
-
-        if not isinstance(self.current_balance, Decimal):
-            self.current_balance = Decimal(str(self.current_balance))
 
 
 @dataclass
@@ -93,20 +81,11 @@ class Budget:
     start_date: Optional[date_type] = None
     end_date: Optional[date_type] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """バリデーション."""
         valid_periods = ["monthly", "yearly"]
         if self.period_type is not None and self.period_type not in valid_periods:
             raise ValueError(f"Period type must be one of: {', '.join(valid_periods)}")
-
-        if self.amount is not None and not isinstance(self.amount, Decimal):
-            self.amount = Decimal(str(self.amount))
-
-        if self.start_date is not None and isinstance(self.start_date, str):
-            self.start_date = datetime.strptime(self.start_date, "%Y-%m-%d").date()
-
-        if self.end_date is not None and isinstance(self.end_date, str):
-            self.end_date = datetime.strptime(self.end_date, "%Y-%m-%d").date()
 
 
 class DatabaseSchema:

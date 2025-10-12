@@ -6,7 +6,7 @@ interface for financial data queries.
 """
 
 from pathlib import Path
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, Optional, Sequence
 
 import pandas as pd
 from fastapi import FastAPI
@@ -51,7 +51,7 @@ class BudgetAnalyzer:
         self.encoding = encoding
         self.df = pd.DataFrame(columns=list(COLUMNS_MAP.values()))
 
-    def load_data(self):
+    def load_data(self) -> None:
         """Loads budget data from the CSV file."""
         try:
             self.df = pd.read_csv(self.csv_path, encoding=self.encoding)
@@ -116,10 +116,11 @@ class BudgetAnalyzer:
 
 
 # グローバルインスタンス
-analyzer = None
+analyzer: Optional[BudgetAnalyzer] = None
 
 
-@server.list_tools()
+# mcp Server のデコレータが未型定義のため、mypy の誤検知を抑制
+@server.list_tools()  # type: ignore[misc,no-untyped-call]
 async def list_tools() -> Sequence[Tool]:
     """Lists available tools for the server."""
 

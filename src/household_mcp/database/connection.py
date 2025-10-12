@@ -74,11 +74,11 @@ class DatabaseConnection:
                     except sqlite3.Error as e:
                         logger.error("Error closing database connection: %s", e)
 
-    def __enter__(self):
+    def __enter__(self) -> sqlite3.Connection:
         """コンテキストマネージャーのエントリ."""
         return self.connect()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """コンテキストマネージャーの終了."""
         if exc_type is not None:
             logger.error("Exception occurred in database context: %s", exc_val)
@@ -127,7 +127,7 @@ class DatabaseConnection:
     def execute_query(
         self,
         query: str,
-        parameters: Optional[tuple] = None,
+        parameters: Optional[tuple[Any, ...]] = None,
         fetch_one: bool = False,
         fetch_all: bool = True,
     ) -> Optional[Any]:
@@ -169,7 +169,7 @@ class DatabaseConnection:
             logger.error("Parameters: %s", parameters)
             raise
 
-    def execute_many(self, query: str, parameters_list: list) -> int:
+    def execute_many(self, query: str, parameters_list: list[tuple[Any, ...]]) -> int:
         """複数レコードの一括処理.
 
         Args:
@@ -195,7 +195,7 @@ class DatabaseConnection:
             logger.error("Query: %s", query)
             raise
 
-    def get_table_names(self) -> list:
+    def get_table_names(self) -> list[str]:
         """データベース内のテーブル名一覧を取得.
 
         Returns:
