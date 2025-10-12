@@ -1,13 +1,26 @@
 """Pytest configuration for the household MCP server tests."""
 
-from __future__ import annotations
-
 import sys
+import warnings
 from pathlib import Path
 
 
-def pytest_configure() -> None:
+def pytest_configure():
+    # Ensure 'src' is importable for tests
     root = Path(__file__).resolve().parent.parent
     src_path = root / "src"
     if str(src_path) not in sys.path:
         sys.path.insert(0, str(src_path))
+
+    # Suppress matplotlib glyph warnings globally (already filtered in code, double-safety)
+    warnings.filterwarnings(
+        "ignore",
+        message=r"Glyph .* missing from current font",
+        category=UserWarning,
+    )
+    # Suppress dateutil utcfromtimestamp deprecation warning in test output
+    warnings.filterwarnings(
+        "ignore",
+        message=r"datetime\.datetime\.utcfromtimestamp\(\) is deprecated",
+        category=DeprecationWarning,
+    )

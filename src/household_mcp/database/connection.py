@@ -95,17 +95,32 @@ class DatabaseConnection:
             sqlite3.Error: データベースエラー
         """
         connection = self.connect()
+        savepoint = False
         try:
-            # トランザクション開始（自動コミット無効化）
-            connection.execute("BEGIN")
+            # 既にトランザクション中ならSAVEPOINTを使用
+            if getattr(connection, "in_transaction", False):
+                connection.execute("SAVEPOINT sp_txn")
+                savepoint = True
+            else:
+                # トランザクション開始（自動コミット無効化）
+                connection.execute("BEGIN")
+
             yield connection
-            # 正常終了でコミット
-            connection.commit()
+
+            # 正常終了でコミット/リリース
+            if savepoint:
+                connection.execute("RELEASE SAVEPOINT sp_txn")
+            else:
+                connection.commit()
             logger.debug("Transaction committed successfully")
 
         except Exception as e:
             # エラー発生でロールバック
-            connection.rollback()
+            if savepoint:
+                connection.execute("ROLLBACK TO SAVEPOINT sp_txn")
+                connection.execute("RELEASE SAVEPOINT sp_txn")
+            else:
+                connection.rollback()
             logger.error("Transaction rolled back due to error: %s", e)
             raise
 
@@ -215,7 +230,18 @@ class DatabaseConnection:
         Returns:
             行数
         """
-        query = f"SELECT COUNT(*) FROM {table_name}"
+        # テーブル名はSQLパラメータとして渡せないため、厳密な検証＋ホワイトリストで安全性を担保
+        import re as _re  # local import to avoid top-level dependency at import time
+
+        if not _re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", table_name):
+            raise ValueError("Invalid table name")
+
+        allowed_tables = self.get_table_names()
+        if table_name not in allowed_tables:
+            raise ValueError(f"Table '{table_name}' does not exist or is not allowed")
+
+        # テーブル名はSQLパラメータ化できないため、厳密な検証後のみ埋め込む
+        query = f'SELECT COUNT(*) FROM "{table_name}"'  # nosec B608
         result = self.execute_query(query, fetch_one=True)
         return result[0] if result else 0
 

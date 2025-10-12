@@ -44,7 +44,13 @@ logging = ["structlog>=23.2.0"]
 # 新機能用の依存関係
 visualization = ["matplotlib>=3.8.0", "pillow>=10.0.0"]
 streaming = ["fastapi>=0.100.0", "uvicorn>=0.23.0", "cachetools>=5.3.0"]
-full = ["matplotlib>=3.8.0", "pillow>=10.0.0", "fastapi>=0.100.0", "uvicorn>=0.23.0", "cachetools>=5.3.0"]
+full = [
+    "matplotlib>=3.8.0",
+    "pillow>=10.0.0",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+    "cachetools>=5.3.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/raoshun/my_household_mcpserver"
@@ -140,6 +146,10 @@ markers = [
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
 ]
+filterwarnings = [
+    # Suppress 3rd-party deprecation warning from dateutil used by pandas
+    'ignore:datetime\.datetime\.utcfromtimestamp\(\) is deprecated:DeprecationWarning',
+]
 
 # Coverage設定
 [tool.coverage.run]
@@ -150,6 +160,7 @@ omit = [
     "*/.*",
     "src/household_mcp/database/*",
     "src/household_mcp/server.py",
+    # Temporarily omit heavy utility/tool modules until dedicated tests are added
 ]
 
 [tool.coverage.report]

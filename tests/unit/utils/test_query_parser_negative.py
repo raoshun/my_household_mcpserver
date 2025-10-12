@@ -1,13 +1,15 @@
 """Negative/edge case tests for resolve_trend_query and helpers."""
+
 from __future__ import annotations
 
-import pytest
 from datetime import date
 
+import pytest
+
 from household_mcp.utils.query_parser import (
+    ValidationError,
     resolve_trend_query,
     sorted_available_months,
-    ValidationError,
 )
 
 AVAILABLE_MONTHS = [

@@ -1,3 +1,12 @@
+"""FastMCP server entry point for household budget analysis.
+
+This module serves as the main entry point for the FastMCP server implementation,
+providing household budget analysis capabilities through MCP protocol.
+It handles command-line arguments and initializes the server with appropriate
+transport configurations.
+"""
+
+import argparse
 from typing import Optional
 
 from fastmcp import FastMCP
@@ -5,12 +14,29 @@ from fastmcp import FastMCP
 from household_mcp.dataloader import HouseholdDataLoader
 from household_mcp.tools import category_trend_summary, get_category_trend
 
-# サーバを初期化 & DataLoader インスタンス生成
+# コマンドライン引数で transport を受け取る
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--transport",
+    nargs="+",
+    default=["stdio"],
+    help="Transport(s) for MCP server",
+)
+parser.add_argument("--host", default="localhost")
+parser.add_argument("--port", type=int, default=8000)
+args, unknown = parser.parse_known_args()
+
 mcp = FastMCP("my_household_mcp")
 data_loader = HouseholdDataLoader(src_dir="data")
 
+# transportにstreamable-httpが含まれる場合はmime_typeをtext/event-streamに
+is_streamable = "streamable-http" in args.transport
 
-@mcp.resource("data://category_hierarchy")
+
+@mcp.resource(
+    "data://category_hierarchy",
+    mime_type="text/event-stream" if is_streamable else None,
+)
 def get_category_hierarchy() -> dict[str, list[str]]:
     """
     家計簿のカテゴリの階層構造を取得する関数。
@@ -24,7 +50,9 @@ def get_category_hierarchy() -> dict[str, list[str]]:
 # 家計簿から指定した年月の収支を取得するツール
 
 
-@mcp.tool("get_monthly_household")
+@mcp.tool(
+    "get_monthly_household",
+)
 def get_monthly_household(year: int, month: int) -> list[dict]:
     """
     指定した年月の家計簿から収支を取得する関数。
@@ -40,7 +68,9 @@ def get_monthly_household(year: int, month: int) -> list[dict]:
     return df.to_dict(orient="records")
 
 
-@mcp.resource("data://available_months")
+@mcp.resource(
+    "data://available_months", mime_type="text/event-stream" if is_streamable else None
+)
 def get_available_months() -> list[dict[str, int]]:
     """利用可能な月のリストを CSV ファイルから動的に検出して返す。"""
 
@@ -48,7 +78,10 @@ def get_available_months() -> list[dict[str, int]]:
     return [{"year": year, "month": month} for year, month in months]
 
 
-@mcp.resource("data://household_categories")
+@mcp.resource(
+    "data://household_categories",
+    mime_type="text/event-stream" if is_streamable else None,
+)
 def get_household_categories() -> dict[str, list[str]]:
     """
     家計簿のカテゴリ一覧を取得する関数。
@@ -59,7 +92,10 @@ def get_household_categories() -> dict[str, list[str]]:
     return data_loader.category_hierarchy(year=2025, month=7)
 
 
-@mcp.resource("data://category_trend_summary")
+@mcp.resource(
+    "data://category_trend_summary",
+    mime_type="text/event-stream" if is_streamable else None,
+)
 def get_category_trend_summary() -> dict:
     """トレンド分析用のカテゴリ集計結果を返す。"""
 
@@ -84,4 +120,9 @@ def run_get_category_trend(
 
 # 実行処理
 if __name__ == "__main__":
-    mcp.run(transport="stdio")
+    # transportはリスト型なので、最初の要素のみ渡す
+    transport = args.transport[0]
+    if transport == "stdio":
+        mcp.run(transport=transport)
+    else:
+        mcp.run(transport=transport, host=args.host, port=args.port)

@@ -1,15 +1,19 @@
-import asyncio
-import json
-import locale
-from datetime import datetime, timedelta
+"""Household MCP Server implementation.
+
+This module provides an MCP server for household budget analysis with FastAPI integration.
+It includes tools for analyzing budget data from CSV files and provides natural language
+interface for financial data queries.
+"""
+
 from pathlib import Path
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, Sequence
 
 import pandas as pd
+from fastapi import FastAPI
 from mcp.server import Server
-from mcp.types import Resource, TextContent, Tool
+from mcp.types import Tool
 
-from src.household_mcp.dataloader import load_csv_from_month
+# from src.household_mcp.dataloader import load_csv_from_month
 
 # サーバーインスタンスの作成
 server = Server("household-mcp")
@@ -45,6 +49,7 @@ class BudgetAnalyzer:
         """
         self.csv_path = csv_path
         self.encoding = encoding
+        self.df = pd.DataFrame(columns=list(COLUMNS_MAP.values()))
 
     def load_data(self):
         """Loads budget data from the CSV file."""
@@ -63,7 +68,7 @@ class BudgetAnalyzer:
 
             print(f"データ読み込み完了: {len(self.df)}件のレコード")
 
-        except Exception as e:
+        except (FileNotFoundError, pd.errors.ParserError, UnicodeDecodeError) as e:
             print(f"データ読み込みエラー: {e}")
             self.df = pd.DataFrame(columns=list(COLUMNS_MAP.values()))
 
@@ -165,3 +170,11 @@ async def list_tools() -> Sequence[Tool]:
             },
         ),
     ]
+
+
+# FastAPI/uvicorn用のASGIアプリエクスポート
+app = FastAPI()
+
+# 必要に応じてFastAPIルーティング追加（現状は空）
+
+# MCP ServerのASGIラッパー（今後拡張する場合はここで統合）

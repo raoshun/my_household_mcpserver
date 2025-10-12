@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import date
-import re
 from typing import Iterable, Mapping, Optional, Sequence
 
 from ..exceptions import ValidationError
@@ -23,7 +23,11 @@ class TrendQuery:
     def month_span(self) -> int:
         """Return the number of months within the span (inclusive)."""
 
-        return (self.end.year - self.start.year) * 12 + (self.end.month - self.start.month) + 1
+        return (
+            (self.end.year - self.start.year) * 12
+            + (self.end.month - self.start.month)
+            + 1
+        )
 
 
 def to_month_key(year: int, month: int) -> str:
@@ -45,7 +49,9 @@ def _parse_month_string(value: str) -> date:
     return date(year, month, 1)
 
 
-def sorted_available_months(available_months: Sequence[Mapping[str, int]]) -> list[date]:
+def sorted_available_months(
+    available_months: Sequence[Mapping[str, int]],
+) -> list[date]:
     """Convert available month dictionaries to a sorted list of dates (ascending)."""
 
     months: set[date] = set()
@@ -63,7 +69,9 @@ def sorted_available_months(available_months: Sequence[Mapping[str, int]]) -> li
     return sorted(months)
 
 
-def _resolve_category(category: Optional[str], available_categories: Optional[Iterable[str]]) -> Optional[str]:
+def _resolve_category(
+    category: Optional[str], available_categories: Optional[Iterable[str]]
+) -> Optional[str]:
     if category is None:
         return None
 
@@ -110,14 +118,18 @@ def resolve_trend_query(
     if end_month:
         resolved_end = _parse_month_string(end_month)
         if resolved_end not in index_map:
-            raise ValidationError(f"指定した終了月 {end_month!r} のデータが見つかりません")
+            raise ValidationError(
+                f"指定した終了月 {end_month!r} のデータが見つかりません"
+            )
     else:
         resolved_end = months[-1]
 
     if start_month:
         resolved_start = _parse_month_string(start_month)
         if resolved_start not in index_map:
-            raise ValidationError(f"指定した開始月 {start_month!r} のデータが見つかりません")
+            raise ValidationError(
+                f"指定した開始月 {start_month!r} のデータが見つかりません"
+            )
     else:
         end_idx = index_map[resolved_end]
         start_idx = max(0, end_idx - default_window + 1)
@@ -135,4 +147,6 @@ def resolve_trend_query(
 
     resolved_category = _resolve_category(category, available_categories)
 
-    return TrendQuery(category=resolved_category, start=resolved_start, end=months[end_idx])
+    return TrendQuery(
+        category=resolved_category, start=resolved_start, end=months[end_idx]
+    )

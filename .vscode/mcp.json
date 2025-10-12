@@ -15,7 +15,8 @@
         "run",
         "python",
         "src/server.py"
-      ]
+      ],
+      "cwd": "${workspaceFolder}"
     }
   }
 }

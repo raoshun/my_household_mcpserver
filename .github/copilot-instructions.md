@@ -1,5 +1,8 @@
 # GitHub Copilot Instructions for Spec-Driven Development
 
+## 使用言語
+日本語でレビューしてください。
+
 ## Overview
 
 This project follows **Kiro's Spec-Driven Development** methodology with a structured workflow using three core markdown files:

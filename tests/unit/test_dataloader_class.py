@@ -1,4 +1,5 @@
 """Tests for the HouseholdDataLoader class (class-specific behaviors)."""
+
 from __future__ import annotations
 
 import time
@@ -6,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from household_mcp.dataloader import HouseholdDataLoader, DataSourceError
+from household_mcp.dataloader import DataSourceError, HouseholdDataLoader
 
 
 def test_category_hierarchy_latest() -> None:

@@ -93,6 +93,36 @@ uv run pytest
 
 カバレッジ閾値 80% を満たすと成功です。
 
+## 日本語フォント（CJK）について
+
+グラフ出力で日本語（漢字・カナ）を正しく描画するには、CJKフォントの導入が必要です。Linux環境では Noto Sans CJK JP の導入を推奨します。
+
+### 1) 自動インストールスクリプト（Linux）
+
+root権限で以下を実行してください。
+
+```bash
+sudo bash scripts/install_cjk_fonts.sh
+```
+
+スクリプトはディストリビューションごとに適切なパッケージをインストールし、`fc-cache` を更新します。実行後、アプリ（pytestやuvicorn）を再起動してください。
+
+### 2) 手動インストールの例
+
+- Debian/Ubuntu: `sudo apt-get update && sudo apt-get install -y fonts-noto-cjk`
+- Arch: `sudo pacman -Sy --noconfirm noto-fonts-cjk`
+- Alpine: `sudo apk add --no-cache font-noto-cjk`
+
+### 3) 検出ロジック
+
+`ChartGenerator` は以下の順にフォントを検出します。
+
+1. `font_path` 引数で明示指定
+2. OSの代表的なパス（Noto Sans CJK JP 等）
+3. matplotlib の `font_manager` による検索
+
+フォント未検出時は描画自体は可能ですが、文字化け防止のためフォント導入を推奨します。
+
 ## 開発
 
 このプロジェクトは [Kiro's Spec-Driven Development](https://github.com/kiro-dev) に従って開発されています：

@@ -49,13 +49,14 @@ class DataValidator:
         if date_str is None:
             raise ValidationError(f"{field_name}は必須です", field_name)
 
-        # 既にdateオブジェクトの場合
-        if isinstance(date_str, date_type):
-            return date_str
-
-        # datetimeオブジェクトの場合
+        # datetimeはdateのサブクラス
+        # 先にdatetimeの判定を行う必要があります
         if isinstance(date_str, datetime):
             return date_str.date()
+
+        # dateオブジェクトの場合（datetimeより後に判定）
+        if isinstance(date_str, date_type):
+            return date_str
 
         # 文字列の場合
         if not isinstance(date_str, str):
