@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from ..analysis import CategoryTrendAnalyzer
 from ..dataloader import iter_available_months, load_csv_from_month
@@ -64,7 +64,7 @@ def category_trend_summary(
     src_dir: str = _DEFAULT_SRC_DIR,
     window: int = 12,
     top_n: int = 3,
-) -> dict:
+) -> dict[str, Any]:
     """Return category trend metrics summary for the latest window."""
 
     months = _list_available_months(src_dir)
@@ -94,7 +94,7 @@ def get_category_trend(
     src_dir: str = _DEFAULT_SRC_DIR,
     top_n: int = 3,
     default_window: int = 12,
-) -> dict:
+) -> dict[str, Any]:
     """Return a formatted trend analysis for the requested category/month range."""
 
     months = _list_available_months(src_dir)

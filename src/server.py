@@ -8,7 +8,7 @@ transport configurations.
 
 import argparse
 import warnings
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 from fastmcp import FastMCP
 
@@ -66,7 +66,7 @@ def get_category_hierarchy() -> dict[str, list[str]]:
 @mcp.tool(
     "get_monthly_household",
 )
-def get_monthly_household(year: int, month: int) -> list[dict]:
+def get_monthly_household(year: int, month: int) -> list[dict[str, Any]]:
     """
     指定した年月の家計簿から収支を取得する関数。
 
@@ -109,7 +109,7 @@ def get_household_categories() -> dict[str, list[str]]:
     "data://category_trend_summary",
     mime_type="text/event-stream" if is_streamable else None,
 )
-def get_category_trend_summary() -> dict:
+def get_category_trend_summary() -> dict[str, Any]:
     """トレンド分析用のカテゴリ集計結果を返す。"""
 
     return category_trend_summary(src_dir="data")
@@ -120,7 +120,7 @@ def run_get_category_trend(
     category: Optional[str] = None,
     start_month: Optional[str] = None,
     end_month: Optional[str] = None,
-) -> dict:
+) -> dict[str, Any]:
     """カテゴリ別の支出トレンドを取得する MCP ツール。"""
 
     return get_category_trend(
