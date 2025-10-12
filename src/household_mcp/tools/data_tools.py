@@ -299,9 +299,7 @@ class TransactionManager:
         # Bandit: update_fields are pre-validated field names from allowed list
         # nosec B608
         query = (
-            "UPDATE transactions\n"
-            f"SET {', '.join(update_fields)}\n"
-            "WHERE id = ?\n"
+            "UPDATE transactions\n" f"SET {', '.join(update_fields)}\n" "WHERE id = ?\n"
         )  # nosec B608: update_fields are whitelisted column names
 
         with self.db_connection.transaction() as conn:
