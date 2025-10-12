@@ -26,11 +26,11 @@ def test_end_to_end_pipeline_with_real_data() -> None:
         available_categories=categories,
     )
 
+    analyzer = CategoryTrendAnalyzer(src_dir=DATA_DIR)
     metrics = analyzer.metrics_for_query(query)
     assert metrics, "metrics should not be empty"
     assert metrics[-1].category == "食費"
     assert metrics[0].month == date(2025, 6, 1)
-    assert metrics[-1].month == date(2025, 7, 1)
     assert metrics[-1].month == date(2025, 7, 1)
 
     resp = get_category_trend(
