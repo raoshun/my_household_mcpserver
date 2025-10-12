@@ -101,7 +101,7 @@ class CategoryTrendAnalyzer:
         # 金額は負の値（支出）なので、絶対値降順で上位カテゴリを決定
         totals["abs_amount"] = totals["amount"].abs()
         top = totals.sort_values("abs_amount", ascending=False).head(top_n)
-        return top["category"].tolist()
+        return [str(cat) for cat in top["category"].tolist()]
 
     def _get_aggregated(self, months: Tuple[MonthTuple, ...]) -> pd.DataFrame:
         signature = self._compute_signature(months)

@@ -8,7 +8,7 @@ transport configurations.
 
 import argparse
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from fastmcp import FastMCP
 
@@ -57,7 +57,8 @@ def get_category_hierarchy() -> dict[str, list[str]]:
     Returns:
         dict[str, list[str]]: カテゴリの階層構造(大項目: [中項目1, 中項目2, ...])を表す辞書
     """
-    return data_loader.category_hierarchy(year=2025, month=7)
+    result = data_loader.category_hierarchy(year=2025, month=7)
+    return dict(result)  # 明示的キャスト
 
 
 # 家計簿から指定した年月の収支を取得するツール
@@ -78,7 +79,7 @@ def get_monthly_household(year: int, month: int) -> list[dict[str, Any]]:
         list[dict]: 支出のリスト
     """
     df = data_loader.load_month(year, month)
-    return df.to_dict(orient="records")
+    return [dict(record) for record in df.to_dict(orient="records")]
 
 
 @mcp.resource(
@@ -102,7 +103,8 @@ def get_household_categories() -> dict[str, list[str]]:
     Returns:
         dict[str, list[str]]: カテゴリの階層構造(大項目: [中項目1, 中項目2, ...])を表す辞書
     """
-    return data_loader.category_hierarchy(year=2025, month=7)
+    result = data_loader.category_hierarchy(year=2025, month=7)
+    return dict(result)  # 明示的キャスト
 
 
 @mcp.resource(
@@ -112,7 +114,8 @@ def get_household_categories() -> dict[str, list[str]]:
 def get_category_trend_summary() -> dict[str, Any]:
     """トレンド分析用のカテゴリ集計結果を返す。"""
 
-    return category_trend_summary(src_dir="data")
+    result = category_trend_summary(src_dir="data")
+    return dict(result)  # 明示的キャスト
 
 
 @mcp.tool("get_category_trend")
@@ -123,12 +126,13 @@ def run_get_category_trend(
 ) -> dict[str, Any]:
     """カテゴリ別の支出トレンドを取得する MCP ツール。"""
 
-    return get_category_trend(
+    result = get_category_trend(
         category=category,
         start_month=start_month,
         end_month=end_month,
         src_dir="data",
     )
+    return dict(result)  # 明示的キャスト
 
 
 # 実行処理
