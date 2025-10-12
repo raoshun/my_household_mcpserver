@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  # Husky v7+ をCIインストール時のみ無効化（npm scripts実行時にフックをスキップ）
+  # 将来 npm ci を追加した場合にも有効になります
+  HUSKY: 0
+
 jobs:
   build-test:
     runs-on: ubuntu-latest
