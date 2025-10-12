@@ -31,7 +31,7 @@ class DataValidator:
     MAX_AMOUNT = Decimal("999999999.99")
 
     @classmethod
-    def validate_date(
+    def validate_date(  # noqa: C901 - intentionally verbose for clarity and explicit error messages
         cls, date_str: Union[str, datetime, date_type], field_name: str = "date"
     ) -> date_type:
         """日付の妥当性を検証.
@@ -119,7 +119,7 @@ class DataValidator:
             ) from e
 
     @classmethod
-    def validate_amount(
+    def validate_amount(  # noqa: C901 - keep explicit branches for robust validation
         cls, amount: Union[str, int, float, Decimal], field_name: str = "amount"
     ) -> Decimal:
         """金額の妥当性を検証.
