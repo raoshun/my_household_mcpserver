@@ -139,7 +139,7 @@ class ChartGenerator:
                     )
                 colors = self._get_colors(len(chart_data))
 
-                _, texts, autotexts = ax.pie(
+                pie_result = ax.pie(
                     chart_data["amount"],
                     labels=chart_data["category"],
                     colors=colors,
@@ -147,7 +147,12 @@ class ChartGenerator:
                     startangle=90,
                     counterclock=False,
                 )
-                self._style_pie_labels(texts, autotexts, font_prop)
+                if len(pie_result) == 3:
+                    _, texts, autotexts = pie_result
+                    self._style_pie_labels(texts, autotexts, font_prop)
+                else:
+                    _, texts = pie_result
+                    self._style_pie_labels(texts, [], font_prop)
                 ax.set_title(
                     title,
                     fontsize=16,
