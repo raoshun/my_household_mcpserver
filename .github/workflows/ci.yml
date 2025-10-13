@@ -81,9 +81,9 @@ jobs:
       - name: Create virtual environment and install dependencies
         run: |
           uv venv
-          uv pip install -e .[web,${{ matrix.extras }}]
+          uv pip install -e .[web,visualization,${{ matrix.extras }}]
           uv pip install pytest pytest-cov
 
       - name: Run tests (smoke)
         run: |
-          uv run pytest -m "not slow" --maxfail=1
+          uv run pytest -m "not slow" --maxfail=1 --no-cov
