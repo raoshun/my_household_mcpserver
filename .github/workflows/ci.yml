@@ -27,9 +27,16 @@ jobs:
         run: |
           pip install uv
 
+      - name: Install system fonts for Japanese support
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-cjk
+
       - name: Create virtual environment and install dependencies
         run: |
-          uv sync --group dev --extra web --extra visualization
+          uv venv
+          uv pip install -e .[web,visualization]
+          uv pip install pytest pytest-cov black isort flake8 mypy bandit[toml] pre-commit
 
       - name: Run tests
         run: |
@@ -66,9 +73,16 @@ jobs:
         run: |
           pip install uv
 
+      - name: Install system fonts for Japanese support
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-cjk
+
       - name: Create virtual environment and install dependencies
         run: |
-          uv sync --group dev --extra web --extra ${{ matrix.extras }}
+          uv venv
+          uv pip install -e .[web,${{ matrix.extras }}]
+          uv pip install pytest pytest-cov
 
       - name: Run tests (smoke)
         run: |

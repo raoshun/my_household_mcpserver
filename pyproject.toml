@@ -36,13 +36,13 @@ web = [
     "pydantic>=2.11,<3",
     "python-multipart>=0.0.6",
 ]
-viz = ["matplotlib==3.8.2", "plotly==5.17.0"]
+viz = ["matplotlib>=3.8.0", "plotly>=5.17.0", "pillow>=10.0.0"]
 db = ["sqlalchemy>=2.0.23", "alembic>=1.12.1"]
 auth = ["passlib[bcrypt]>=1.7.4", "python-jose[cryptography]>=3.3.0"]
 io = ["aiofiles>=23.2.1", "httpx>=0.25.2"]
 logging = ["structlog>=23.2.0"]
-# 新機能用の依存関係
-visualization = ["matplotlib>=3.8.0", "pillow>=10.0.0"]
+# 新機能用の依存関係 (vizのエイリアス)
+visualization = ["matplotlib>=3.8.0", "plotly>=5.17.0", "pillow>=10.0.0"]
 streaming = ["fastapi>=0.100.0", "uvicorn>=0.23.0", "cachetools>=5.3.0"]
 full = [
     "matplotlib>=3.8.0",

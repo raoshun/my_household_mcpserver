@@ -5,7 +5,10 @@ import pandas as pd
 import pytest
 
 from household_mcp.exceptions import ChartGenerationError
-from household_mcp.visualization.chart_generator import ChartGenerator
+from household_mcp.visualization.chart_generator import (
+    HAS_VISUALIZATION_DEPS,
+    ChartGenerator,
+)
 
 
 def sample_pie_data():
@@ -27,6 +30,9 @@ def sample_bar_data():
 
 
 def test_create_monthly_pie_chart():
+    if not HAS_VISUALIZATION_DEPS:
+        pytest.skip("Visualization依存関係が見つからないためテストをスキップします")
+
     font_path = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
     if not Path(font_path).exists():
         pytest.skip("日本語フォントが見つからないためテストをスキップします")
@@ -37,6 +43,9 @@ def test_create_monthly_pie_chart():
 
 
 def test_create_category_trend_line():
+    if not HAS_VISUALIZATION_DEPS:
+        pytest.skip("Visualization依存関係が見つからないためテストをスキップします")
+
     font_path = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
     if not Path(font_path).exists():
         pytest.skip("日本語フォントが見つからないためテストをスキップします")
@@ -49,6 +58,9 @@ def test_create_category_trend_line():
 
 
 def test_create_comparison_bar_chart():
+    if not HAS_VISUALIZATION_DEPS:
+        pytest.skip("Visualization依存関係が見つからないためテストをスキップします")
+
     font_path = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
     if not Path(font_path).exists():
         pytest.skip("日本語フォントが見つからないためテストをスキップします")
@@ -59,7 +71,13 @@ def test_create_comparison_bar_chart():
 
 
 def test_invalid_data_raises():
+    if not HAS_VISUALIZATION_DEPS:
+        pytest.skip("Visualization依存関係が見つからないためテストをスキップします")
+
     font_path = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
+    if not Path(font_path).exists():
+        pytest.skip("日本語フォントが見つからないためテストをスキップします")
+
     gen = ChartGenerator(font_path=font_path)
     with pytest.raises(ChartGenerationError):
         gen.create_monthly_pie_chart(pd.DataFrame({"foo": [1], "bar": [2]}))
