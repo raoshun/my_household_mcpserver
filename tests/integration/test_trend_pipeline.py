@@ -1,8 +1,11 @@
-from __future__ import annotations
-
 """E2E pipeline test for trend analysis: query -> analyzer -> formatter."""
 
+from __future__ import annotations
+
 from datetime import date
+from pathlib import Path
+
+import pytest
 
 from household_mcp.analysis import CategoryTrendAnalyzer
 from household_mcp.tools.trend_tool import get_category_trend
@@ -12,6 +15,13 @@ from household_mcp.utils import resolve_trend_query
 def test_end_to_end_pipeline_with_real_data() -> None:
     # 実データ（data/ 以下）を利用したエンドツーエンド確認
     DATA_DIR = "data"
+    # CIなど実データが同梱されない環境ではスキップ
+    required = [
+        Path(DATA_DIR) / "収入・支出詳細_2025-06-01_2025-06-30.csv",
+        Path(DATA_DIR) / "収入・支出詳細_2025-07-01_2025-07-31.csv",
+    ]
+    if any(not p.exists() for p in required):
+        pytest.skip("実データCSVが見つからないため統合テストをスキップします")
     available = [
         {"year": 2025, "month": 6},
         {"year": 2025, "month": 7},

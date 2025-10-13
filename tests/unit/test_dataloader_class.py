@@ -11,6 +11,11 @@ from household_mcp.dataloader import DataSourceError, HouseholdDataLoader
 
 
 def test_category_hierarchy_latest() -> None:
+    # データファイルの存在確認
+    data_dir = Path("data")
+    if not data_dir.exists() or not any(data_dir.glob("*.csv")):
+        pytest.skip("テスト用データファイルが見つからないためテストをスキップします")
+
     loader = HouseholdDataLoader(src_dir="data")
     # 確実に一つ以上の月がある前提（既存テストと同じ前提）
     hierarchy = loader.category_hierarchy()

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from household_mcp.dataloader import (
@@ -12,6 +14,10 @@ from household_mcp.dataloader import (
 
 
 def test_load_csv_from_month_filters_data() -> None:
+    csv_path = Path("data") / "収入・支出詳細_2025-07-01_2025-07-31.csv"
+    if not csv_path.exists():
+        pytest.skip("テスト用CSVファイルが見つからないためテストをスキップします")
+
     df = load_csv_from_month(2025, 7, src_dir="data")
 
     assert not df.empty
@@ -22,6 +28,10 @@ def test_load_csv_from_month_filters_data() -> None:
 
 
 def test_iter_available_months_detects_recent_month() -> None:
+    csv_path = Path("data") / "収入・支出詳細_2025-07-01_2025-07-31.csv"
+    if not csv_path.exists():
+        pytest.skip("テスト用CSVファイルが見つからないためテストをスキップします")
+
     months = list(iter_available_months(src_dir="data"))
 
     assert (2025, 7) in months

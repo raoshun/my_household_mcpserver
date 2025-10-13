@@ -1,4 +1,5 @@
 import io
+from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -27,6 +28,8 @@ def sample_bar_data():
 
 def test_create_monthly_pie_chart():
     font_path = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
+    if not Path(font_path).exists():
+        pytest.skip("日本語フォントが見つからないためテストをスキップします")
     gen = ChartGenerator(font_path=font_path)
     buf = gen.create_monthly_pie_chart(sample_pie_data(), title="テスト円グラフ")
     assert isinstance(buf, io.BytesIO)
@@ -35,6 +38,8 @@ def test_create_monthly_pie_chart():
 
 def test_create_category_trend_line():
     font_path = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
+    if not Path(font_path).exists():
+        pytest.skip("日本語フォントが見つからないためテストをスキップします")
     gen = ChartGenerator(font_path=font_path)
     buf = gen.create_category_trend_line(
         sample_line_data(), category="食費", title="推移テスト"
@@ -45,6 +50,8 @@ def test_create_category_trend_line():
 
 def test_create_comparison_bar_chart():
     font_path = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
+    if not Path(font_path).exists():
+        pytest.skip("日本語フォントが見つからないためテストをスキップします")
     gen = ChartGenerator(font_path=font_path)
     buf = gen.create_comparison_bar_chart(sample_bar_data(), title="比較棒グラフ")
     assert isinstance(buf, io.BytesIO)
