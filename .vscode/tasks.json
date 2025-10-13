@@ -66,7 +66,10 @@
       "label": "Learning Support: Check Review Schedule",
       "type": "shell",
       "command": "python",
-      "args": [".learning_support/review_scheduler.py", "--check"],
+      "args": [
+        ".learning_support/review_scheduler.py",
+        "--check"
+      ],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -83,7 +86,12 @@
       "label": "TDD: Run Tests (Red Phase)",
       "type": "shell",
       "command": "python",
-      "args": ["-m", "pytest", "${input:test_file}", "-v"],
+      "args": [
+        "-m",
+        "pytest",
+        "${input:test_file}",
+        "-v"
+      ],
       "group": {
         "kind": "test",
         "isDefault": true
@@ -97,7 +105,9 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "problemMatcher": ["$python"]
+      "problemMatcher": [
+        "$python"
+      ]
     },
     {
       "label": "Towncrier: Create Feature Fragment",
@@ -147,7 +157,9 @@
       "label": "Towncrier: Generate Changelog",
       "type": "shell",
       "command": "towncrier",
-      "args": ["--draft"],
+      "args": [
+        "--draft"
+      ],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -164,7 +176,9 @@
       "label": "Learning Support: Full Check",
       "type": "shell",
       "command": "python",
-      "args": [".learning_support/full_learning_check.py"],
+      "args": [
+        ".learning_support/full_learning_check.py"
+      ],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -180,8 +194,11 @@
     {
       "label": "Install Dependencies",
       "type": "shell",
-      "command": "poetry",
-      "args": ["install", "--with", "dev"],
+      "command": "uv",
+      "args": [
+        "install",
+        "--dev"
+      ],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -193,8 +210,11 @@
     {
       "label": "Run Tests",
       "type": "shell",
-      "command": "poetry",
-      "args": ["run", "pytest"],
+      "command": "uv",
+      "args": [
+        "run",
+        "pytest"
+      ],
       "group": {
         "kind": "test",
         "isDefault": true
@@ -209,8 +229,12 @@
     {
       "label": "Format Code",
       "type": "shell",
-      "command": "poetry",
-      "args": ["run", "black", "."],
+      "command": "uv",
+      "args": [
+        "run",
+        "black",
+        "."
+      ],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -222,8 +246,12 @@
     {
       "label": "Sort Imports",
       "type": "shell",
-      "command": "poetry",
-      "args": ["run", "isort", "."],
+      "command": "uv",
+      "args": [
+        "run",
+        "isort",
+        "."
+      ],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -235,8 +263,11 @@
     {
       "label": "Lint Code",
       "type": "shell",
-      "command": "poetry",
-      "args": ["run", "flake8"],
+      "command": "uv",
+      "args": [
+        "run",
+        "flake8"
+      ],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -248,8 +279,12 @@
     {
       "label": "Type Check",
       "type": "shell",
-      "command": "poetry",
-      "args": ["run", "mypy", "src/"],
+      "command": "uv",
+      "args": [
+        "run",
+        "mypy",
+        "src/"
+      ],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -261,8 +296,13 @@
     {
       "label": "Security Scan",
       "type": "shell",
-      "command": "poetry",
-      "args": ["run", "bandit", "-r", "src/"],
+      "command": "uv",
+      "args": [
+        "run",
+        "bandit",
+        "-r",
+        "src/"
+      ],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -287,7 +327,7 @@
     {
       "label": "Start Dev Server",
       "type": "shell",
-      "command": "poetry",
+      "command": "uv",
       "args": [
         "run",
         "uvicorn",
@@ -327,7 +367,11 @@
       "description": "TDDのフェーズを選択してください",
       "default": "red",
       "type": "pickString",
-      "options": ["red", "green", "refactor"]
+      "options": [
+        "red",
+        "green",
+        "refactor"
+      ]
     },
     {
       "id": "test_file",
