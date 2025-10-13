@@ -27,13 +27,9 @@ jobs:
         run: |
           pip install uv
 
-      - name: Create virtual environment
+      - name: Create virtual environment and install dependencies
         run: |
-          uv venv
-
-      - name: Install dependencies (with web & visualization)
-        run: |
-          uv pip install -e .[dev,web,visualization]
+          uv sync --group dev --extra web --extra visualization
 
       - name: Run tests
         run: |
@@ -70,13 +66,9 @@ jobs:
         run: |
           pip install uv
 
-      - name: Create virtual environment
+      - name: Create virtual environment and install dependencies
         run: |
-          uv venv
-
-      - name: Install dependencies (with ${{ matrix.extras }} + web)
-        run: |
-          uv pip install -e .[dev,web,${{ matrix.extras }}]
+          uv sync --group dev --extra web --extra ${{ matrix.extras }}
 
       - name: Run tests (smoke)
         run: |
