@@ -26,6 +26,7 @@ dependencies = [
     "pandas>=2.1.4",
     "numpy>=1.26.0",
     "mcp[cli]>=1.13.1",
+    "fastmcp>=0.4.0",
 ]
 
 [project.optional-dependencies]

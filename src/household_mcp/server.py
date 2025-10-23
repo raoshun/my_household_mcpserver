@@ -1,28 +1,143 @@
-"""Household MCP Server implementation.
+"""Household MCP Server unified implementation.
 
-This module provides an MCP server for household budget analysis with FastAPI integration.
-It includes tools for analyzing budget data from CSV files and provides natural language
-interface for financial data queries.
+This module provides a unified MCP server for household budget analysis with FastAPI integration.
+It includes tools for analyzing budget data from CSV files and provides natural language interface for financial data queries.
+Combines functionality from both server.py files into a single entry point.
 """
 
+import argparse
+import warnings
 from pathlib import Path
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, Optional
 
 import pandas as pd
 from fastapi import FastAPI
-from mcp.server import Server
-from mcp.types import Tool
+from fastmcp import FastMCP
 
-# from src.household_mcp.dataloader import load_csv_from_month
+from household_mcp.dataloader import HouseholdDataLoader
+from household_mcp.tools.trend_tool import category_trend_summary, get_category_trend
 
-# サーバーインスタンスの作成
-server = Server("household-mcp")
+# Suppress third-party deprecation warnings at runtime
+warnings.filterwarnings(
+    "ignore",
+    category=DeprecationWarning,
+    module="dateutil.*",
+)
+warnings.filterwarnings(
+    "ignore",
+    message="datetime.datetime.utcfromtimestamp.*is deprecated",
+    category=DeprecationWarning,
+)
 
-# データファイルのパス
-DATA_DIR = Path("data")
-DATA_DIR.mkdir(exist_ok=True)
+# コマンドライン引数で transport を受け取る
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--transport",
+    nargs="+",
+    default=["stdio"],
+    help="Transport(s) for MCP server",
+)
+parser.add_argument("--host", default="localhost")
+parser.add_argument("--port", type=int, default=8000)
+args, unknown = parser.parse_known_args()
 
-# MoneyForwardのCSV列名マッピング
+mcp = FastMCP("my_household_mcp")
+data_loader = HouseholdDataLoader(src_dir="data")
+
+# transportにstreamable-httpが含まれる場合はmime_typeをtext/event-streamに
+is_streamable = "streamable-http" in args.transport
+
+
+@mcp.resource(
+    "data://category_hierarchy",
+    mime_type="text/event-stream" if is_streamable else None,
+)
+def get_category_hierarchy() -> dict[str, list[str]]:
+    """
+    家計簿のカテゴリの階層構造を取得する関数。
+
+    Returns:
+        dict[str, list[str]]: カテゴリの階層構造(大項目: [中項目1, 中項目2, ...])を表す辞書
+    """
+    result = data_loader.category_hierarchy(year=2025, month=7)
+    return dict(result)  # 明示的キャスト
+
+
+# 家計簿から指定した年月の収支を取得するツール
+
+
+@mcp.tool(
+    "get_monthly_household",
+)
+def get_monthly_household(year: int, month: int) -> list[dict[str, Any]]:
+    """
+    指定した年月の家計簿から収支を取得する関数。
+
+    Args:
+        year (int): 年
+        month (int): 月
+
+    Returns:
+        list[dict]: 支出のリスト
+    """
+    df = data_loader.load_month(year, month)
+    return [dict(record) for record in df.to_dict(orient="records")]
+
+
+@mcp.resource(
+    "data://available_months", mime_type="text/event-stream" if is_streamable else None
+)
+def get_available_months() -> list[dict[str, int]]:
+    """利用可能な月のリストを CSV ファイルから動的に検出して返す。"""
+
+    months = list(data_loader.iter_available_months())
+    return [{"year": year, "month": month} for year, month in months]
+
+
+@mcp.resource(
+    "data://household_categories",
+    mime_type="text/event-stream" if is_streamable else None,
+)
+def get_household_categories() -> dict[str, list[str]]:
+    """
+    家計簿のカテゴリ一覧を取得する関数。
+
+    Returns:
+        dict[str, list[str]]: カテゴリの階層構造(大項目: [中項目1, 中項目2, ...])を表す辞書
+    """
+    result = data_loader.category_hierarchy(year=2025, month=7)
+    return dict(result)  # 明示的キャスト
+
+
+@mcp.resource(
+    "data://category_trend_summary",
+    mime_type="text/event-stream" if is_streamable else None,
+)
+def get_category_trend_summary() -> dict[str, Any]:
+    """トレンド分析用のカテゴリ集計結果を返す。"""
+
+    result = category_trend_summary(src_dir="data")
+    return dict(result)  # 明示的キャスト
+
+
+@mcp.tool("get_category_trend")
+def run_get_category_trend(
+    category: Optional[str] = None,
+    start_month: Optional[str] = None,
+    end_month: Optional[str] = None,
+) -> dict[str, Any]:
+    """カテゴリ別の支出トレンドを取得する MCP ツール。"""
+
+    result = get_category_trend(
+        category=category,
+        start_month=start_month,
+        end_month=end_month,
+        src_dir="data",
+    )
+    return dict(result)  # 明示的キャスト
+
+
+# MoneyForwardのCSV列名マッピング（BudgetAnalyzer用）
 COLUMNS_MAP = {
     0: "calc_target",
     1: "date",
@@ -41,12 +156,7 @@ class BudgetAnalyzer:
     """Analyzes budget data from a CSV file."""
 
     def __init__(self, csv_path: Path, encoding: str = "shift_jis"):
-        """Initializes the BudgetAnalyzer with the specified CSV file path and encoding.
-
-        Args:
-            csv_path (Path): Path to the CSV file containing budget data.
-            encoding (str, optional): Encoding of the CSV file. Defaults to "shift_jis".
-        """
+        """Initializes the BudgetAnalyzer with the specified CSV file path and encoding."""
         self.csv_path = csv_path
         self.encoding = encoding
         self.df = pd.DataFrame(columns=list(COLUMNS_MAP.values()))
@@ -55,17 +165,14 @@ class BudgetAnalyzer:
         """Loads budget data from the CSV file."""
         try:
             self.df = pd.read_csv(self.csv_path, encoding=self.encoding)
-            # 列名の標準化
             if len(self.df.columns) >= 10:
                 self.df.columns = list(COLUMNS_MAP.values())
 
-            # データ型の変換
             self.df["date"] = pd.to_datetime(self.df["date"], errors="coerce")
             self.df["amount"] = pd.to_numeric(self.df["amount"], errors="coerce")
             self.df["calc_target"] = pd.to_numeric(
                 self.df["calc_target"], errors="coerce"
             )
-
             print(f"データ読み込み完了: {len(self.df)}件のレコード")
 
         except (FileNotFoundError, pd.errors.ParserError, UnicodeDecodeError) as e:
@@ -73,28 +180,23 @@ class BudgetAnalyzer:
             self.df = pd.DataFrame(columns=list(COLUMNS_MAP.values()))
 
     def get_monthly_summary(self, year: int, month: int) -> Dict[str, Any]:
-        """Returns a summary of the monthly budget data for the specified year and
-        month."""
+        """Returns a summary of the monthly budget data for the specified year and month."""
         if self.df.empty:
             return {"message": "No data available."}
 
-        # 指定月のデータを抽出
         mask = (self.df["date"].dt.year == year) & (self.df["date"].dt.month == month)
         monthly_data = self.df[mask]
 
         if monthly_data.empty:
             return {"message": f"No data for {year}-{month:02d}."}
 
-        # 収入と支出の集計
         income_data = monthly_data[monthly_data["amount"] > 0]
         expense_data = monthly_data[monthly_data["amount"] < 0]
 
         total_income = income_data["amount"].sum()
         total_expense = abs(expense_data["amount"].sum())
-
         balance = total_income - total_expense
 
-        # 月ごとのカテゴリ別集計
         category_summary = (
             expense_data.groupby("minor_category")["amount"]
             .sum()
@@ -102,7 +204,6 @@ class BudgetAnalyzer:
             .sort_values(ascending=False)
         )
 
-        # 結果のまとめ
         summary = {
             "period": f"{year}-{month:02d}",
             "total_income": int(total_income),
@@ -111,7 +212,6 @@ class BudgetAnalyzer:
             "expense_by_category": category_summary.to_dict(),
             "transaction_count": len(monthly_data),
         }
-
         return summary
 
 
@@ -119,63 +219,47 @@ class BudgetAnalyzer:
 analyzer: Optional[BudgetAnalyzer] = None
 
 
-# mcp Server のデコレータが未型定義のため、mypy の誤検知を抑制
-@server.list_tools()  # type: ignore[misc,no-untyped-call]
-async def list_tools() -> Sequence[Tool]:
-    """Lists available tools for the server."""
+@mcp.tool("monthly_summary")
+def monthly_summary(year: int, month: int) -> Dict[str, Any]:
+    """Get monthly budget summary for a specific year and month."""
+    global analyzer
+    if analyzer is None:
+        csv_path = data_loader.month_csv_path(year, month)
+        if csv_path.exists():
+            analyzer = BudgetAnalyzer(csv_path)
+            analyzer.load_data()
 
-    return [
-        Tool(
-            name="monthly_summary",
-            description="Get monthly budget summary for a specific year and month.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "year": {
-                        "type": "integer",
-                        "description": "Year of the budget data.",
-                    },
-                    "month": {
-                        "type": "integer",
-                        "description": "Month of the budget data.",
-                    },
-                },
-                "required": ["year", "month"],
-            },
-        ),
-        Tool(
-            name="category_analysis",
-            description="Analyze expenses by category for a specific year and month.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "category": {
-                        "type": "string",
-                        "description": "Minor category of expenses to analyze.",
-                    },
-                    "months": {
-                        "type": "int",
-                        "description": "Number of months to analyze from the current month.(default: 3)",
-                        "default": 3,
-                    },
-                },
-                "required": ["category"],
-            },
-        ),
-        Tool(
-            name="find_categories",
-            description="Find all unique expense categories.",
-            inputSchema={
-                "type": "object",
-                "properties": {},
-            },
-        ),
-    ]
+    if analyzer is not None:
+        return analyzer.get_monthly_summary(year, month)
+    else:
+        return {"message": "No data available."}
+
+
+@mcp.tool("category_analysis")
+def category_analysis(category: str, months: int = 3) -> Dict[str, Any]:
+    """Analyze expenses by category for a specific period."""
+    return {"category": category, "months": months, "message": "Not implemented yet"}
+
+
+@mcp.tool("find_categories")
+def find_categories() -> Dict[str, Any]:
+    """Find all unique expense categories."""
+    try:
+        categories = data_loader.category_hierarchy()
+        return {"categories": categories}
+    except Exception as e:
+        return {"message": f"Error finding categories: {e}"}
 
 
 # FastAPI/uvicorn用のASGIアプリエクスポート
 app = FastAPI()
 
-# 必要に応じてFastAPIルーティング追加（現状は空）
 
-# MCP ServerのASGIラッパー（今後拡張する場合はここで統合）
+# 実行処理
+if __name__ == "__main__":
+    # transportはリスト型なので、最初の要素のみ渡す
+    transport = args.transport[0]
+    if transport == "stdio":
+        mcp.run(transport=transport)
+    else:
+        mcp.run(transport=transport, host=args.host, port=args.port)
