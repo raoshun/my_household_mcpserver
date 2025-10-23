@@ -6,6 +6,7 @@ Combines functionality from both server.py files into a single entry point.
 """
 
 import argparse
+import os
 import warnings
 from pathlib import Path
 from typing import Any, Dict, Optional, cast
@@ -19,6 +20,7 @@ except Exception:  # FastAPI is optional; tests may run without web extras insta
 from fastmcp import FastMCP
 
 from household_mcp.dataloader import HouseholdDataLoader
+from household_mcp.exceptions import DataSourceError
 from household_mcp.tools.trend_tool import category_trend_summary, get_category_trend
 
 # Suppress third-party deprecation warnings at runtime
@@ -52,12 +54,20 @@ mcp = FastMCP("my_household_mcp")
 _data_loader: Optional[HouseholdDataLoader] = None
 
 
+def _data_dir() -> str:
+    """Return the data directory path from env or default.
+
+    HOUSEHOLD_DATA_DIR can be set in CI or runtime to point to fixtures.
+    Defaults to "data" for local runs.
+    """
+    return os.getenv("HOUSEHOLD_DATA_DIR", "data")
+
+
 def _get_data_loader() -> HouseholdDataLoader:
     global _data_loader
     if _data_loader is None:
-        # Keep default relative path; actual functions will only instantiate
-        # when invoked. This prevents import-time errors.
-        _data_loader = HouseholdDataLoader(src_dir="data")
+        # Instantiate lazily to avoid import-time failures
+        _data_loader = HouseholdDataLoader(src_dir=_data_dir())
     return _data_loader
 
 
@@ -76,8 +86,12 @@ def get_category_hierarchy() -> dict[str, list[str]]:
     Returns:
         dict[str, list[str]]: カテゴリの階層構造(大項目: [中項目1, 中項目2, ...])を表す辞書
     """
-    result = _get_data_loader().category_hierarchy(year=2025, month=7)
-    return dict(result)  # 明示的キャスト
+    try:
+        result = _get_data_loader().category_hierarchy(year=2025, month=7)
+        return dict(result)  # 明示的キャスト
+    except DataSourceError:
+        # データ未配置時は空で返す
+        return {}
 
 
 # 家計簿から指定した年月の収支を取得するツール
@@ -96,10 +110,14 @@ def get_monthly_household(year: int, month: int) -> list[dict[str, Any]]:
     Returns:
         list[dict]: 支出のリスト
     """
-    df = _get_data_loader().load_month(year, month)
-    return cast(
-        list[dict[str, Any]], [dict(record) for record in df.to_dict(orient="records")]
-    )
+    try:
+        df = _get_data_loader().load_month(year, month)
+        return cast(
+            list[dict[str, Any]],
+            [dict(record) for record in df.to_dict(orient="records")],
+        )
+    except DataSourceError:
+        return []
 
 
 @mcp.resource(
@@ -108,8 +126,11 @@ def get_monthly_household(year: int, month: int) -> list[dict[str, Any]]:
 def get_available_months() -> list[dict[str, int]]:
     """利用可能な月のリストを CSV ファイルから動的に検出して返す。"""
 
-    months = list(_get_data_loader().iter_available_months())
-    return [{"year": year, "month": month} for year, month in months]
+    try:
+        months = list(_get_data_loader().iter_available_months())
+        return [{"year": year, "month": month} for year, month in months]
+    except DataSourceError:
+        return []
 
 
 @mcp.resource(
@@ -123,8 +144,11 @@ def get_household_categories() -> dict[str, list[str]]:
     Returns:
         dict[str, list[str]]: カテゴリの階層構造(大項目: [中項目1, 中項目2, ...])を表す辞書
     """
-    result = _get_data_loader().category_hierarchy(year=2025, month=7)
-    return dict(result)  # 明示的キャスト
+    try:
+        result = _get_data_loader().category_hierarchy(year=2025, month=7)
+        return dict(result)
+    except DataSourceError:
+        return {}
 
 
 @mcp.resource(
@@ -134,8 +158,11 @@ def get_household_categories() -> dict[str, list[str]]:
 def get_category_trend_summary() -> dict[str, Any]:
     """トレンド分析用のカテゴリ集計結果を返す。"""
 
-    result = category_trend_summary(src_dir="data")
-    return dict(result)  # 明示的キャスト
+    try:
+        result = category_trend_summary(src_dir=_data_dir())
+        return dict(result)
+    except DataSourceError:
+        return {"summary": {}}
 
 
 @mcp.tool("get_category_trend")
@@ -146,13 +173,16 @@ def run_get_category_trend(
 ) -> dict[str, Any]:
     """カテゴリ別の支出トレンドを取得する MCP ツール。"""
 
-    result = get_category_trend(
-        category=category,
-        start_month=start_month,
-        end_month=end_month,
-        src_dir="data",
-    )
-    return dict(result)  # 明示的キャスト
+    try:
+        result = get_category_trend(
+            category=category,
+            start_month=start_month,
+            end_month=end_month,
+            src_dir=_data_dir(),
+        )
+        return dict(result)
+    except DataSourceError:
+        return {"trend": {}}
 
 
 # MoneyForwardのCSV列名マッピング（BudgetAnalyzer用）
@@ -242,7 +272,10 @@ def monthly_summary(year: int, month: int) -> Dict[str, Any]:
     """Get monthly budget summary for a specific year and month."""
     global analyzer
     if analyzer is None:
-        csv_path = _get_data_loader().month_csv_path(year, month)
+        try:
+            csv_path = _get_data_loader().month_csv_path(year, month)
+        except DataSourceError as e:
+            return {"message": f"No data available: {e}"}
         if csv_path.exists():
             analyzer = BudgetAnalyzer(csv_path)
             analyzer.load_data()
@@ -265,8 +298,8 @@ def find_categories() -> Dict[str, Any]:
     try:
         categories = _get_data_loader().category_hierarchy()
         return {"categories": categories}
-    except Exception as e:
-        return {"message": f"Error finding categories: {e}"}
+    except DataSourceError as e:
+        return {"message": f"No data available: {e}", "categories": {}}
 
 
 # Expose an async helper to list tools for smoke tests
