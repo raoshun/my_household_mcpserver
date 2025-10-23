@@ -9,14 +9,18 @@ import argparse
 import os
 import warnings
 from pathlib import Path
-from typing import Any, Dict, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, cast
 
 import pandas as pd
 
-try:
+if TYPE_CHECKING:
     from fastapi import FastAPI
-except Exception:  # FastAPI is optional; tests may run without web extras installed
-    FastAPI = None
+else:
+    try:
+        from fastapi import FastAPI
+    except Exception:  # FastAPI is optional; tests may run without web extras installed
+        FastAPI = None
+
 from fastmcp import FastMCP
 
 from household_mcp.dataloader import HouseholdDataLoader
