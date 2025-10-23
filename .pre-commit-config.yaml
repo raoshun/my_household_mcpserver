@@ -81,21 +81,21 @@ repos:
           - types-requests
         exclude: ^tests/
 
-  # Markdown リンター (Node.js v20+が必要なため一時的に無効化)
-  # - repo: https://github.com/igorshubovych/markdownlint-cli
-  #   rev: v0.45.0
-  #   hooks:
-  #     - id: markdownlint
-  #       args: ["--fix"]
-  #       files: \.md$
+  # Markdown リンター
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.45.0
+    hooks:
+      - id: markdownlint
+        args: ["--fix"]
+        files: \.md$
 
-  # YAML フォーマッター (Node.js v20+が必要なため一時的に無効化)
-  # - repo: https://github.com/pre-commit/mirrors-prettier
-  #   rev: v4.0.0-alpha.8
-  #   hooks:
-  #     - id: prettier
-  #       types_or: [yaml, json]
-  #       args: ["--tab-width", "2"]
+  # YAML フォーマッター
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        types_or: [yaml, json]
+        args: ["--tab-width", "2"]
 
   # Docker関連のリンター (Dockerfileが存在しないため一時的に無効化)
   # - repo: https://github.com/hadolint/hadolint

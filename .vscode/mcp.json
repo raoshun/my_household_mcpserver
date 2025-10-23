@@ -2,9 +2,7 @@
   "servers": {
     "my-household-mcp": {
       "command": "${workspaceFolder}/.venv/bin/python",
-      "args": [
-        "src/server.py"
-      ],
+      "args": ["src/server.py"],
       "cwd": "${workspaceFolder}"
     }
   }

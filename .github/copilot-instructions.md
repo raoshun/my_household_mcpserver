@@ -1,6 +1,7 @@
 # GitHub Copilot Instructions for Spec-Driven Development
 
 ## 使用言語
+
 日本語でレビューしてください。
 
 ## Overview
