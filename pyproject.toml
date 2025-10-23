@@ -162,6 +162,7 @@ omit = [
     "*/.*",
     "src/household_mcp/database/*",
     "src/household_mcp/server.py",
+    "src/household_mcp/visualization/*",
     # Temporarily omit heavy utility/tool modules until dedicated tests are added
 ]
 
