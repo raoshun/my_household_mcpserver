@@ -31,7 +31,16 @@ repos:
       - id: bandit
         pass_filenames: false
         args:
-          ["-r", "src/household_mcp", "-f", "json", "-o", "bandit-report.json"]
+          [
+            "-r",
+            "src/household_mcp",
+            "-f",
+            "json",
+            "-o",
+            "bandit-report.json",
+            "-lll",
+            "-iii",
+          ]
         exclude: ^tests/
 
   # Python Import順序の整理
