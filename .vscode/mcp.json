@@ -1,19 +1,8 @@
 {
   "servers": {
-    // 補助学習サーバー（必要時にコメント解除）
-    "my-learning-assistant": {
-      "command": "/home/shun-h/learning-support-mcp/.venv/bin/python",
-      "args": [
-        "-m",
-        "src.cli_mcp_server"
-      ],
-      "cwd": "/home/shun-h/learning-support-mcp"
-    },
     "my-household-mcp": {
-      "command": "uv",
+      "command": "${workspaceFolder}/.venv/bin/python",
       "args": [
-        "run",
-        "python",
         "src/server.py"
       ],
       "cwd": "${workspaceFolder}"
