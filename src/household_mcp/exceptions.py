@@ -21,7 +21,11 @@ class ValidationError(HouseholdMCPError):
         # Maintain a ``message`` attribute for backward compatibility with
         # code that accessed ``e.message`` (not standard in modern Python).
         self.message = message
-        super().__init__(message)
+        # Pass message to super().__init__() for proper exception handling
+        if field:
+            super().__init__(f"{message} (field: {field})")
+        else:
+            super().__init__(message)
 
 
 class DataSourceError(HouseholdMCPError):

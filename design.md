@@ -313,7 +313,7 @@ class ToolParameters:
     year: int
     month: int
     category: Optional[str] = None
-    
+
     # 新規引数
     output_format: Literal["text", "image"] = "text"
     graph_type: Optional[Literal["bar", "line", "pie", "area"]] = None
@@ -347,13 +347,13 @@ def enhanced_get_monthly_household(**params) -> Union[str, dict]:
 class ChartGenerator:
     def __init__(self, font_path: Optional[str] = None):
         self.font_path = font_path or self._detect_japanese_font()
-        
+
     def create_monthly_pie_chart(self, data: pd.DataFrame, **options) -> BytesIO:
         """月次支出の円グラフ生成"""
-        
+
     def create_category_trend_line(self, data: pd.DataFrame, **options) -> BytesIO:
         """カテゴリ別推移の線グラフ生成"""
-        
+
     def create_comparison_bar_chart(self, data: pd.DataFrame, **options) -> BytesIO:
         """比較棒グラフ生成"""
 ```
@@ -399,7 +399,7 @@ async def stream_chart(chart_id: str):
     image_buffer = chart_cache.get(chart_id)
     if not image_buffer:
         raise HTTPException(404, "Chart not found")
-        
+
     return StreamingResponse(
         io.BytesIO(image_buffer),
         media_type="image/png",
@@ -427,15 +427,15 @@ import hashlib
 class ChartCache:
     def __init__(self, max_size: int = 50, ttl: int = 3600):
         self.cache = TTLCache(maxsize=max_size, ttl=ttl)
-    
+
     def get_key(self, params: dict) -> str:
         """パラメータからキャッシュキーを生成"""
         key_str = json.dumps(params, sort_keys=True)
         return hashlib.md5(key_str.encode()).hexdigest()
-    
+
     def get(self, key: str) -> Optional[bytes]:
         return self.cache.get(key)
-    
+
     def set(self, key: str, image_data: bytes):
         self.cache[key] = image_data
 ```
@@ -499,7 +499,7 @@ plt.rcParams.update({
 
 # 配色パレット
 CATEGORY_COLORS = [
-    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', 
+    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4',
     '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'
 ]
 ```
