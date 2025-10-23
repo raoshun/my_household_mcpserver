@@ -25,6 +25,15 @@ def _to_decimal(value: NumberLike | str) -> Decimal:
 
 
 def format_currency(value: Optional[NumberLike], unit: str = "円") -> str:
+    """Format a numeric value as currency.
+
+    Args:
+        value: Numeric value to format, or None.
+        unit: Currency unit symbol (default: 円).
+
+    Returns:
+        Formatted currency string with thousand separators, or "N/A" if value is None.
+    """
     if value is None:
         return "N/A"
     amount = _to_decimal(value).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
@@ -32,6 +41,15 @@ def format_currency(value: Optional[NumberLike], unit: str = "円") -> str:
 
 
 def format_percentage(value: Optional[NumberLike], digits: int = 1) -> str:
+    """Format a numeric value as percentage.
+
+    Args:
+        value: Numeric value to format (as decimal, e.g., 0.15 = 15%), or None.
+        digits: Number of decimal places to display (default: 1).
+
+    Returns:
+        Formatted percentage string, or "N/A" if value is None or NaN.
+    """
     if value is None:
         return "N/A"
     number = _to_decimal(value)
