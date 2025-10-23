@@ -124,9 +124,15 @@ def test_trend_tool_available_categories_empty_df(tmp_path: Path):
         trend_tool.get_category_trend(src_dir=str(tmp_path), category=None)
 
 
-def test_analyzer_expand_months_error():
-    analyzer = CategoryTrendAnalyzer(
-        loader=HouseholdDataLoader("data")
-    )  # uses real data dir present in repo
+def test_analyzer_expand_months_error(tmp_path: Path):
+    # Create minimal data directory for analyzer initialization
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    _write_csv(
+        data_dir / "収入・支出詳細_2024-06-01_2024-06-30.csv",
+        ["2024-06-15,1,-1000,食費,外食"],
+    )
+
+    analyzer = CategoryTrendAnalyzer(loader=HouseholdDataLoader(str(data_dir)))
     with pytest.raises(AnalysisError):
         analyzer._expand_months(date(2024, 7, 1), date(2024, 6, 1))
