@@ -293,7 +293,8 @@ class ChartGenerator:
                     font_prop = fm.FontProperties(family=font_name)
                     font_file = fm.findfont(font_prop)
                     if font_file and os.path.exists(font_file):
-                        return font_file
+                        # Explicitly cast to str to satisfy mypy
+                        return str(font_file)
                 except (ValueError, OSError, RuntimeError):
                     # Try next candidate if this family cannot be resolved
                     continue

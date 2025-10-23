@@ -79,7 +79,7 @@ repos:
         additional_dependencies:
           - types-python-dateutil
           - types-requests
-        exclude: ^(tests/|src/server\.py|src/household_mcp/server\.py|src/household_mcp/visualization/)
+        exclude: ^tests/
 
   # Markdown リンター (Node.js v20+が必要なため一時的に無効化)
   # - repo: https://github.com/igorshubovych/markdownlint-cli
