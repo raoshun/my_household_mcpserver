@@ -10,6 +10,7 @@ import io
 import os
 import sys
 import warnings
+from pathlib import Path
 from typing import Any, List, Optional, Sequence, Tuple
 
 import pandas as pd
@@ -235,13 +236,48 @@ class ChartGenerator:
         Returns:
             Path to detected Japanese font, or None if not found.
         """
-        # First try platform-specific font paths
+        # First try local fonts directory
+        local_font = self._check_local_fonts_dir()
+        if local_font:
+            return local_font
+
+        # Then try platform-specific font paths
         font_path = self._get_platform_font_candidates()
         if font_path:
             return font_path
 
         # Then try matplotlib font manager
         return self._find_font_via_matplotlib()
+
+    def _check_local_fonts_dir(self) -> Optional[str]:
+        """Check for fonts in local fonts/ directory.
+
+        Returns:
+            Path to font file in fonts/ directory, or None if not found.
+        """
+        # Get project root (assuming we're in src/household_mcp/visualization/)
+        current_file = Path(__file__)
+        project_root = current_file.parent.parent.parent.parent
+        fonts_dir = project_root / "fonts"
+
+        if not fonts_dir.exists():
+            return None
+
+        # Check for common Japanese font files
+        font_candidates = [
+            "NotoSansCJK-Regular.ttc",
+            "NotoSansCJKjp-Regular.ttc",
+            "NotoSansCJK-Regular.otf",
+            "NotoSansCJKjp-Regular.otf",
+            "NotoSansCJK-Regular.ttf",
+        ]
+
+        for font_name in font_candidates:
+            font_path = fonts_dir / font_name
+            if font_path.exists():
+                return str(font_path)
+
+        return None
 
     def _get_platform_font_candidates(self) -> Optional[str]:
         """Get platform-specific font candidates and check existence."""

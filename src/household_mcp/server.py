@@ -292,8 +292,126 @@ def monthly_summary(year: int, month: int) -> Dict[str, Any]:
 
 @mcp.tool("category_analysis")
 def category_analysis(category: str, months: int = 3) -> Dict[str, Any]:
-    """Analyze expenses by category for a specific period."""
-    return {"category": category, "months": months, "message": "Not implemented yet"}
+    """Analyze expenses by category for a specific period.
+
+    Args:
+        category: Category name to analyze (e.g., "食費", "光熱費")
+        months: Number of months to analyze (default: 3)
+
+    Returns:
+        Dictionary containing:
+        - category: Analyzed category name
+        - months: Number of months analyzed
+        - total: Total expenses for the period
+        - average: Average monthly expense
+        - trend: Month-over-month trend data
+        - summary: Text summary in Japanese
+    """
+    try:
+        from household_mcp.analysis.trends import CategoryTrendAnalyzer
+
+        # Get available months
+        available_months = list(_get_data_loader().iter_available_months())
+        if not available_months:
+            return {
+                "category": category,
+                "months": months,
+                "error": "データが利用できません。data/ ディレクトリにCSVファイルを配置してください。",
+            }
+
+        # Get the latest N months
+        available_months.sort(reverse=True)
+        if len(available_months) < months:
+            months = len(available_months)
+
+        target_months = available_months[:months]
+
+        # Analyze using CategoryTrendAnalyzer
+        analyzer = CategoryTrendAnalyzer(src_dir=_data_dir())
+
+        try:
+            metrics = analyzer.metrics_for_category(
+                months=target_months, category=category
+            )
+        except Exception as e:
+            return {
+                "category": category,
+                "months": months,
+                "error": f"カテゴリ '{category}' の分析中にエラーが発生しました: {str(e)}",
+            }
+
+        if not metrics:
+            return {
+                "category": category,
+                "months": months,
+                "error": f"カテゴリ '{category}' のデータが見つかりませんでした。",
+            }
+
+        # Calculate statistics
+        amounts = [abs(m.amount) for m in metrics]
+        total_expense = sum(amounts)
+        average_expense = total_expense / len(amounts) if amounts else 0
+
+        max_metric = max(metrics, key=lambda m: abs(m.amount))
+        min_metric = min(metrics, key=lambda m: abs(m.amount))
+
+        # Create month-by-month breakdown
+        monthly_data = []
+        for m in metrics:
+            monthly_data.append(
+                {
+                    "year": m.month.year,
+                    "month": m.month.month,
+                    "amount": int(abs(m.amount)),
+                    "mom_change": m.month_over_month,
+                }
+            )
+
+        # Generate summary text
+        summary = f"""カテゴリ「{category}」の過去{len(metrics)}ヶ月間の分析結果:
+
+合計支出: {int(total_expense):,}円
+月平均: {int(average_expense):,}円
+最大月: {max_metric.month.year}年{max_metric.month.month}月 ({int(abs(max_metric.amount)):,}円)
+最小月: {min_metric.month.year}年{min_metric.month.month}月 ({int(abs(min_metric.amount)):,}円)
+
+月次推移は 'monthly_breakdown' フィールドをご確認ください。"""
+
+        return {
+            "category": category,
+            "months": len(metrics),
+            "period": {
+                "start": f"{metrics[-1].month.year}-{metrics[-1].month.month:02d}",
+                "end": f"{metrics[0].month.year}-{metrics[0].month.month:02d}",
+            },
+            "total_expense": int(total_expense),
+            "average_expense": int(average_expense),
+            "max_month": {
+                "year": max_metric.month.year,
+                "month": max_metric.month.month,
+                "amount": int(abs(max_metric.amount)),
+            },
+            "min_month": {
+                "year": min_metric.month.year,
+                "month": min_metric.month.month,
+                "amount": int(abs(min_metric.amount)),
+            },
+            "monthly_breakdown": monthly_data,
+            "summary": summary,
+        }
+
+    except DataSourceError as e:
+        return {
+            "category": category,
+            "months": months,
+            "error": f"データソースエラー: {str(e)}",
+        }
+    except Exception as e:
+        return {
+            "category": category,
+            "months": months,
+            "error": f"予期しないエラーが発生しました: {str(e)}",
+        }
 
 
 @mcp.tool("find_categories")

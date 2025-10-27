@@ -1,9 +1,9 @@
 # 家計簿分析 MCP サーバー設計書
 
-- **バージョン**: 0.2.0
-- **更新日**: 2025-10-03
+- **バージョン**: 0.3.0
+- **更新日**: 2025-10-28
 - **作成者**: GitHub Copilot (AI assistant)
-- **対象要件**: [requirements.md](./requirements.md) に記載の FR-001〜FR-003、NFR-001〜NFR-004
+- **対象要件**: [requirements.md](./requirements.md) に記載の FR-001〜FR-006、NFR-001〜NFR-007
 
 ---
 
