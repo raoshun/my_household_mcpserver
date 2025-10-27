@@ -1,7 +1,8 @@
 """Household MCP Server unified implementation.
 
-This module provides a unified MCP server for household budget analysis with FastAPI integration.
-It includes tools for analyzing budget data from CSV files and provides natural language interface for financial data queries.
+This module provides a unified MCP server for household budget analysis
+with FastAPI integration. It includes tools for analyzing budget data from
+CSV files and provides natural language interface for financial data queries.
 Combines functionality from both server.py files into a single entry point.
 """
 
@@ -26,6 +27,15 @@ from fastmcp import FastMCP
 from household_mcp.dataloader import HouseholdDataLoader
 from household_mcp.exceptions import DataSourceError
 from household_mcp.tools.trend_tool import category_trend_summary, get_category_trend
+from household_mcp.tools.enhanced_tools import enhanced_monthly_summary
+
+# Import HTTP server if streaming extras are available
+try:
+    from household_mcp.web import create_http_app
+
+    HAS_HTTP_SERVER = True
+except ImportError:
+    HAS_HTTP_SERVER = False
 
 # Suppress third-party deprecation warnings at runtime
 warnings.filterwarnings(
@@ -424,6 +434,33 @@ def find_categories() -> Dict[str, Any]:
         return {"message": f"No data available: {e}", "categories": {}}
 
 
+# 画像対応の拡張ツール
+@mcp.tool("enhanced_monthly_summary")
+def tool_enhanced_monthly_summary(
+    year: int,
+    month: int,
+    output_format: str = "text",
+    graph_type: str = "pie",
+    image_size: str = "800x600",
+    image_format: str = "png",
+) -> Dict[str, Any]:
+    """画像出力に対応した月次サマリーツール。
+
+    output_format="image" の場合、キャッシュに画像を格納しURLを返す。
+    """
+    try:
+        return enhanced_monthly_summary(
+            year,
+            month,
+            output_format=output_format,
+            graph_type=graph_type,
+            image_size=image_size,
+            image_format=image_format,
+        )
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
 # Expose an async helper to list tools for smoke tests
 from typing import (  # noqa: E402  (import after FastMCP for clarity)
     NamedTuple,
@@ -449,12 +486,27 @@ async def list_tools() -> Sequence[Any]:
         # Also expose additional defined tools (not required by the smoke test)
         "get_monthly_household",
         "get_category_trend",
+        "enhanced_monthly_summary",
     ]
     return [_SimpleTool(name=n) for n in tool_names]
 
 
 # FastAPI/uvicorn用のASGIアプリエクスポート
-app = FastAPI() if FastAPI is not None else None
+# HTTP streaming機能が有効な場合は create_http_app を使用
+try:
+    if HAS_HTTP_SERVER and FastAPI is not None:
+        app = create_http_app(
+            enable_cors=True,
+            allowed_origins=["*"],
+            cache_size=50,
+            cache_ttl=3600,
+        )
+    else:
+        # Fallback: streaming機能なしの基本的なFastAPIアプリ
+        app = FastAPI() if FastAPI is not None else None
+except ImportError:
+    # streaming 依存が不足している場合は、空のFastAPIにフォールバック
+    app = FastAPI() if FastAPI is not None else None
 
 
 # 実行処理
