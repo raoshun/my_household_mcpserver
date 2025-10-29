@@ -27,7 +27,7 @@ dependencies = [
     "numpy>=1.26.0",
     "mcp[cli]>=1.13.1",
     "fastmcp>=0.4.0",
-    "sqlalchemy>=2.0.23",  # Database ORM for duplicate detection
+    "sqlalchemy>=2.0.23", # Database ORM for duplicate detection
 ]
 
 [project.optional-dependencies]

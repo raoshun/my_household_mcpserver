@@ -30,16 +30,16 @@
 
 ### 1.2 コンポーネント構成
 
-| コンポーネント    | 主な責務                            | 主な実装                                              | 対応要件          |
-| ----------------- | ----------------------------------- | ----------------------------------------------------- | ----------------- |
-| MCP Server        | リソース/ツール定義とリクエスト分岐 | `src/server.py`                                       | 全要件            |
-| Data Loader       | CSV ファイルの読み込みと前処理      | `src/household_mcp/dataloader.py`                     | FR-001〜FR-003    |
-| Trend Analyzer    | 月次指標計算モジュール（今後追加）  | `src/household_mcp/analysis/trends.py` *(予定)*       | FR-001            |
-| Query Resolver    | 質問パラメータ解釈ユーティリティ    | `src/household_mcp/utils/query_parser.py` *(予定)*    | FR-002, FR-003    |
-| Formatter         | 数値書式・テキスト生成              | `src/household_mcp/utils/formatters.py` *(予定)*      | NFR-001           |
-| DatabaseManager   | SQLiteセッション管理と初期化        | `src/household_mcp/database/manager.py`               | FR-009, NFR-011   |
-| CSVImporter       | CSV→DBインポート処理                | `src/household_mcp/database/csv_importer.py`          | FR-009-3          |
-| DuplicateDetector | 重複検出アルゴリズム                | `src/household_mcp/duplicate/detector.py`             | FR-009-1          |
+| コンポーネント    | 主な責務                            | 主な実装                                           | 対応要件        |
+| ----------------- | ----------------------------------- | -------------------------------------------------- | --------------- |
+| MCP Server        | リソース/ツール定義とリクエスト分岐 | `src/server.py`                                    | 全要件          |
+| Data Loader       | CSV ファイルの読み込みと前処理      | `src/household_mcp/dataloader.py`                  | FR-001〜FR-003  |
+| Trend Analyzer    | 月次指標計算モジュール（今後追加）  | `src/household_mcp/analysis/trends.py` *(予定)*    | FR-001          |
+| Query Resolver    | 質問パラメータ解釈ユーティリティ    | `src/household_mcp/utils/query_parser.py` *(予定)* | FR-002, FR-003  |
+| Formatter         | 数値書式・テキスト生成              | `src/household_mcp/utils/formatters.py` *(予定)*   | NFR-001         |
+| DatabaseManager   | SQLiteセッション管理と初期化        | `src/household_mcp/database/manager.py`            | FR-009, NFR-011 |
+| CSVImporter       | CSV→DBインポート処理                | `src/household_mcp/database/csv_importer.py`       | FR-009-3        |
+| DuplicateDetector | 重複検出アルゴリズム                | `src/household_mcp/duplicate/detector.py`          | FR-009-1        |
 
 ### 1.3 技術スタック
 
