@@ -20,25 +20,60 @@
 
 ## インストール
 
+### 基本インストール
+
 ```bash
-# 推奨: uv を用いたインストール
+# 推奨: uv を用いた基本インストール
+uv pip install -e "."
+
+# 開発環境（テスト・lint含む）
 uv pip install -e ".[dev]"
+```
 
-# 必要に応じてオプション機能を追加
-uv pip install -e ".[web,viz,db,auth,io,logging]"
-# 例: Web API 機能を使う場合
+### オプション機能の追加
+
+画像生成やHTTPストリーミングなど、追加機能ごとに依存関係を選択できます：
+
+```bash
+# 画像生成機能（matplotlib, pillow）
+uv pip install -e ".[visualization]"
+
+# HTTPストリーミング（FastAPI, uvicorn, cachetools）
+uv pip install -e ".[streaming]"
+
+# Web API機能
 uv pip install -e ".[web]"
-# 例: グラフ描画や可視化を使う場合
-uv pip install -e ".[viz]"
-# 例: DB連携や認証が必要な場合
-uv pip install -e ".[db,auth]"
-# 例: ロギング強化（structlog）
-uv pip install -e ".[logging]"
 
-# 代替: Poetry を使用する場合
-# poetry install --with dev
+# すべての機能を含む完全インストール
+uv pip install -e ".[full]"
 
-# pre-commit フックの有効化
+# その他のオプション
+uv pip install -e ".[db]"        # DB連携（SQLAlchemy）
+uv pip install -e ".[auth]"      # 認証機能
+uv pip install -e ".[io]"        # 非同期I/O
+uv pip install -e ".[logging]"   # 構造化ログ（structlog）
+```
+
+### 推奨セットアップ（画像生成機能込み）
+
+```bash
+# 画像生成とHTTPストリーミング機能を含む開発環境
+uv pip install -e ".[full,dev]"
+
+# 日本語フォントの配置（必須）
+# fonts/ ディレクトリに Noto Sans CJK フォントを配置
+# 詳細は「日本語フォント設定」セクションを参照
+```
+
+### Poetry を使用する場合
+
+```bash
+poetry install --with dev
+```
+
+### pre-commit フックの有効化
+
+```bash
 pre-commit install
 ```
 
@@ -47,17 +82,46 @@ pre-commit install
 ### MCP サーバーの起動
 
 ```bash
-# MCP サーバー起動
+# 標準 MCP サーバー起動（stdio モード）
 python -m src.server
 
-# テスト実行
-uv run pytest  # または poetry run pytest
+# HTTPストリーミングモード（画像配信対応）
+# ※ 現在実装中 - TASK-603 完了後に利用可能
+# python -m src.server --transport streamable-http --port 8080
+```
 
-# コード品質チェック例
-uv run black .
-uv run isort .
-uv run flake8
-uv run mypy src/
+### 画像生成機能（オプション）
+
+画像生成機能を使用するには、追加の依存関係とフォント設定が必要です：
+
+```bash
+# 画像生成に必要な依存関係をインストール
+uv pip install -e ".[visualization]"
+
+# 日本語フォントを配置
+# fonts/ ディレクトリに Noto Sans CJK を配置
+# 詳細は「日本語フォント設定」セクションを参照
+```
+
+**サポートされるグラフタイプ**:
+- 円グラフ（pie）: カテゴリ別支出割合
+- 棒グラフ（bar）: カテゴリ別比較
+- 折れ線グラフ（line）: 時系列トレンド
+- 面グラフ（area）: 累積トレンド
+
+**使用例**（実装予定 - TASK-604）:
+```python
+# MCPツールから画像生成をリクエスト
+{
+  "tool": "get_monthly_household",
+  "arguments": {
+    "year": 2025,
+    "month": 10,
+    "output_format": "image",
+    "graph_type": "pie",
+    "image_size": "800x600"
+  }
+}
 ```
 
 ### 利用可能な MCP リソース / ツール
@@ -69,6 +133,29 @@ uv run mypy src/
 | `data://category_trend_summary` | Resource | 直近 12 か月のカテゴリ別トレンド情報       |
 | `get_monthly_household`         | Tool     | 指定年月の支出明細一覧                     |
 | `get_category_trend`            | Tool     | 指定カテゴリ or 上位カテゴリのトレンド解説 |
+| `category_analysis`             | Tool     | カテゴリ別の期間分析（前月比・最大最小）    |
+| `find_categories`               | Tool     | 利用可能なカテゴリ一覧を取得               |
+| `monthly_summary`               | Tool     | 月次サマリ（収入・支出・カテゴリ別集計）    |
+
+### テスト・コード品質チェック
+
+```bash
+# テスト実行
+uv run pytest
+
+# カバレッジ付きテスト
+uv run pytest --cov=src/household_mcp --cov-report=html
+
+# コード品質チェック
+uv run black .          # コードフォーマット
+uv run isort .          # インポート整理
+uv run flake8           # リント
+uv run mypy src/        # 型チェック
+uv run bandit -r src/   # セキュリティスキャン
+
+# すべてのチェックを一括実行
+uv run task all-checks  # ※ tasks.json に定義
+```
 
 ### サンプル応答
 
@@ -93,35 +180,59 @@ uv run pytest
 
 カバレッジ閾値 80% を満たすと成功です。
 
-## 日本語フォント（CJK）について
+## 日本語フォント設定
 
-グラフ出力で日本語（漢字・カナ）を正しく描画するには、CJKフォントの導入が必要です。Linux環境では Noto Sans CJK JP の導入を推奨します。
+グラフ生成機能で日本語（漢字・カナ）を正しく描画するには、日本語フォントの設定が必要です。
 
-### 1) 自動インストールスクリプト（Linux）
+### フォント配置（推奨）
 
-root権限で以下を実行してください。
+プロジェクトの `fonts/` ディレクトリに Noto Sans CJK フォントを配置します：
 
 ```bash
-sudo bash scripts/install_cjk_fonts.sh
+# Debian/Ubuntu の場合
+sudo apt-get install fonts-noto-cjk
+cp /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc fonts/
+
+# または、直接ダウンロード
+wget https://github.com/googlefonts/noto-cjk/raw/main/Sans/OTF/Japanese/NotoSansCJKjp-Regular.otf -O fonts/NotoSansCJKjp-Regular.otf
 ```
 
-スクリプトはディストリビューションごとに適切なパッケージをインストールし、`fc-cache` を更新します。実行後、アプリ（pytestやuvicorn）を再起動してください。
+詳細な手順は `fonts/README.md` を参照してください。
 
-### 2) 手動インストールの例
+### フォント検出の優先順位
 
-- Debian/Ubuntu: `sudo apt-get update && sudo apt-get install -y fonts-noto-cjk`
-- Arch: `sudo pacman -Sy --noconfirm noto-fonts-cjk`
-- Alpine: `sudo apk add --no-cache font-noto-cjk`
+`ChartGenerator` は以下の順序でフォントを検出します：
 
-### 3) 検出ロジック
+1. **ローカル fonts/ ディレクトリ**: プロジェクト内の `fonts/` 配下
+2. **プラットフォーム固有パス**:
+   - Linux: `/usr/share/fonts/opentype/noto/`, `/usr/share/fonts/truetype/noto/`
+   - macOS: `/System/Library/Fonts/`
+   - Windows: `C:/Windows/Fonts/`
+3. **matplotlib font_manager**: システムにインストールされた全フォントから検索
 
-`ChartGenerator` は以下の順にフォントを検出します。
+### フォント未設定時の動作
 
-1. `font_path` 引数で明示指定
-2. OSの代表的なパス（Noto Sans CJK JP 等）
-3. matplotlib の `font_manager` による検索
+フォントが検出できない場合でもグラフ生成は可能ですが、日本語が文字化けする可能性があります。
+画像生成機能を使用する場合は、必ず日本語フォントを配置してください。
 
-フォント未検出時は描画自体は可能ですが、文字化け防止のためフォント導入を推奨します。
+### システムフォントのインストール（参考）
+
+```bash
+# Debian/Ubuntu
+sudo apt-get update && sudo apt-get install -y fonts-noto-cjk
+
+# Arch Linux
+sudo pacman -Sy --noconfirm noto-fonts-cjk
+
+# Alpine Linux
+sudo apk add --no-cache font-noto-cjk
+
+# macOS (Homebrew)
+brew install font-noto-sans-cjk-jp
+
+# インストール後、フォントキャッシュを更新
+fc-cache -fv
+```
 
 ## 開発
 
