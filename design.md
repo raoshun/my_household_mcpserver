@@ -1,9 +1,9 @@
 # 家計簿分析 MCP サーバー設計書
 
-- **バージョン**: 0.3.0
-- **更新日**: 2025-10-28
+- **バージョン**: 0.4.0
+- **更新日**: 2025-10-30
 - **作成者**: GitHub Copilot (AI assistant)
-- **対象要件**: [requirements.md](./requirements.md) に記載の FR-001〜FR-006、NFR-001〜NFR-007
+- **対象要件**: [requirements.md](./requirements.md) に記載の FR-001〜FR-009、NFR-001〜NFR-011
 
 ---
 
@@ -24,18 +24,22 @@
 ```
 
 - サーバーは `fastmcp.FastMCP` を利用し、LLM クライアントと標準入出力経由で通信する。
-- データソースは `data/` 配下の家計簿 CSV ファイル（全てローカル）。外部 DB やネットワーク通信は行わない。
+- データソースは `data/` 配下の家計簿 CSV ファイルとSQLiteデータベース（全てローカル）。外部ネットワーク通信は行わない。
+- SQLiteは重複検出結果の永続化に使用（data/household.db）。
 - 解析ロジックは pandas/numpy によるインメモリ処理で完結する。
 
 ### 1.2 コンポーネント構成
 
-| コンポーネント | 主な責務                            | 主な実装                                           | 対応要件       |
-| -------------- | ----------------------------------- | -------------------------------------------------- | -------------- |
-| MCP Server     | リソース/ツール定義とリクエスト分岐 | `src/server.py`                                    | 全要件         |
-| Data Loader    | CSV ファイルの読み込みと前処理      | `src/household_mcp/dataloader.py`                  | FR-001〜FR-003 |
-| Trend Analyzer | 月次指標計算モジュール（今後追加）  | `src/household_mcp/analysis/trends.py` *(予定)*    | FR-001         |
-| Query Resolver | 質問パラメータ解釈ユーティリティ    | `src/household_mcp/utils/query_parser.py` *(予定)* | FR-002, FR-003 |
-| Formatter      | 数値書式・テキスト生成              | `src/household_mcp/utils/formatters.py` *(予定)*   | NFR-001        |
+| コンポーネント    | 主な責務                            | 主な実装                                              | 対応要件          |
+| ----------------- | ----------------------------------- | ----------------------------------------------------- | ----------------- |
+| MCP Server        | リソース/ツール定義とリクエスト分岐 | `src/server.py`                                       | 全要件            |
+| Data Loader       | CSV ファイルの読み込みと前処理      | `src/household_mcp/dataloader.py`                     | FR-001〜FR-003    |
+| Trend Analyzer    | 月次指標計算モジュール（今後追加）  | `src/household_mcp/analysis/trends.py` *(予定)*       | FR-001            |
+| Query Resolver    | 質問パラメータ解釈ユーティリティ    | `src/household_mcp/utils/query_parser.py` *(予定)*    | FR-002, FR-003    |
+| Formatter         | 数値書式・テキスト生成              | `src/household_mcp/utils/formatters.py` *(予定)*      | NFR-001           |
+| DatabaseManager   | SQLiteセッション管理と初期化        | `src/household_mcp/database/manager.py`               | FR-009, NFR-011   |
+| CSVImporter       | CSV→DBインポート処理                | `src/household_mcp/database/csv_importer.py`          | FR-009-3          |
+| DuplicateDetector | 重複検出アルゴリズム                | `src/household_mcp/duplicate/detector.py`             | FR-009-1          |
 
 ### 1.3 技術スタック
 
@@ -74,6 +78,13 @@
 - 欠損値: カテゴリまたは金額が欠落している行は分析対象から除外。
 - 重複: 同一日・同金額・同カテゴリの重複は保持（家計簿の明細として許容）。
 - 利用可能月一覧: `get_available_months()` で 2025 年 1〜12 月を提供（現状はハードコーディング、将来自動検出予定）。
+
+### 2.4 SQLiteデータベーススキーマ
+
+重複検出・解決機能のために、以下のSQLiteテーブルを使用する（詳細はセクション12.3を参照）:
+
+- **transactions**: CSV取引データのキャッシュと重複管理フラグ
+- **duplicate_checks**: 重複検出履歴とユーザー判定結果
 
 ---
 
@@ -248,16 +259,7 @@ my_household_mcpserver/
 
 ---
 
-## 9. 変更履歴
-
-| 日付       | バージョン | 概要                                                 |
-| ---------- | ---------- | ---------------------------------------------------- |
-| 2025-07-29 | 1.0        | 旧バージョン（DB 前提の構成）                        |
-| 2025-10-03 | 0.2.0      | CSV 前提アーキテクチャに刷新、トレンド分析設計を追加 |
-
----
-
-## 10. 画像生成・ストリーミング機能設計
+## 9. 画像生成・ストリーミング機能設計
 
 ### 10.1 アーキテクチャ拡張
 
@@ -551,19 +553,9 @@ class StreamingConfig:
 
 ---
 
-## 11. 変更履歴
+## 10. 重複検出・解決機能設計（FR-009対応）
 
-| 日付       | バージョン | 概要                                                 |
-| ---------- | ---------- | ---------------------------------------------------- |
-| 2025-07-29 | 1.0        | 旧バージョン（DB 前提の構成）                        |
-| 2025-10-03 | 0.2.0      | CSV 前提アーキテクチャに刷新、トレンド分析設計を追加 |
-| 2025-10-04 | 0.3.0      | 画像生成・HTTPストリーミング機能設計を追加           |
-
----
-
-## 12. 重複検出・解決機能設計（FR-009対応）
-
-### 12.1 アーキテクチャ拡張
+### 10.1 アーキテクチャ拡張
 
 要件 FR-009-1〜FR-009-4 に対応するため、既存アーキテクチャに以下のコンポーネントを追加する：
 
@@ -594,7 +586,7 @@ class StreamingConfig:
                                       └────────────────────────┘
 ```
 
-### 12.2 新規コンポーネント
+### 10.2 新規コンポーネント
 
 | コンポーネント       | 主な責務                         | 実装ファイル                                 | 対応要件 |
 | -------------------- | -------------------------------- | -------------------------------------------- | -------- |
@@ -605,7 +597,7 @@ class StreamingConfig:
 | Duplicate Tools      | ユーザー確認用MCPツール群        | `src/household_mcp/tools/duplicate_tools.py` | FR-009-2 |
 | Duplicate Resolver   | 重複解消処理（フラグ設定・復元） | `src/household_mcp/duplicate/resolver.py`    | FR-009-4 |
 
-### 12.3 技術スタック拡張
+### 10.3 技術スタック拡張
 
 | 区分         | 追加技術        | 用途                           | 備考                   |
 | ------------ | --------------- | ------------------------------ | ---------------------- |
@@ -614,7 +606,7 @@ class StreamingConfig:
 | 日付処理     | python-dateutil | 日付誤差計算                   | 標準ライブラリで代替可 |
 | 文字列類似度 | difflib         | 摘要の類似度計算（将来拡張用） | Python標準ライブラリ   |
 
-### 12.4 データベース設計
+### 10.4 データベース設計
 
 #### 12.4.1 スキーマ定義
 
@@ -756,7 +748,7 @@ class DuplicateCheck(Base):
     transaction_2 = relationship('Transaction', foreign_keys=[transaction_id_2])
 ```
 
-### 12.5 重複検出ロジック設計
+### 10.5 重複検出ロジック設計
 
 #### 12.5.1 DuplicateDetector クラス
 
@@ -930,7 +922,7 @@ class DuplicateDetector:
        └─> WHERE is_duplicate = 0 でフィルタ
 ```
 
-### 12.6 MCPツール設計
+### 10.6 MCPツール設計
 
 #### 12.6.1 ツール一覧
 
@@ -1114,7 +1106,7 @@ AI: 「取引ID 105 を重複としてマークしました。
      今後の集計から除外されます。」
 ```
 
-### 12.7 CSV to DB インポート設計
+### 10.7 CSV to DB インポート設計
 
 #### 12.7.1 CSVImporter クラス
 
@@ -1213,7 +1205,7 @@ class CSVImporter:
         }
 ```
 
-### 12.8 非機能要件対応
+### 10.8 非機能要件対応
 
 #### 12.8.1 パフォーマンス最適化（NFR-002）
 
@@ -1282,7 +1274,7 @@ def confirm_duplicate_with_transaction(check_id, decision):
         raise DuplicateResolutionError(f"重複確認処理に失敗: {e}")
 ```
 
-### 12.9 エラーハンドリング拡張
+### 10.9 エラーハンドリング拡張
 
 ```python
 class DuplicateDetectionError(HouseholdMCPError):
@@ -1304,7 +1296,7 @@ ERROR_MESSAGES = {
 }
 ```
 
-### 12.10 プロジェクト構造拡張
+### 10.10 プロジェクト構造拡張
 
 ```text
 my_household_mcpserver/
@@ -1333,7 +1325,7 @@ my_household_mcpserver/
         └── test_duplicate_pipeline.py  # ★ 新規
 ```
 
-### 12.11 設定・環境変数
+### 10.11 設定・環境変数
 
 ```python
 # src/household_mcp/config.py
@@ -1355,7 +1347,7 @@ class DuplicateDetectionConfig:
     auto_detect_on_import: bool = False  # CSV取り込み時に自動検出
 ```
 
-### 12.12 初期化・マイグレーション
+### 10.12 初期化・マイグレーション
 
 ```python
 # src/household_mcp/database/db_manager.py
@@ -1384,7 +1376,7 @@ class DatabaseManager:
 
 ---
 
-## 13. 変更履歴
+## 11. 変更履歴
 
 | 日付       | バージョン | 概要                                                 |
 | ---------- | ---------- | ---------------------------------------------------- |
