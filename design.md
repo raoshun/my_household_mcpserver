@@ -561,4 +561,838 @@ class StreamingConfig:
 
 ---
 
+## 12. 重複検出・解決機能設計（FR-009対応）
+
+### 12.1 アーキテクチャ拡張
+
+要件 FR-009-1〜FR-009-4 に対応するため、既存アーキテクチャに以下のコンポーネントを追加する：
+
+```text
+┌──────────────┐   MCPプロトコル   ┌─────────────────────────┐
+│  LLMクライアント │ ◄─────────────► │  家計簿分析 MCP サーバ   │
+└──────────────┘                  └────────┬────────────────┘
+                                                │
+                                                ├─ Duplicate Detector
+                                                │  (重複検出エンジン)
+                                                │
+                                                ├─ User Confirmation
+                                                │  (MCPツール経由)
+                                                │
+                                                ▼
+                                      ┌─────────────────────┐
+                                      │   SQLite Database   │
+                                      │  (data/household.db)│
+                                      │                     │
+                                      │ - transactions      │
+                                      │ - duplicate_checks  │
+                                      └─────────────────────┘
+                                                ▲
+                                                │ CSV読み込み時にキャッシュ
+                                                │
+                                      ┌────────────────────────┐
+                                      │  CSV データ / ローカルFS │
+                                      └────────────────────────┘
+```
+
+### 12.2 新規コンポーネント
+
+| コンポーネント       | 主な責務                         | 実装ファイル                                 | 対応要件 |
+| -------------------- | -------------------------------- | -------------------------------------------- | -------- |
+| Database Manager     | SQLiteのスキーマ管理とCRUD操作   | `src/household_mcp/database/db_manager.py`   | FR-009-3 |
+| CSV to DB Importer   | CSVデータのDB取り込み            | `src/household_mcp/database/csv_importer.py` | FR-009-3 |
+| Duplicate Detector   | 重複候補の検出ロジック           | `src/household_mcp/duplicate/detector.py`    | FR-009-1 |
+| Duplicate Comparator | 誤差許容を含む比較ロジック       | `src/household_mcp/duplicate/comparator.py`  | FR-009-1 |
+| Duplicate Tools      | ユーザー確認用MCPツール群        | `src/household_mcp/tools/duplicate_tools.py` | FR-009-2 |
+| Duplicate Resolver   | 重複解消処理（フラグ設定・復元） | `src/household_mcp/duplicate/resolver.py`    | FR-009-4 |
+
+### 12.3 技術スタック拡張
+
+| 区分         | 追加技術        | 用途                           | 備考                   |
+| ------------ | --------------- | ------------------------------ | ---------------------- |
+| データベース | SQLite 3.x      | ローカルデータベース           | Python標準ライブラリ   |
+| ORM/DB操作   | SQLAlchemy      | データベース抽象化レイヤー     | 2.0以降を推奨          |
+| 日付処理     | python-dateutil | 日付誤差計算                   | 標準ライブラリで代替可 |
+| 文字列類似度 | difflib         | 摘要の類似度計算（将来拡張用） | Python標準ライブラリ   |
+
+### 12.4 データベース設計
+
+#### 12.4.1 スキーマ定義
+
+**transactions テーブル** - 取引データのキャッシュ
+
+```sql
+CREATE TABLE transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    -- 元データ
+    source_file TEXT NOT NULL,              -- 元のCSVファイル名
+    row_number INTEGER NOT NULL,            -- CSV内の行番号
+    date DATE NOT NULL,                     -- 取引日付
+    amount DECIMAL(12, 2) NOT NULL,         -- 金額（円）
+    description TEXT,                       -- 摘要
+    category_major TEXT,                    -- 大項目
+    category_minor TEXT,                    -- 中項目
+    account TEXT,                           -- 口座
+    memo TEXT,                              -- メモ
+    is_target INTEGER DEFAULT 1,            -- 計算対象フラグ
+
+    -- 重複管理フィールド
+    is_duplicate INTEGER DEFAULT 0,         -- 重複フラグ（0=非重複, 1=重複）
+    duplicate_of INTEGER,                   -- 参照先取引ID
+    duplicate_checked INTEGER DEFAULT 0,    -- ユーザー確認済みフラグ
+    duplicate_checked_at TIMESTAMP,         -- 確認日時
+
+    -- メタ情報
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- インデックス用複合キー
+    UNIQUE(source_file, row_number),
+    FOREIGN KEY(duplicate_of) REFERENCES transactions(id)
+);
+
+-- パフォーマンス最適化用インデックス
+CREATE INDEX idx_date_amount ON transactions(date, amount);
+CREATE INDEX idx_is_duplicate ON transactions(is_duplicate);
+CREATE INDEX idx_duplicate_of ON transactions(duplicate_of);
+CREATE INDEX idx_date_range ON transactions(date);
+```
+
+**duplicate_checks テーブル** - 重複検出の履歴
+
+```sql
+CREATE TABLE duplicate_checks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    transaction_id_1 INTEGER NOT NULL,      -- 取引ID1
+    transaction_id_2 INTEGER NOT NULL,      -- 取引ID2
+
+    -- 検出パラメータ
+    detection_date_tolerance INTEGER,       -- 日付誤差(日数)
+    detection_amount_tolerance_abs DECIMAL(12, 2),  -- 金額絶対誤差(円)
+    detection_amount_tolerance_pct DECIMAL(5, 2),   -- 金額割合誤差(%)
+
+    -- 検出結果
+    similarity_score DECIMAL(5, 4),         -- 類似度スコア (0.0-1.0)
+    detected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- ユーザー判定
+    user_decision TEXT,                     -- 'duplicate' / 'not_duplicate' / 'skip'
+    decided_at TIMESTAMP,
+
+    FOREIGN KEY(transaction_id_1) REFERENCES transactions(id),
+    FOREIGN KEY(transaction_id_2) REFERENCES transactions(id),
+    UNIQUE(transaction_id_1, transaction_id_2)
+);
+
+CREATE INDEX idx_decision ON duplicate_checks(user_decision);
+```
+
+#### 12.4.2 SQLAlchemy モデル定義
+
+```python
+from sqlalchemy import Column, Integer, String, Decimal, DateTime, ForeignKey, Text
+from sqlalchemy.orm import declarative_base, relationship
+from datetime import datetime
+
+Base = declarative_base()
+
+class Transaction(Base):
+    __tablename__ = 'transactions'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # 元データ
+    source_file = Column(String(255), nullable=False)
+    row_number = Column(Integer, nullable=False)
+    date = Column(DateTime, nullable=False, index=True)
+    amount = Column(Decimal(12, 2), nullable=False)
+    description = Column(Text)
+    category_major = Column(String(100))
+    category_minor = Column(String(100))
+    account = Column(String(100))
+    memo = Column(Text)
+    is_target = Column(Integer, default=1)
+
+    # 重複管理
+    is_duplicate = Column(Integer, default=0, index=True)
+    duplicate_of = Column(Integer, ForeignKey('transactions.id'))
+    duplicate_checked = Column(Integer, default=0)
+    duplicate_checked_at = Column(DateTime)
+
+    # メタ情報
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+    # リレーション
+    original_transaction = relationship('Transaction', remote_side=[id], backref='duplicates')
+    duplicate_checks_as_1 = relationship('DuplicateCheck', foreign_keys='DuplicateCheck.transaction_id_1')
+    duplicate_checks_as_2 = relationship('DuplicateCheck', foreign_keys='DuplicateCheck.transaction_id_2')
+
+
+class DuplicateCheck(Base):
+    __tablename__ = 'duplicate_checks'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    transaction_id_1 = Column(Integer, ForeignKey('transactions.id'), nullable=False)
+    transaction_id_2 = Column(Integer, ForeignKey('transactions.id'), nullable=False)
+
+    # 検出パラメータ
+    detection_date_tolerance = Column(Integer)
+    detection_amount_tolerance_abs = Column(Decimal(12, 2))
+    detection_amount_tolerance_pct = Column(Decimal(5, 2))
+
+    # 検出結果
+    similarity_score = Column(Decimal(5, 4))
+    detected_at = Column(DateTime, default=datetime.now)
+
+    # ユーザー判定
+    user_decision = Column(String(20))  # 'duplicate', 'not_duplicate', 'skip'
+    decided_at = Column(DateTime)
+
+    # リレーション
+    transaction_1 = relationship('Transaction', foreign_keys=[transaction_id_1])
+    transaction_2 = relationship('Transaction', foreign_keys=[transaction_id_2])
+```
+
+### 12.5 重複検出ロジック設計
+
+#### 12.5.1 DuplicateDetector クラス
+
+```python
+from dataclasses import dataclass
+from typing import List, Tuple
+from datetime import timedelta
+
+@dataclass
+class DetectionOptions:
+    """重複検出オプション"""
+    date_tolerance_days: int = 0           # 日付誤差許容(±日数)
+    amount_tolerance_abs: float = 0.0      # 金額絶対誤差(±円)
+    amount_tolerance_pct: float = 0.0      # 金額割合誤差(±%)
+    min_similarity_score: float = 0.8      # 最小類似度スコア
+
+
+class DuplicateDetector:
+    """重複検出エンジン"""
+
+    def __init__(self, db_session, options: DetectionOptions = None):
+        self.db = db_session
+        self.options = options or DetectionOptions()
+
+    def detect_duplicates(
+        self,
+        transaction_ids: List[int] = None
+    ) -> List[Tuple[Transaction, Transaction, float]]:
+        """
+        重複候補を検出
+
+        Args:
+            transaction_ids: 検出対象の取引IDリスト。Noneの場合は全件検索
+
+        Returns:
+            (取引1, 取引2, 類似度スコア) のリスト
+        """
+        candidates = []
+
+        # 検出対象の取得（is_duplicate=0 のみ）
+        query = self.db.query(Transaction).filter(
+            Transaction.is_duplicate == 0
+        )
+        if transaction_ids:
+            query = query.filter(Transaction.id.in_(transaction_ids))
+
+        transactions = query.all()
+
+        # 全ペアの比較（効率化のため日付でグルーピング）
+        grouped = self._group_by_date_range(transactions)
+
+        for date_group in grouped.values():
+            for i, trans1 in enumerate(date_group):
+                for trans2 in date_group[i+1:]:
+                    if self._is_potential_duplicate(trans1, trans2):
+                        score = self._calculate_similarity(trans1, trans2)
+                        if score >= self.options.min_similarity_score:
+                            candidates.append((trans1, trans2, score))
+
+        # スコア降順でソート
+        candidates.sort(key=lambda x: x[2], reverse=True)
+        return candidates
+
+    def _group_by_date_range(
+        self,
+        transactions: List[Transaction]
+    ) -> dict:
+        """日付範囲でグルーピング（効率化）"""
+        groups = {}
+        tolerance = self.options.date_tolerance_days
+
+        for trans in transactions:
+            # 日付を週単位などでグルーピング
+            key = trans.date.date().isocalendar()[:2]  # (year, week)
+            if key not in groups:
+                groups[key] = []
+            groups[key].append(trans)
+
+        return groups
+
+    def _is_potential_duplicate(
+        self,
+        trans1: Transaction,
+        trans2: Transaction
+    ) -> bool:
+        """基本条件チェック（高速フィルタリング）"""
+        # 日付チェック
+        date_diff = abs((trans1.date - trans2.date).days)
+        if date_diff > self.options.date_tolerance_days:
+            return False
+
+        # 金額チェック（絶対値）
+        if self.options.amount_tolerance_abs > 0:
+            amount_diff_abs = abs(float(trans1.amount) - float(trans2.amount))
+            if amount_diff_abs > self.options.amount_tolerance_abs:
+                return False
+
+        # 金額チェック（割合）
+        if self.options.amount_tolerance_pct > 0:
+            avg_amount = (abs(float(trans1.amount)) + abs(float(trans2.amount))) / 2
+            if avg_amount > 0:
+                amount_diff_pct = abs(float(trans1.amount) - float(trans2.amount)) / avg_amount * 100
+                if amount_diff_pct > self.options.amount_tolerance_pct:
+                    return False
+        else:
+            # 誤差許容なしの場合は完全一致のみ
+            if trans1.amount != trans2.amount:
+                return False
+
+        return True
+
+    def _calculate_similarity(
+        self,
+        trans1: Transaction,
+        trans2: Transaction
+    ) -> float:
+        """類似度スコア計算 (0.0-1.0)"""
+        score = 0.0
+        weights = []
+
+        # 日付の類似度
+        date_diff = abs((trans1.date - trans2.date).days)
+        max_diff = max(self.options.date_tolerance_days, 1)
+        date_sim = 1.0 - (date_diff / max_diff)
+        score += date_sim * 0.4
+        weights.append(0.4)
+
+        # 金額の類似度
+        amount1 = abs(float(trans1.amount))
+        amount2 = abs(float(trans2.amount))
+        max_amount = max(amount1, amount2)
+        if max_amount > 0:
+            amount_sim = 1.0 - abs(amount1 - amount2) / max_amount
+        else:
+            amount_sim = 1.0
+        score += amount_sim * 0.6
+        weights.append(0.6)
+
+        return score
+```
+
+#### 12.5.2 処理フロー
+
+```text
+1. CSV読み込み時
+   └─> CSVImporter.import_csv()
+       ├─> DBにトランザクション登録（重複チェックなし）
+       └─> 登録完了
+
+2. 重複検出実行（手動またはスケジュール）
+   └─> DuplicateDetector.detect_duplicates()
+       ├─> 未チェック取引を取得
+       ├─> 日付・金額条件で候補ペア抽出
+       ├─> 類似度スコア計算
+       └─> duplicate_checks テーブルに記録
+
+3. ユーザー確認（MCPツール経由）
+   └─> list_duplicate_candidates() ツール
+       ├─> 候補ペアの詳細を取得
+       ├─> LLMクライアントに整形して提示
+       └─> ユーザー判定を待機
+
+   └─> confirm_duplicate() ツール
+       ├─> ユーザー判定を受信
+       ├─> duplicate_checks テーブル更新
+       ├─> is_duplicate フラグ設定（decision='duplicate'の場合）
+       └─> 処理完了
+
+4. 集計・分析時
+   └─> データ取得クエリ
+       └─> WHERE is_duplicate = 0 でフィルタ
+```
+
+### 12.6 MCPツール設計
+
+#### 12.6.1 ツール一覧
+
+```python
+# src/household_mcp/tools/duplicate_tools.py
+
+@mcp.tool()
+def detect_duplicates(
+    date_tolerance_days: int = 0,
+    amount_tolerance_abs: float = 0.0,
+    amount_tolerance_pct: float = 0.0,
+    transaction_ids: list[int] | None = None
+) -> dict:
+    """
+    重複候補を検出
+
+    Args:
+        date_tolerance_days: 日付の誤差許容(±日数)
+        amount_tolerance_abs: 金額の絶対誤差許容(±円)
+        amount_tolerance_pct: 金額の割合誤差許容(±%)
+        transaction_ids: 検出対象の取引IDリスト（省略時は全件）
+
+    Returns:
+        {
+            "candidates_count": 候補数,
+            "message": "5件の重複候補が見つかりました"
+        }
+    """
+
+
+@mcp.tool()
+def list_duplicate_candidates(
+    limit: int = 10,
+    skip_checked: bool = True
+) -> dict:
+    """
+    重複候補の一覧を取得
+
+    Args:
+        limit: 取得件数上限
+        skip_checked: 確認済みをスキップするか
+
+    Returns:
+        {
+            "candidates": [
+                {
+                    "check_id": 1,
+                    "transaction_1": {...},
+                    "transaction_2": {...},
+                    "similarity_score": 0.95,
+                    "date_diff_days": 0,
+                    "amount_diff": 0.0
+                },
+                ...
+            ]
+        }
+    """
+
+
+@mcp.tool()
+def get_duplicate_candidate_detail(check_id: int) -> dict:
+    """
+    重複候補の詳細を取得
+
+    Args:
+        check_id: duplicate_checks テーブルのID
+
+    Returns:
+        {
+            "check_id": 1,
+            "transaction_1": {
+                "id": 100,
+                "date": "2024-01-15",
+                "amount": -5000,
+                "description": "スーパーマーケット A店",
+                "category_major": "食費",
+                "category_minor": "食料品",
+                "source_file": "収入・支出詳細_2024-01-01_2024-01-31.csv",
+                "row_number": 45
+            },
+            "transaction_2": {
+                "id": 105,
+                "date": "2024-01-15",
+                "amount": -5000,
+                "description": "スーパーマーケット A店",
+                "category_major": "食費",
+                "category_minor": "食料品",
+                "source_file": "収入・支出詳細_2024-01-01_2024-01-31.csv",
+                "row_number": 50
+            },
+            "similarity_score": 1.0,
+            "detection_params": {
+                "date_tolerance_days": 0,
+                "amount_tolerance_abs": 0.0,
+                "amount_tolerance_pct": 0.0
+            }
+        }
+    """
+
+
+@mcp.tool()
+def confirm_duplicate(
+    check_id: int,
+    decision: Literal["duplicate", "not_duplicate", "skip"]
+) -> dict:
+    """
+    重複判定結果を記録
+
+    Args:
+        check_id: duplicate_checks テーブルのID
+        decision: ユーザー判定
+            - "duplicate": 重複である
+            - "not_duplicate": 重複ではない
+            - "skip": 保留（後で判断）
+
+    Returns:
+        {
+            "success": true,
+            "message": "重複として記録しました。取引ID 105 にフラグが設定されました。",
+            "marked_transaction_id": 105
+        }
+    """
+
+
+@mcp.tool()
+def restore_duplicate(transaction_id: int) -> dict:
+    """
+    誤って重複とマークした取引を復元
+
+    Args:
+        transaction_id: 復元する取引ID
+
+    Returns:
+        {
+            "success": true,
+            "message": "取引ID 105 を復元しました。"
+        }
+    """
+
+
+@mcp.tool()
+def get_duplicate_stats() -> dict:
+    """
+    重複検出の統計情報を取得
+
+    Returns:
+        {
+            "total_transactions": 10000,
+            "marked_duplicates": 25,
+            "pending_checks": 5,
+            "confirmed_not_duplicate": 3,
+            "duplicate_rate": 0.25
+        }
+    """
+```
+
+#### 12.6.2 ユーザー対話フロー例
+
+```text
+ユーザー: 「重複している取引があるか確認したい」
+
+AI: detect_duplicates() を実行
+    → "5件の重複候補が見つかりました"
+
+AI: list_duplicate_candidates() を実行
+    → 候補一覧を取得
+
+AI: ユーザーに提示
+    「以下の重複候補が見つかりました:
+     1. 2024-01-15 スーパーマーケット -5,000円 (類似度: 100%)
+        - 取引ID 100 (行45) と 取引ID 105 (行50)
+     2. ...」
+
+ユーザー: 「1番目は重複です。2番目は別の買い物です。」
+
+AI: confirm_duplicate(check_id=1, decision="duplicate")
+    confirm_duplicate(check_id=2, decision="not_duplicate")
+    → 判定を記録
+
+AI: 「取引ID 105 を重複としてマークしました。
+     今後の集計から除外されます。」
+```
+
+### 12.7 CSV to DB インポート設計
+
+#### 12.7.1 CSVImporter クラス
+
+```python
+class CSVImporter:
+    """CSV → DB インポーター"""
+
+    def __init__(self, db_session):
+        self.db = db_session
+
+    def import_csv(self, csv_path: str, encoding: str = "cp932") -> dict:
+        """
+        CSVファイルをDBにインポート
+
+        Args:
+            csv_path: CSVファイルパス
+            encoding: エンコーディング
+
+        Returns:
+            {
+                "imported": 件数,
+                "skipped": 件数,
+                "errors": エラー情報リスト
+            }
+        """
+        df = pd.read_csv(csv_path, encoding=encoding)
+
+        imported = 0
+        skipped = 0
+        errors = []
+
+        source_file = os.path.basename(csv_path)
+
+        for idx, row in df.iterrows():
+            try:
+                # 既存チェック（source_file + row_number）
+                existing = self.db.query(Transaction).filter(
+                    Transaction.source_file == source_file,
+                    Transaction.row_number == idx
+                ).first()
+
+                if existing:
+                    skipped += 1
+                    continue
+
+                # 新規登録
+                trans = Transaction(
+                    source_file=source_file,
+                    row_number=idx,
+                    date=pd.to_datetime(row['日付']),
+                    amount=Decimal(str(row['金額(円)'])),
+                    description=row.get('内容', ''),
+                    category_major=row.get('大項目', row.get('大分類', '')),
+                    category_minor=row.get('中項目', row.get('中分類', '')),
+                    account=row.get('口座', ''),
+                    memo=row.get('メモ', ''),
+                    is_target=int(row.get('計算対象', 1))
+                )
+
+                self.db.add(trans)
+                imported += 1
+
+            except Exception as e:
+                errors.append({
+                    "row": idx,
+                    "error": str(e)
+                })
+
+        self.db.commit()
+
+        return {
+            "imported": imported,
+            "skipped": skipped,
+            "errors": errors
+        }
+
+    def import_all_csvs(self, data_dir: str = "data") -> dict:
+        """dataディレクトリ内の全CSVをインポート"""
+        csv_files = glob.glob(os.path.join(data_dir, "収入・支出詳細_*.csv"))
+
+        total_imported = 0
+        total_skipped = 0
+        all_errors = []
+
+        for csv_file in sorted(csv_files):
+            result = self.import_csv(csv_file)
+            total_imported += result["imported"]
+            total_skipped += result["skipped"]
+            all_errors.extend(result["errors"])
+
+        return {
+            "files_processed": len(csv_files),
+            "total_imported": total_imported,
+            "total_skipped": total_skipped,
+            "errors": all_errors
+        }
+```
+
+### 12.8 非機能要件対応
+
+#### 12.8.1 パフォーマンス最適化（NFR-002）
+
+```python
+# インデックス活用
+# - (date, amount) 複合インデックス
+# - is_duplicate 単独インデックス
+
+# クエリ最適化例
+def get_active_transactions(start_date, end_date):
+    """集計対象取引の取得（重複除外）"""
+    return db.query(Transaction).filter(
+        Transaction.is_duplicate == 0,
+        Transaction.date.between(start_date, end_date)
+    ).all()
+
+# バッチ処理
+def detect_duplicates_batch(batch_size=1000):
+    """大量データの重複検出（バッチ処理）"""
+    offset = 0
+    while True:
+        batch = db.query(Transaction).filter(
+            Transaction.is_duplicate == 0,
+            Transaction.duplicate_checked == 0
+        ).limit(batch_size).offset(offset).all()
+
+        if not batch:
+            break
+
+        detector.detect_duplicates_for_batch(batch)
+        offset += batch_size
+```
+
+#### 12.8.2 データ整合性保証（NFR-010）
+
+```python
+# トランザクション処理
+def confirm_duplicate_with_transaction(check_id, decision):
+    """原子性を保証した重複確認処理"""
+    try:
+        with db.begin():  # トランザクション開始
+            # 1. duplicate_checks 更新
+            check = db.query(DuplicateCheck).filter(
+                DuplicateCheck.id == check_id
+            ).with_for_update().first()
+
+            check.user_decision = decision
+            check.decided_at = datetime.now()
+
+            # 2. transaction フラグ更新（decision='duplicate'の場合）
+            if decision == 'duplicate':
+                trans2 = db.query(Transaction).filter(
+                    Transaction.id == check.transaction_id_2
+                ).with_for_update().first()
+
+                trans2.is_duplicate = 1
+                trans2.duplicate_of = check.transaction_id_1
+                trans2.duplicate_checked = 1
+                trans2.duplicate_checked_at = datetime.now()
+
+            db.commit()
+            return {"success": True}
+
+    except Exception as e:
+        db.rollback()
+        raise DuplicateResolutionError(f"重複確認処理に失敗: {e}")
+```
+
+### 12.9 エラーハンドリング拡張
+
+```python
+class DuplicateDetectionError(HouseholdMCPError):
+    """重複検出時のエラー"""
+
+class DuplicateResolutionError(HouseholdMCPError):
+    """重複解消処理時のエラー"""
+
+class DatabaseError(HouseholdMCPError):
+    """データベース操作のエラー"""
+
+# エラーメッセージの日本語化（NFR-014）
+ERROR_MESSAGES = {
+    "duplicate_not_found": "指定された重複候補が見つかりません",
+    "transaction_not_found": "指定された取引が見つかりません",
+    "already_marked": "この取引は既に重複としてマークされています",
+    "invalid_decision": "判定値が不正です（duplicate/not_duplicate/skipのいずれか）",
+    "db_connection_failed": "データベース接続に失敗しました",
+}
+```
+
+### 12.10 プロジェクト構造拡張
+
+```text
+my_household_mcpserver/
+├── data/
+│   └── household.db              # ★ 新規（自動生成）
+├── src/
+│   ├── household_mcp/
+│   │   ├── database/
+│   │   │   ├── __init__.py
+│   │   │   ├── db_manager.py     # ★ 新規
+│   │   │   ├── models.py         # ★ 新規（SQLAlchemyモデル）
+│   │   │   └── csv_importer.py   # ★ 新規
+│   │   ├── duplicate/
+│   │   │   ├── __init__.py
+│   │   │   ├── detector.py       # ★ 新規
+│   │   │   ├── comparator.py     # ★ 新規
+│   │   │   └── resolver.py       # ★ 新規
+│   │   └── tools/
+│   │       └── duplicate_tools.py # ★ 新規
+└── tests/
+    ├── unit/
+    │   ├── test_duplicate_detector.py  # ★ 新規
+    │   ├── test_csv_importer.py        # ★ 新規
+    │   └── test_duplicate_tools.py     # ★ 新規
+    └── integration/
+        └── test_duplicate_pipeline.py  # ★ 新規
+```
+
+### 12.11 設定・環境変数
+
+```python
+# src/household_mcp/config.py
+
+@dataclass
+class DatabaseConfig:
+    db_path: str = "data/household.db"
+    echo_sql: bool = False              # SQLログ出力
+    pool_size: int = 5
+    max_overflow: int = 10
+
+@dataclass
+class DuplicateDetectionConfig:
+    default_date_tolerance: int = 0
+    default_amount_tolerance_abs: float = 0.0
+    default_amount_tolerance_pct: float = 0.0
+    min_similarity_score: float = 0.8
+    batch_size: int = 1000
+    auto_detect_on_import: bool = False  # CSV取り込み時に自動検出
+```
+
+### 12.12 初期化・マイグレーション
+
+```python
+# src/household_mcp/database/db_manager.py
+
+class DatabaseManager:
+    """データベース初期化とマイグレーション"""
+
+    def __init__(self, db_path: str = "data/household.db"):
+        self.db_path = db_path
+        self.engine = create_engine(f"sqlite:///{db_path}")
+
+    def init_db(self):
+        """データベースとテーブルの初期化"""
+        Base.metadata.create_all(self.engine)
+        print(f"Database initialized: {self.db_path}")
+
+    def get_session(self):
+        """セッション取得"""
+        Session = sessionmaker(bind=self.engine)
+        return Session()
+
+    def check_db_exists(self) -> bool:
+        """データベースファイルの存在確認"""
+        return os.path.exists(self.db_path)
+```
+
+---
+
+## 13. 変更履歴
+
+| 日付       | バージョン | 概要                                                 |
+| ---------- | ---------- | ---------------------------------------------------- |
+| 2025-07-29 | 1.0        | 旧バージョン（DB 前提の構成）                        |
+| 2025-10-03 | 0.2.0      | CSV 前提アーキテクチャに刷新、トレンド分析設計を追加 |
+| 2025-10-04 | 0.3.0      | 画像生成・HTTPストリーミング機能設計を追加           |
+| 2025-10-30 | 0.4.0      | 重複検出・解決機能設計を追加（FR-009対応）           |
+
+---
+
 以上。
