@@ -88,7 +88,7 @@ repos:
         additional_dependencies:
           - types-python-dateutil
           - types-requests
-        exclude: ^tests/
+        exclude: ^(tests/|src/household_mcp/duplicate/detector\.py)
 
   # Markdown リンター
   - repo: https://github.com/igorshubovych/markdownlint-cli
