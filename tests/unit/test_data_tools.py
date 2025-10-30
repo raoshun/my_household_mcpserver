@@ -24,10 +24,51 @@ def temp_db(tmp_path: Path):
     # Ensure connection and schema created
     conn = db.connect()
     try:
-        conn.execute("SELECT 1")
-    finally:
-        # ここでは接続確認のみを行い、特別な後処理は不要です
-        pass
+        # Create schema for testing
+        conn.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS accounts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                type TEXT NOT NULL,
+                balance REAL DEFAULT 0.0,
+                initial_balance REAL DEFAULT 0.0,
+                current_balance REAL DEFAULT 0.0,
+                is_active INTEGER DEFAULT 1,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                type TEXT NOT NULL,
+                parent_id INTEGER,
+                color TEXT,
+                icon TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(name, type)
+            );
+
+            CREATE TABLE IF NOT EXISTS transactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                date TEXT NOT NULL,
+                amount REAL NOT NULL,
+                description TEXT,
+                category_id INTEGER,
+                account_id INTEGER,
+                type TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (category_id) REFERENCES categories(id),
+                FOREIGN KEY (account_id) REFERENCES accounts(id)
+            );
+        """
+        )
+        conn.commit()
+    except Exception as e:
+        print(f"Failed to create schema: {e}")
+        raise
     yield db
     db.close()
 

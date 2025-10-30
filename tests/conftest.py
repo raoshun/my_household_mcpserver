@@ -4,6 +4,8 @@ import sys
 import warnings
 from pathlib import Path
 
+import pytest
+
 
 def pytest_configure():
     # Ensure 'src' is importable for tests
@@ -24,3 +26,9 @@ def pytest_configure():
         message=r"datetime\.datetime\.utcfromtimestamp\(\) is deprecated",
         category=DeprecationWarning,
     )
+
+
+# Configure anyio to use only asyncio backend (trio not installed)
+@pytest.fixture(scope="session")
+def anyio_backend():
+    return "asyncio"

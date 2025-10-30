@@ -1,5 +1,4 @@
 import io
-from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -33,10 +32,8 @@ def test_create_monthly_pie_chart():
     if not HAS_VISUALIZATION_DEPS:
         pytest.skip("Visualization依存関係が見つからないためテストをスキップします")
 
-    font_path = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
-    if not Path(font_path).exists():
-        pytest.skip("日本語フォントが見つからないためテストをスキップします")
-    gen = ChartGenerator(font_path=font_path)
+    # Auto-detect font (should find fonts/NotoSansCJKjp-Regular.otf)
+    gen = ChartGenerator()
     buf = gen.create_monthly_pie_chart(sample_pie_data(), title="テスト円グラフ")
     assert isinstance(buf, io.BytesIO)
     assert buf.getbuffer().nbytes > 0
@@ -46,10 +43,8 @@ def test_create_category_trend_line():
     if not HAS_VISUALIZATION_DEPS:
         pytest.skip("Visualization依存関係が見つからないためテストをスキップします")
 
-    font_path = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
-    if not Path(font_path).exists():
-        pytest.skip("日本語フォントが見つからないためテストをスキップします")
-    gen = ChartGenerator(font_path=font_path)
+    # Auto-detect font (should find fonts/NotoSansCJKjp-Regular.otf)
+    gen = ChartGenerator()
     buf = gen.create_category_trend_line(
         sample_line_data(), category="食費", title="推移テスト"
     )
@@ -61,10 +56,8 @@ def test_create_comparison_bar_chart():
     if not HAS_VISUALIZATION_DEPS:
         pytest.skip("Visualization依存関係が見つからないためテストをスキップします")
 
-    font_path = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
-    if not Path(font_path).exists():
-        pytest.skip("日本語フォントが見つからないためテストをスキップします")
-    gen = ChartGenerator(font_path=font_path)
+    # Auto-detect font (should find fonts/NotoSansCJKjp-Regular.otf)
+    gen = ChartGenerator()
     buf = gen.create_comparison_bar_chart(sample_bar_data(), title="比較棒グラフ")
     assert isinstance(buf, io.BytesIO)
     assert buf.getbuffer().nbytes > 0
@@ -74,11 +67,8 @@ def test_invalid_data_raises():
     if not HAS_VISUALIZATION_DEPS:
         pytest.skip("Visualization依存関係が見つからないためテストをスキップします")
 
-    font_path = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
-    if not Path(font_path).exists():
-        pytest.skip("日本語フォントが見つからないためテストをスキップします")
-
-    gen = ChartGenerator(font_path=font_path)
+    # Auto-detect font (should find fonts/NotoSansCJKjp-Regular.otf)
+    gen = ChartGenerator()
     with pytest.raises(ChartGenerationError):
         gen.create_monthly_pie_chart(pd.DataFrame({"foo": [1], "bar": [2]}))
 
@@ -91,11 +81,8 @@ def test_chart_generator_all_graph_types():
     if not HAS_VISUALIZATION_DEPS:
         pytest.skip("Visualization依存関係が見つからないためテストをスキップします")
 
-    font_path = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
-    if not Path(font_path).exists():
-        pytest.skip("日本語フォントが見つからないためテストをスキップします")
-
-    gen = ChartGenerator(font_path=font_path)
+    # Auto-detect font (should find fonts/NotoSansCJKjp-Regular.otf)
+    gen = ChartGenerator()
 
     # 円グラフ
     pie_buf = gen.create_monthly_pie_chart(sample_pie_data(), title="円グラフテスト")
@@ -110,9 +97,7 @@ def test_chart_generator_all_graph_types():
     assert line_buf.getbuffer().nbytes > 1000
 
     # 棒グラフ
-    bar_buf = gen.create_comparison_bar_chart(
-        sample_bar_data(), title="棒グラフテスト"
-    )
+    bar_buf = gen.create_comparison_bar_chart(sample_bar_data(), title="棒グラフテスト")
     assert isinstance(bar_buf, io.BytesIO)
     assert bar_buf.getbuffer().nbytes > 1000
 
@@ -122,11 +107,8 @@ def test_chart_generator_japanese_font_rendering():
     if not HAS_VISUALIZATION_DEPS:
         pytest.skip("Visualization依存関係が見つからないためテストをスキップします")
 
-    font_path = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
-    if not Path(font_path).exists():
-        pytest.skip("日本語フォントが見つからないためテストをスキップします")
-
-    gen = ChartGenerator(font_path=font_path)
+    # Auto-detect font (should find fonts/NotoSansCJKjp-Regular.otf)
+    gen = ChartGenerator()
 
     # 日本語を含むデータ
     japanese_data = pd.DataFrame(
@@ -148,15 +130,12 @@ def test_chart_generator_empty_data_error():
     if not HAS_VISUALIZATION_DEPS:
         pytest.skip("Visualization依存関係が見つからないためテストをスキップします")
 
-    font_path = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
-    if not Path(font_path).exists():
-        pytest.skip("日本語フォントが見つからないためテストをスキップします")
-
-    gen = ChartGenerator(font_path=font_path)
+    # Auto-detect font (should find fonts/NotoSansCJKjp-Regular.otf)
+    gen = ChartGenerator()
 
     empty_df = pd.DataFrame({"category": [], "amount": []})
 
-    with pytest.raises(ChartGenerationError, match="データが空"):
+    with pytest.raises(ChartGenerationError, match="No positive amounts found"):
         gen.create_monthly_pie_chart(empty_df)
 
 
@@ -165,11 +144,8 @@ def test_chart_generator_missing_columns_error():
     if not HAS_VISUALIZATION_DEPS:
         pytest.skip("Visualization依存関係が見つからないためテストをスキップします")
 
-    font_path = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
-    if not Path(font_path).exists():
-        pytest.skip("日本語フォントが見つからないためテストをスキップします")
-
-    gen = ChartGenerator(font_path=font_path)
+    # Auto-detect font (should find fonts/NotoSansCJKjp-Regular.otf)
+    gen = ChartGenerator()
 
     # 'amount' 列がない
     invalid_df = pd.DataFrame({"category": ["食費", "住居費"], "value": [10000, 20000]})
@@ -197,11 +173,8 @@ def test_chart_generator_large_dataset_performance():
     if not HAS_VISUALIZATION_DEPS:
         pytest.skip("Visualization依存関係が見つからないためテストをスキップします")
 
-    font_path = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
-    if not Path(font_path).exists():
-        pytest.skip("日本語フォントが見つからないためテストをスキップします")
-
-    gen = ChartGenerator(font_path=font_path)
+    # Auto-detect font (should find fonts/NotoSansCJKjp-Regular.otf)
+    gen = ChartGenerator()
 
     # 100カテゴリの大量データ
     large_data = pd.DataFrame(

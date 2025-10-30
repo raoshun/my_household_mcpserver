@@ -35,11 +35,7 @@ dependencies = [
 # 以下は必要に応じてインストール
 
 # 画像生成機能
-visualization = [
-    "matplotlib>=3.8.0",
-    "plotly>=5.17.0",
-    "pillow>=10.0.0",
-]
+visualization = ["matplotlib>=3.8.0", "plotly>=5.17.0", "pillow>=10.0.0"]
 
 # HTTPストリーミング（画像配信用）
 streaming = [
@@ -57,27 +53,16 @@ web = [
 ]
 
 # データベース連携（将来の拡張向け）
-db = [
-    "sqlalchemy>=2.0.23",
-    "alembic>=1.12.1",
-]
+db = ["sqlalchemy>=2.0.23", "alembic>=1.12.1"]
 
 # 認証機能
-auth = [
-    "passlib[bcrypt]>=1.7.4",
-    "python-jose[cryptography]>=3.3.0",
-]
+auth = ["passlib[bcrypt]>=1.7.4", "python-jose[cryptography]>=3.3.0"]
 
 # 非同期 I/O
-io = [
-    "aiofiles>=23.2.1",
-    "httpx>=0.25.2",
-]
+io = ["aiofiles>=23.2.1", "httpx>=0.25.2"]
 
 # 構造化ログ
-logging = [
-    "structlog>=23.2.0",
-]
+logging = ["structlog>=23.2.0"]
 
 # 完全インストール（すべてのオプション機能）
 full = [
@@ -166,7 +151,11 @@ warn_no_return = true
 warn_unreachable = true
 strict_equality = true
 ignore_missing_imports = true
-exclude = ["src/server.py", "src/household_mcp/duplicate/detector.py", "src/household_mcp/web/http_server.py"]
+exclude = [
+    "src/server.py",
+    "src/household_mcp/duplicate/detector.py",
+    "src/household_mcp/web/http_server.py",
+]
 
 [[tool.mypy.overrides]]
 module = "tests.*"
@@ -193,6 +182,7 @@ markers = [
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
     "asyncio: marks tests as asyncio tests",
+    "anyio: marks tests as anyio tests",
 ]
 filterwarnings = [
     # Suppress 3rd-party deprecation warning from dateutil used by pandas

@@ -4,8 +4,8 @@ import io
 
 import pytest
 
-# Use asyncio only (trio not installed)
-pytestmark = pytest.mark.asyncio
+# Use anyio for async tests
+pytestmark = pytest.mark.anyio
 
 
 def test_chart_cache_import():
@@ -114,7 +114,6 @@ def test_image_streamer_buffer_conversion():
     assert extracted == test_data
 
 
-@pytest.mark.asyncio
 async def test_image_streamer_stream_bytes():
     """Test async streaming of bytes."""
     from household_mcp.streaming.image_streamer import ImageStreamer
@@ -132,7 +131,6 @@ async def test_image_streamer_stream_bytes():
     assert chunks[1] == b"56789"
 
 
-@pytest.mark.asyncio
 async def test_image_streamer_stream_from_buffer():
     """Test async streaming from BytesIO buffer."""
     from household_mcp.streaming.image_streamer import ImageStreamer
@@ -223,7 +221,6 @@ def test_chart_cache_key_consistency():
         pytest.skip("cachetools not installed")
 
 
-@pytest.mark.asyncio
 async def test_image_streamer_empty_data():
     """Test streaming empty data."""
     from household_mcp.streaming.image_streamer import ImageStreamer
@@ -236,7 +233,6 @@ async def test_image_streamer_empty_data():
     assert len(chunks) == 0
 
 
-@pytest.mark.asyncio
 async def test_image_streamer_single_byte():
     """Test streaming single byte."""
     from household_mcp.streaming.image_streamer import ImageStreamer
@@ -250,7 +246,6 @@ async def test_image_streamer_single_byte():
     assert chunks[0] == b"X"
 
 
-@pytest.mark.asyncio
 async def test_image_streamer_large_image():
     """Test streaming large image data (NFR-005: memory efficiency)."""
     from household_mcp.streaming.image_streamer import ImageStreamer
