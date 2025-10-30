@@ -158,6 +158,12 @@ def enhanced_monthly_summary(
         "cache_key": key,
         "media_type": "image/png",
         "alt_text": f"{year}年{month}月の支出構成（{graph_type}）",
+        "metadata": {
+            "year": year,
+            "month": month,
+            "graph_type": graph_type,
+            "image_size": size,
+        },
     }
 
 
@@ -215,11 +221,12 @@ def enhanced_category_trend(
             "error": "No metrics data available for chart generation",
         }
 
-    # Prepare chart data: month & amount
+    # Prepare chart data: use month as category for bar chart
+    # The comparison bar chart expects category and amount columns
     chart_df = pd.DataFrame(
         {
-            "month": [m["month"] for m in metrics],
-            "amount": [abs(m["amount"]) for m in metrics],
+            "カテゴリ": [m["month"] for m in metrics],  # Use month as category
+            "金額": [abs(m["amount"]) for m in metrics],
         }
     )
 
@@ -230,7 +237,7 @@ def enhanced_category_trend(
     cat_name = result.get("category", "カテゴリ")
     title = f"{cat_name} の推移"
 
-    # Use comparison bar chart for now (works for all graph types)
+    # Use comparison bar chart (month is treated as category)
     # The chart will show amount by month
     buffer = gen.create_comparison_bar_chart(
         chart_df,
@@ -272,7 +279,11 @@ def enhanced_category_trend(
         "cache_key": key,
         "media_type": "image/png",
         "alt_text": f"{cat_name}のトレンド（{graph_type}）",
-        "category": cat_name,
-        "start_month": result.get("start_month"),
-        "end_month": result.get("end_month"),
+        "metadata": {
+            "category": cat_name,
+            "start_month": result.get("start_month"),
+            "end_month": result.get("end_month"),
+            "graph_type": graph_type,
+            "image_size": size,
+        },
     }
