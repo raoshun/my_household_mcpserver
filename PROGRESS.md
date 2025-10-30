@@ -62,6 +62,43 @@
 - **対応要件**: FR-003（画像生成）、FR-004（画像配信）
 - **技術的負債解消**: "MCP ツールに画像生成オプションを統合する" ✅
 
+### TASK-606: 統合テスト実装 ✅
+
+- **完了日**: 2025-10-30
+- **実装内容**:
+  - `tests/unit/test_chart_generator.py`: 7つの新規テストを追加（142行）
+    - `test_chart_generator_all_graph_types`: 全グラフタイプ（円・折れ線・棒）生成検証
+    - `test_chart_generator_japanese_font_rendering`: 日本語フォント（NotoSansCJK）レンダリング検証
+    - `test_chart_generator_empty_data_error`: 空データ時のエラーハンドリング
+    - `test_chart_generator_missing_columns_error`: カラム欠損時のエラーハンドリング
+    - `test_chart_generator_invalid_font_path`: 無効フォントパス時のフォールバック動作
+    - `test_chart_generator_large_dataset_performance`: 大量データ（100カテゴリ）パフォーマンステスト（NFR-005: 3秒以内）
+  - `tests/unit/test_streaming.py`: 7つの新規テストを追加（167行）
+    - `test_chart_cache_ttl_expiration`: キャッシュTTL失効動作検証
+    - `test_chart_cache_max_size_limit`: キャッシュサイズ上限（max_size=3）検証
+    - `test_chart_cache_key_consistency`: MD5ハッシュキー一貫性検証
+    - `test_image_streamer_empty_data`: 空データストリーミング検証（async）
+    - `test_image_streamer_single_byte`: 単一バイトストリーミング検証（async）
+    - `test_image_streamer_large_image`: 大規模画像（5MB）チャンクストリーミング検証（async, NFR-005）
+    - `test_global_cache_singleton`: グローバルキャッシュシングルトンパターン検証
+    - `test_global_cache_operations`: グローバルキャッシュ操作（set/get/clear/stats）検証
+  - `tests/integration/test_streaming_pipeline.py`: 11の統合テストを新規作成（277行）
+    - `test_end_to_end_monthly_summary_image`: E2E月次サマリー画像生成→キャッシュ→URL
+    - `test_end_to_end_category_trend_image`: E2Eカテゴリトレンド画像生成→キャッシュ→URL
+    - `test_performance_image_generation_within_3_seconds`: 画像生成パフォーマンス（NFR-005: 3秒以内）
+    - `test_cache_hit_performance`: キャッシュヒット時のパフォーマンス（0.1秒以内）
+    - `test_memory_usage_within_50mb`: メモリ使用量検証（NFR-006: 50MB以内）
+    - `test_concurrent_image_generation`: 並行画像生成（3件同時）検証
+    - `test_cache_stats_tracking`: キャッシュ統計追跡検証
+    - `test_error_handling_invalid_data`: 不正データ時のエラーハンドリング
+    - `test_error_handling_missing_visualization_deps`: 依存欠落時のエラーハンドリング
+    - `test_image_format_validation`: PNG形式マジックナンバー検証
+    - `test_streaming_imports`: インポート動作確認（スモークテスト）
+  - `pyproject.toml`: asyncio マーカー設定追加
+- **テスト結果**: 108テスト合格、29スキップ（オプション依存未インストール - 期待通り）
+- **対応要件**: NFR-005（画像生成3秒以内）、NFR-006（メモリ50MB以内）
+- **コミット**: 875b4f7
+
 ## 完了タスク（過去）
 
 ### TASK-605: category_analysis 実装 ✅
