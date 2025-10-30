@@ -237,9 +237,7 @@ def run_get_category_trend(
     if output_format == "image":
         # 画像生成機能を使用
         try:
-            from household_mcp.tools.enhanced_tools import (
-                enhanced_category_trend,
-            )
+            from household_mcp.tools.enhanced_tools import enhanced_category_trend
 
             result = enhanced_category_trend(
                 category=category,

@@ -6,7 +6,6 @@
 import logging
 import sqlite3
 from datetime import datetime
-from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 from ..database.connection import DatabaseConnection
@@ -64,7 +63,7 @@ class TransactionManager:
                 """
                 params = (
                     date,
-                    Decimal(str(amount)),
+                    float(amount),
                     description,
                     category_id,
                     account_id,
@@ -274,7 +273,7 @@ class TransactionManager:
                     update_params.append(datetime.strptime(value, "%Y-%m-%d").date())
                 elif field == "amount":
                     update_fields.append("amount = ?")
-                    update_params.append(Decimal(str(value)))
+                    update_params.append(float(value))
                 elif field == "description":
                     update_fields.append("description = ?")
                     update_params.append(value)
@@ -468,7 +467,7 @@ class TransactionManager:
             )
 
         cursor = conn.cursor()
-        cursor.execute(update_query, (Decimal(str(amount)), account_id))
+        cursor.execute(update_query, (float(amount), account_id))
 
     def _get_transaction_by_id(self, transaction_id: int) -> Optional[Dict[str, Any]]:
         """IDで取引を取得."""
@@ -924,17 +923,26 @@ class AccountManager:
 
             accounts = []
             for row in results:
+                # カラムインデックス: id, name, type, balance, initial_balance, current_balance, is_active, created_at, updated_at
                 accounts.append(
                     {
                         "id": row[0],
                         "name": row[1],
                         "type": row[2],
-                        "initial_balance": float(row[3]),
-                        "current_balance": float(row[4]),
-                        "currency": row[5],
-                        "is_active": bool(row[6]),
-                        "created_at": row[7].isoformat() if row[7] else None,
-                        "updated_at": row[8].isoformat() if row[8] else None,
+                        "balance": float(row[3]) if row[3] is not None else 0.0,
+                        "initial_balance": float(row[4]) if row[4] is not None else 0.0,
+                        "current_balance": float(row[5]) if row[5] is not None else 0.0,
+                        "is_active": bool(row[6]) if row[6] is not None else True,
+                        "created_at": (
+                            row[7]
+                            if isinstance(row[7], str)
+                            else (row[7].isoformat() if row[7] else None)
+                        ),
+                        "updated_at": (
+                            row[8]
+                            if isinstance(row[8], str)
+                            else (row[8].isoformat() if row[8] else None)
+                        ),
                     }
                 )
 
@@ -961,16 +969,21 @@ class AccountManager:
             if not result:
                 return None
 
+            # カラムインデックスに基づいて結果を返す
+            # accounts: id, name, type, balance, initial_balance, current_balance, is_active, created_at
             return {
                 "id": result[0],
                 "name": result[1],
                 "type": result[2],
-                "initial_balance": float(result[3]),
-                "current_balance": float(result[4]),
-                "currency": result[5],
-                "is_active": bool(result[6]),
-                "created_at": result[7].isoformat() if result[7] else None,
-                "updated_at": result[8].isoformat() if result[8] else None,
+                "balance": float(result[3]) if result[3] is not None else 0.0,
+                "initial_balance": float(result[4]) if result[4] is not None else 0.0,
+                "current_balance": float(result[5]) if result[5] is not None else 0.0,
+                "is_active": bool(result[6]) if result[6] is not None else True,
+                "created_at": (
+                    result[7]
+                    if isinstance(result[7], str)
+                    else (result[7].isoformat() if result[7] else None)
+                ),
             }
 
         except Exception as e:

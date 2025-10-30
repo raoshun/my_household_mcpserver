@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Generator, Optional
 
-from .models import DatabaseSchema
+# from .models import DatabaseSchema  # TODO: Implement DatabaseSchema
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,8 @@ class DatabaseConnection:
                         self._connection.execute("PRAGMA journal_mode = WAL")
 
                         # データベーススキーマを作成
-                        DatabaseSchema.create_all_tables(self._connection)
+                        # TODO: Implement DatabaseSchema.create_all_tables
+                        # DatabaseSchema.create_all_tables(self._connection)
 
                         logger.info("Database connected successfully: %s", self.db_path)
 

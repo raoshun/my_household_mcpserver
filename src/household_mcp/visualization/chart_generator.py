@@ -51,6 +51,14 @@ class ChartGenerator:
                 "Install with: pip install household-mcp-server[visualization]"
             )
 
+        # Validate font_path if provided
+        if font_path and not os.path.exists(font_path):
+            warnings.warn(
+                f"Font path '{font_path}' does not exist. Will attempt auto-detection.",
+                UserWarning,
+            )
+            font_path = None
+
         self.font_path = font_path or self._detect_japanese_font()
         self._setup_matplotlib()
 
