@@ -244,8 +244,12 @@ pre-commit install
 python -m src.server
 
 # HTTPストリーミングモード（画像配信対応）
-# ※ 現在実装中 - TASK-603 完了後に利用可能
-# python -m src.server --transport streamable-http --port 8080
+# 注: streaming または web extras のインストールが必要
+uv pip install -e ".[streaming]"
+python -m src.server --transport streamable-http --port 8000
+
+# または uvicorn で直接起動
+uv run uvicorn household_mcp.http_server:app --host 0.0.0.0 --port 8000
 ```
 
 ### 画像生成機能（オプション）
@@ -268,10 +272,10 @@ uv pip install -e ".[visualization]"
 - 折れ線グラフ（line）: 時系列トレンド
 - 面グラフ（area）: 累積トレンド
 
-**使用例**（実装予定 - TASK-604）:
+**MCP ツールからの使用例**:
 
 ```python
-# MCPツールから画像生成をリクエスト
+# 月次サマリーを画像で取得
 {
   "tool": "get_monthly_household",
   "arguments": {
@@ -279,10 +283,58 @@ uv pip install -e ".[visualization]"
     "month": 10,
     "output_format": "image",
     "graph_type": "pie",
-    "image_size": "800x600"
+    "image_size": "800x600",
+    "image_format": "png"
+  }
+}
+
+# レスポンス
+{
+  "success": true,
+  "type": "image",
+  "url": "http://localhost:8000/api/charts/abc123...",
+  "metadata": {
+    "graph_type": "pie",
+    "format": "png",
+    "size": "800x600",
+    "cache_key": "abc123..."
+  }
+}
+
+# カテゴリトレンドを画像で取得
+{
+  "tool": "get_category_trend",
+  "arguments": {
+    "category": "食費",
+    "start_month": "2024-01",
+    "end_month": "2024-06",
+    "output_format": "image"
   }
 }
 ```
+
+**HTTP エンドポイント経由でのアクセス**:
+
+HTTPストリーミングモードで起動した場合、以下のエンドポイントが利用可能です：
+
+```bash
+# 画像取得（ストリーミング配信）
+GET http://localhost:8000/api/charts/{chart_id}
+
+# キャッシュ情報取得
+GET http://localhost:8000/api/charts/{chart_id}/info
+
+# キャッシュ統計
+GET http://localhost:8000/api/cache/stats
+
+# キャッシュクリア
+DELETE http://localhost:8000/api/cache
+
+# ヘルスチェック
+GET http://localhost:8000/health
+```
+
+詳細は `docs/api.md` を参照してください。
 
 ### 利用可能な MCP リソース / ツール
 
