@@ -148,6 +148,27 @@
 - **対応要件**: ユーザー向けドキュメント整備
 - **コミット**: d985df7
 
+### TASK-609: 設計書・要件定義の整合性修正 ✅
+
+- **完了日**: 2025-10-30
+- **実装内容**:
+  - `requirements.md`: バージョンv1.1に更新
+    - FR-015追加: グラフ可視化機能（円・棒・折れ線・面グラフ、日本語対応）
+    - FR-016追加: HTTP画像配信（ストリーミング、キャッシング、5エンドポイント）
+    - FR-017追加: MCPツールの画像生成対応（output_format, graph_type等）
+    - NFR-005/006追加: 画像生成性能（3秒以内）とメモリ（50MB以内）
+    - NFR番号の再振り（NFR-005〜013）
+    - TS-011〜016追加: 画像生成関連テストシナリオ
+  - `design.md`: バージョン0.5.0に更新
+    - 対象要件: FR-001〜017、NFR-001〜013に更新
+    - コンポーネント構成テーブルに5つ追加:
+      - ChartGenerator, ImageStreamer, HTTPServer, ChartCache, EnhancedTools
+    - 技術スタックテーブルに追加:
+      - matplotlib, plotly, pillow（可視化・画像処理）
+      - FastAPI, uvicorn（HTTP配信）
+      - cachetools（キャッシング）
+- **対応要件**: 設計書と要件定義の整合性確保
+
 ## 完了タスク（過去）
 
 ### TASK-605: category_analysis 実装 ✅
