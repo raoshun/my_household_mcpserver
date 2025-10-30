@@ -192,6 +192,7 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
+    "asyncio: marks tests as asyncio tests",
 ]
 filterwarnings = [
     # Suppress 3rd-party deprecation warning from dateutil used by pandas
