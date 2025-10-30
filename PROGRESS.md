@@ -43,6 +43,25 @@
 - **テスト結果**: 全75テスト合格
 - **対応要件**: FR-004（画像配信）
 
+### TASK-604: MCPツール拡張（画像生成対応） ✅
+
+- **完了日**: 2025-10-30
+- **実装内容**:
+  - `server.py`: get_monthly_household に画像生成オプション追加
+    - output_format パラメータ: "text" (デフォルト) / "image"
+    - graph_type, image_size, image_format パラメータ追加
+    - 返り値: text形式は従来通り、image形式はURLとメタデータ
+  - `server.py`: run_get_category_trend に画像生成オプション追加
+    - 同様のパラメータセット（output_format, graph_type, image_size, image_format）
+  - `enhanced_tools.py`: enhanced_category_trend 関数実装（120行）
+    - ChartGenerator.create_comparison_bar_chart でトレンドチャート生成
+    - グローバルキャッシュに画像を保存（MD5ハッシュキー）
+    - HTTP URL 生成 (`http://localhost:8000/api/charts/{key}`)
+    - 依存関係未インストール時のエラーハンドリング
+- **テスト結果**: 全75テスト合格
+- **対応要件**: FR-003（画像生成）、FR-004（画像配信）
+- **技術的負債解消**: "MCP ツールに画像生成オプションを統合する" ✅
+
 ## 完了タスク（過去）
 
 ### TASK-605: category_analysis 実装 ✅
@@ -90,10 +109,7 @@
 
 ### 高優先度（次アクション候補）
 
-1. **TASK-604**: MCPツール拡張（画像生成対応）
-   - 見積: 1.0d
-   - 依存関係: TASK-602 ✅, TASK-603 ✅
-   - 内容: get_monthly_household, get_category_trend に画像生成オプション追加
+なし（全高優先度タスク完了）
 
 ### 中優先度
 
@@ -127,14 +143,14 @@
 2. 単体・統合テストの不足（TASK-401, TASK-402）
 3. ~~ドキュメント未更新（design.md バージョン）~~ ✅ 完了
 4. ~~設計書バージョン不整合~~ ✅ 完了
-5. ~~画像生成機能の統合未完了（TASK-602〜603）~~ ✅ 完了
+5. ~~画像生成機能の統合未完了（TASK-602〜604）~~ ✅ 完了
 6. ~~日本語フォント未配置~~ ✅ 完了（配置手順ドキュメント化）
 7. ~~依存関係の整理~~ ✅ 完了（TASK-608）
 
 ## 実装統計
 
-- **完了タスク**: 6件（TASK-601, 605, 609, 608, 602, 603 + tasks.md更新）
-- **残タスク**: 8件（高優先1、中優先2、低優先5）
+- **完了タスク**: 7件（TASK-601, 605, 609, 608, 602, 603, 604 + tasks.md更新）
+- **残タスク**: 7件（高優先0、中優先2、低優先5）
 - **コードカバレッジ**: trends.py 88%, dataloader.py 93%
 - **テスト状況**: 82テスト中75合格、7スキップ（visualization deps）
 
@@ -142,19 +158,18 @@
 
 ### 即座に実装可能
 
-1. TASK-608 から着手（依存関係整理）
-   - pyproject.toml の確認
-   - README にインストール手順追記
-   - 工数: 0.5d
+1. TASK-606 から着手（統合テスト）
+   - E2E フロー検証（画像生成→キャッシュ→HTTP配信）
+   - 工数: 1.5d
 
-2. TASK-602 の実装
-   - image_streamer.py と cache.py の作成
+2. TASK-607 の実装（パフォーマンス最適化）
+   - レスポンスタイム測定、メモリ使用量確認
    - 工数: 1.0d
 
 ### 推奨実装順序
 
 ```text
-TASK-608 ✅ → TASK-602 ✅ → TASK-603 ✅ → TASK-604 → TASK-606 → TASK-607 → TASK-610
+TASK-608 ✅ → TASK-602 ✅ → TASK-603 ✅ → TASK-604 ✅ → TASK-606 → TASK-607 → TASK-610
 ```
 
 ## 設計との整合性
