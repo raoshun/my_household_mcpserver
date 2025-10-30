@@ -40,17 +40,17 @@ uv pip install -e ".[dev]"
 
 #### 機能別インストールガイド
 
-| 機能 | オプション | 用途 | 依存パッケージ数 |
-|------|---------|------|---|
-| **MCP サーバー基本** | なし | CSV 読み込み・MCP リソース/ツール提供 | 4 個 |
-| **画像生成** | `visualization` | グラフ・チャート生成（PNG/SVG） | +3 個 |
-| **HTTP ストリーミング** | `streaming` | FastAPI 経由の画像配信 | +3 個 |
-| **Web API** | `web` | REST API エンドポイント | +4 個 |
-| **データベース連携** | `db` | SQLite/PostgreSQL への永続化 | +2 個 |
-| **認証** | `auth` | JWT・パスワード認証機能 | +2 個 |
-| **非同期 I/O** | `io` | aiofiles・httpx 対応 | +2 個 |
-| **構造化ログ** | `logging` | structlog による詳細ログ出力 | +1 個 |
-| **すべて** | `full` | 全機能を有効化 | +17 個 |
+| 機能                    | オプション      | 用途                                  | 依存パッケージ数 |
+| ----------------------- | --------------- | ------------------------------------- | ---------------- |
+| **MCP サーバー基本**    | なし            | CSV 読み込み・MCP リソース/ツール提供 | 4 個             |
+| **画像生成**            | `visualization` | グラフ・チャート生成（PNG/SVG）       | +3 個            |
+| **HTTP ストリーミング** | `streaming`     | FastAPI 経由の画像配信                | +3 個            |
+| **Web API**             | `web`           | REST API エンドポイント               | +4 個            |
+| **データベース連携**    | `db`            | SQLite/PostgreSQL への永続化          | +2 個            |
+| **認証**                | `auth`          | JWT・パスワード認証機能               | +2 個            |
+| **非同期 I/O**          | `io`            | aiofiles・httpx 対応                  | +2 個            |
+| **構造化ログ**          | `logging`       | structlog による詳細ログ出力          | +1 個            |
+| **すべて**              | `full`          | 全機能を有効化                        | +17 個           |
 
 #### インストール例
 
@@ -336,18 +336,221 @@ GET http://localhost:8000/health
 
 詳細は `docs/api.md` を参照してください。
 
+### トレンド分析機能の詳細
+
+#### 1. カテゴリトレンド分析（`get_category_trend`）
+
+特定カテゴリの時系列推移を分析し、以下の指標を提供します：
+
+**提供される指標:**
+
+- 月次支出金額
+- 前月比（MoM: Month over Month）
+- 前年同月比（YoY: Year over Year）
+- 12ヶ月移動平均
+
+**テキスト出力例:**
+
+```json
+{
+  "tool": "get_category_trend",
+  "arguments": {
+    "category": "食費",
+    "start_month": "2024-01",
+    "end_month": "2024-06"
+  }
+}
+
+// レスポンス
+{
+  "category": "食費",
+  "start_month": "2024-01",
+  "end_month": "2024-06",
+  "text": "食費の 2024年01月〜2024年06月 の推移です。...",
+  "metrics": [
+    {
+      "month": "2024-01",
+      "amount": -110942,
+      "month_over_month": null,
+      "year_over_year": -0.05,
+      "moving_avg_12m": -108500
+    },
+    {
+      "month": "2024-02",
+      "amount": -123750,
+      "month_over_month": 0.115,
+      "year_over_year": 0.08,
+      "moving_avg_12m": -109200
+    }
+    // ... 以下続く
+  ]
+}
+```
+
+**画像出力例:**
+
+```json
+{
+  "tool": "get_category_trend",
+  "arguments": {
+    "category": "食費",
+    "start_month": "2024-01",
+    "end_month": "2024-06",
+    "output_format": "image",
+    "graph_type": "bar",
+    "image_size": "1000x600"
+  }
+}
+
+// レスポンス
+{
+  "success": true,
+  "type": "image",
+  "url": "http://localhost:8000/api/charts/abc123...",
+  "cache_key": "abc123...",
+  "media_type": "image/png",
+  "alt_text": "食費のトレンド（bar）",
+  "metadata": {
+    "category": "食費",
+    "start_month": "2024-01",
+    "end_month": "2024-06",
+    "graph_type": "bar",
+    "image_size": "1000x600"
+  }
+}
+```
+
+#### 2. カテゴリ分析（`category_analysis`）
+
+指定期間における全カテゴリの支出状況を一括分析します。
+
+**提供される情報:**
+
+- 期間内の総支出（カテゴリ別）
+- 前月比の変化率
+- 最大・最小支出月
+- トップN支出カテゴリ
+
+**使用例:**
+
+```json
+{
+  "tool": "category_analysis",
+  "arguments": {
+    "start_month": "2024-01",
+    "end_month": "2024-06",
+    "top_n": 5
+  }
+}
+
+// レスポンス
+{
+  "period": "2024-01 〜 2024-06",
+  "total_expense": -850000,
+  "categories": [
+    {
+      "name": "食費",
+      "total": -350000,
+      "avg_monthly": -58333,
+      "month_over_month": 0.05,
+      "max_month": {"month": "2024-05", "amount": -65000},
+      "min_month": {"month": "2024-02", "amount": -52000}
+    },
+    // ... トップN件
+  ],
+  "top_categories": ["食費", "住居", "交通・通信", "日用品", "娯楽"]
+}
+```
+
+#### 3. 月次サマリー画像生成（`get_monthly_household`）
+
+特定月の支出構成を視覚化します。
+
+**グラフタイプ:**
+
+- `pie`: カテゴリ別支出割合（円グラフ）
+- `bar`: カテゴリ別金額比較（棒グラフ）
+
+**使用例:**
+
+```json
+{
+  "tool": "get_monthly_household",
+  "arguments": {
+    "year": 2024,
+    "month": 10,
+    "output_format": "image",
+    "graph_type": "pie",
+    "image_size": "800x600"
+  }
+}
+
+// レスポンス
+{
+  "success": true,
+  "type": "image",
+  "url": "http://localhost:8000/api/charts/def456...",
+  "cache_key": "def456...",
+  "media_type": "image/png",
+  "alt_text": "2024年10月の支出構成（pie）",
+  "metadata": {
+    "year": 2024,
+    "month": 10,
+    "graph_type": "pie",
+    "image_size": "800x600"
+  }
+}
+```
+
 ### 利用可能な MCP リソース / ツール
+
+#### リソース一覧
 
 | 名称                            | 種別     | 説明                                       |
 | ------------------------------- | -------- | ------------------------------------------ |
 | `data://category_hierarchy`     | Resource | 大項目→中項目のカテゴリ辞書                |
 | `data://available_months`       | Resource | CSV から検出した利用可能年月               |
 | `data://category_trend_summary` | Resource | 直近 12 か月のカテゴリ別トレンド情報       |
-| `get_monthly_household`         | Tool     | 指定年月の支出明細一覧                     |
-| `get_category_trend`            | Tool     | 指定カテゴリ or 上位カテゴリのトレンド解説 |
-| `category_analysis`             | Tool     | カテゴリ別の期間分析（前月比・最大最小）    |
-| `find_categories`               | Tool     | 利用可能なカテゴリ一覧を取得               |
-| `monthly_summary`               | Tool     | 月次サマリ（収入・支出・カテゴリ別集計）    |
+
+#### ツール一覧
+
+| 名称                     | 説明                                                   | 出力形式        |
+| ------------------------ | ------------------------------------------------------ | --------------- |
+| `get_monthly_household`  | 指定年月の支出明細一覧と月次サマリー                   | テキスト / 画像 |
+| `get_category_trend`     | カテゴリ別トレンド分析（前月比・前年比・移動平均）     | テキスト / 画像 |
+| `category_analysis`      | カテゴリ別の期間分析（前月比・最大最小・トップN支出）  | テキスト        |
+| `find_categories`        | 利用可能なカテゴリ一覧を取得                           | テキスト        |
+| `monthly_summary`        | 月次サマリ（収入・支出・カテゴリ別集計）               | テキスト        |
+
+### 画像生成のパフォーマンスとキャッシング
+
+画像生成機能は以下の最適化が施されています：
+
+**パフォーマンス目標:**
+
+- 初回生成: 3秒以内
+- キャッシュヒット: 0.5秒以内
+- メモリ使用量: 50MB以内（並行生成時）
+
+**キャッシュ機構:**
+
+生成された画像は自動的にキャッシュされ、同一パラメータでの再リクエスト時に即座に返されます。
+
+```bash
+# キャッシュ統計の確認
+curl http://localhost:8000/api/cache/stats
+
+# キャッシュクリア
+curl -X DELETE http://localhost:8000/api/cache
+```
+
+**キャッシュキーの構成要素:**
+
+- 画像タイプ（monthly, trend）
+- 年月 / カテゴリ
+- グラフタイプ（pie, bar, line, area）
+- 画像サイズ
+- フォーマット（png, svg）
 
 ### テスト・コード品質チェック
 
@@ -369,19 +572,60 @@ uv run bandit -r src/   # セキュリティスキャン
 uv run task all-checks  # ※ tasks.json に定義
 ```
 
-### サンプル応答
+### 実用的な使用例
 
-```json
-{
-  "category": "食費",
-  "start_month": "2025-06",
-  "end_month": "2025-07",
-  "text": "食費の 2025年06月〜2025年07月 の推移です。...",
-  "metrics": [
-    {"month": "2025-06", "amount": -62500, "month_over_month": null},
-    {"month": "2025-07", "amount": -58300, "month_over_month": -0.067}
-  ]
-}
+#### ケース1: 月次レポート生成
+
+```python
+# 先月の支出構成を円グラフで確認
+from household_mcp.tools.enhanced_tools import enhanced_monthly_summary
+
+result = enhanced_monthly_summary(
+    year=2024,
+    month=9,
+    output_format="image",
+    graph_type="pie",
+    image_size="800x600"
+)
+
+print(f"画像URL: {result['url']}")
+print(f"キャッシュキー: {result['cache_key']}")
+```
+
+#### ケース2: カテゴリ別トレンド分析
+
+```python
+# 食費の半年トレンドを棒グラフで可視化
+from household_mcp.tools.enhanced_tools import enhanced_category_trend
+
+result = enhanced_category_trend(
+    category="食費",
+    start_month="2024-04",
+    end_month="2024-09",
+    output_format="image",
+    graph_type="bar",
+    image_size="1000x600"
+)
+
+# 画像をブラウザで確認
+# ブラウザで result['url'] にアクセス
+```
+
+#### ケース3: 全カテゴリ分析
+
+```python
+# 直近3ヶ月の全カテゴリ支出状況を分析
+from household_mcp.tools.trend_tool import category_analysis
+
+result = category_analysis(
+    start_month="2024-07",
+    end_month="2024-09",
+    top_n=10
+)
+
+print(f"期間総支出: {result['total_expense']}円")
+for cat in result['top_categories']:
+    print(f"  - {cat['name']}: {cat['total']}円")
 ```
 
 ### テスト
@@ -445,6 +689,13 @@ brew install font-noto-sans-cjk-jp
 # インストール後、フォントキャッシュを更新
 fc-cache -fv
 ```
+
+## ドキュメント
+
+- [利用ガイド](docs/usage.md) - 詳細な使用方法とパラメータ説明
+- [サンプル会話例](docs/examples.md) - LLMクライアントでの実践的なプロンプト例
+- [FAQ](docs/FAQ.md) - よくある質問とトラブルシューティング
+- [API リファレンス](docs/api.md) - HTTPエンドポイント仕様
 
 ## 開発
 

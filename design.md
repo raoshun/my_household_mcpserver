@@ -30,36 +30,36 @@
 
 ### 1.2 コンポーネント構成
 
-| コンポーネント    | 主な責務                            | 主な実装                                           | 対応要件        |
-| ----------------- | ----------------------------------- | -------------------------------------------------- | --------------- |
-| MCP Server        | リソース/ツール定義とリクエスト分岐 | `src/server.py`                                    | 全要件          |
-| Data Loader       | CSV ファイルの読み込みと前処理      | `src/household_mcp/dataloader.py`                  | FR-001〜FR-003  |
-| Trend Analyzer    | 月次指標計算モジュール              | `src/household_mcp/analysis/trends.py`             | FR-001, FR-005  |
-| Query Resolver    | 質問パラメータ解釈ユーティリティ    | `src/household_mcp/utils/query_parser.py`          | FR-002, FR-003  |
-| Formatter         | 数値書式・テキスト生成              | `src/household_mcp/utils/formatters.py`            | NFR-008         |
-| DatabaseManager   | SQLiteセッション管理と初期化        | `src/household_mcp/database/manager.py`            | FR-009, NFR-013 |
-| CSVImporter       | CSV→DBインポート処理                | `src/household_mcp/database/csv_importer.py`       | FR-009-3        |
-| DuplicateDetector | 重複検出アルゴリズム                | `src/household_mcp/duplicate/detector.py`          | FR-009-1        |
+| コンポーネント    | 主な責務                            | 主な実装                                             | 対応要件        |
+| ----------------- | ----------------------------------- | ---------------------------------------------------- | --------------- |
+| MCP Server        | リソース/ツール定義とリクエスト分岐 | `src/server.py`                                      | 全要件          |
+| Data Loader       | CSV ファイルの読み込みと前処理      | `src/household_mcp/dataloader.py`                    | FR-001〜FR-003  |
+| Trend Analyzer    | 月次指標計算モジュール              | `src/household_mcp/analysis/trends.py`               | FR-001, FR-005  |
+| Query Resolver    | 質問パラメータ解釈ユーティリティ    | `src/household_mcp/utils/query_parser.py`            | FR-002, FR-003  |
+| Formatter         | 数値書式・テキスト生成              | `src/household_mcp/utils/formatters.py`              | NFR-008         |
+| DatabaseManager   | SQLiteセッション管理と初期化        | `src/household_mcp/database/manager.py`              | FR-009, NFR-013 |
+| CSVImporter       | CSV→DBインポート処理                | `src/household_mcp/database/csv_importer.py`         | FR-009-3        |
+| DuplicateDetector | 重複検出アルゴリズム                | `src/household_mcp/duplicate/detector.py`            | FR-009-1        |
 | ChartGenerator    | グラフ画像生成（matplotlib使用）    | `src/household_mcp/visualization/chart_generator.py` | FR-015          |
-| ImageStreamer     | 画像ストリーミング配信              | `src/household_mcp/streaming/image_streamer.py`    | FR-016          |
-| HTTPServer        | FastAPI HTTPエンドポイント          | `src/household_mcp/http_server.py`                 | FR-016          |
-| ChartCache        | 画像キャッシング管理                | `src/household_mcp/streaming/chart_cache.py`       | FR-016, NFR-005 |
-| EnhancedTools     | MCPツールの画像生成拡張             | `src/household_mcp/tools/enhanced_tools.py`        | FR-017          |
+| ImageStreamer     | 画像ストリーミング配信              | `src/household_mcp/streaming/image_streamer.py`      | FR-016          |
+| HTTPServer        | FastAPI HTTPエンドポイント          | `src/household_mcp/http_server.py`                   | FR-016          |
+| ChartCache        | 画像キャッシング管理                | `src/household_mcp/streaming/chart_cache.py`         | FR-016, NFR-005 |
+| EnhancedTools     | MCPツールの画像生成拡張             | `src/household_mcp/tools/enhanced_tools.py`          | FR-017          |
 
 ### 1.3 技術スタック
 
-| 区分         | 採用技術                             | 備考                  |
-| ------------ | ------------------------------------ | --------------------- |
-| 言語         | Python 3.12 (uv 管理)                | `pyproject.toml` 参照 |
-| MCP 実装     | `fastmcp`                            | 既存コードで使用      |
-| データ処理   | pandas, numpy                        | CSV の集計と指標算出  |
-| データベース | SQLite (better-sqlite3)              | 重複判定結果の永続化  |
-| 可視化       | matplotlib>=3.8.0, plotly>=5.17.0    | グラフ画像生成        |
-| 画像処理     | pillow>=10.0.0                       | 画像フォーマット変換  |
+| 区分         | 採用技術                             | 備考                   |
+| ------------ | ------------------------------------ | ---------------------- |
+| 言語         | Python 3.12 (uv 管理)                | `pyproject.toml` 参照  |
+| MCP 実装     | `fastmcp`                            | 既存コードで使用       |
+| データ処理   | pandas, numpy                        | CSV の集計と指標算出   |
+| データベース | SQLite (better-sqlite3)              | 重複判定結果の永続化   |
+| 可視化       | matplotlib>=3.8.0, plotly>=5.17.0    | グラフ画像生成         |
+| 画像処理     | pillow>=10.0.0                       | 画像フォーマット変換   |
 | HTTP         | FastAPI>=0.100.0, uvicorn>=0.23.0    | 画像配信エンドポイント |
-| キャッシング | cachetools>=5.3.0                    | 画像キャッシュ管理    |
-| フォーマット | Python 標準 `locale`, `decimal` など | 数値の桁区切り、丸め  |
-| テスト       | pytest, pytest-asyncio               | 単体・統合テスト      |
+| キャッシング | cachetools>=5.3.0                    | 画像キャッシュ管理     |
+| フォーマット | Python 標準 `locale`, `decimal` など | 数値の桁区切り、丸め   |
+| テスト       | pytest, pytest-asyncio               | 単体・統合テスト       |
 
 ---
 
