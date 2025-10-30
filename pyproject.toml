@@ -27,31 +27,75 @@ dependencies = [
     "numpy>=1.26.0",
     "mcp[cli]>=1.13.1",
     "fastmcp>=0.4.0",
-    "sqlalchemy>=2.0.23", # Database ORM for duplicate detection
 ]
 
 [project.optional-dependencies]
-# Kept as optionals to avoid forcing heavy/unnecessary installs for the current CLI/MCP use-case.
+# Optional dependency groups for additional functionality
+# 基本: ローカルデータ読み込み・MCP リソース/ツール提供（依存なし）
+# 以下は必要に応じてインストール
+
+# 画像生成機能
+visualization = [
+    "matplotlib>=3.8.0",
+    "plotly>=5.17.0",
+    "pillow>=10.0.0",
+]
+
+# HTTPストリーミング（画像配信用）
+streaming = [
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.23.0",
+    "cachetools>=5.3.0",
+]
+
+# Web API（FastAPI ベース REST API）
 web = [
-    "fastapi==0.116.1",
-    "uvicorn>=0.34,<0.36",
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.23.0",
     "pydantic>=2.11,<3",
     "python-multipart>=0.0.6",
 ]
-viz = ["matplotlib>=3.8.0", "plotly>=5.17.0", "pillow>=10.0.0"]
-db = ["sqlalchemy>=2.0.23", "alembic>=1.12.1"]
-auth = ["passlib[bcrypt]>=1.7.4", "python-jose[cryptography]>=3.3.0"]
-io = ["aiofiles>=23.2.1", "httpx>=0.25.2"]
-logging = ["structlog>=23.2.0"]
-# 新機能用の依存関係 (vizのエイリアス)
-visualization = ["matplotlib>=3.8.0", "plotly>=5.17.0", "pillow>=10.0.0"]
-streaming = ["fastapi>=0.100.0", "uvicorn>=0.23.0", "cachetools>=5.3.0"]
+
+# データベース連携（将来の拡張向け）
+db = [
+    "sqlalchemy>=2.0.23",
+    "alembic>=1.12.1",
+]
+
+# 認証機能
+auth = [
+    "passlib[bcrypt]>=1.7.4",
+    "python-jose[cryptography]>=3.3.0",
+]
+
+# 非同期 I/O
+io = [
+    "aiofiles>=23.2.1",
+    "httpx>=0.25.2",
+]
+
+# 構造化ログ
+logging = [
+    "structlog>=23.2.0",
+]
+
+# 完全インストール（すべてのオプション機能）
 full = [
     "matplotlib>=3.8.0",
+    "plotly>=5.17.0",
     "pillow>=10.0.0",
     "fastapi>=0.100.0",
-    "uvicorn>=0.23.0",
+    "uvicorn[standard]>=0.23.0",
     "cachetools>=5.3.0",
+    "pydantic>=2.11,<3",
+    "python-multipart>=0.0.6",
+    "sqlalchemy>=2.0.23",
+    "alembic>=1.12.1",
+    "passlib[bcrypt]>=1.7.4",
+    "python-jose[cryptography]>=3.3.0",
+    "aiofiles>=23.2.1",
+    "httpx>=0.25.2",
+    "structlog>=23.2.0",
 ]
 
 [project.urls]
@@ -122,7 +166,7 @@ warn_no_return = true
 warn_unreachable = true
 strict_equality = true
 ignore_missing_imports = true
-exclude = ["src/server.py", "src/household_mcp/duplicate/detector.py"]
+exclude = ["src/server.py", "src/household_mcp/duplicate/detector.py", "src/household_mcp/web/http_server.py"]
 
 [[tool.mypy.overrides]]
 module = "tests.*"

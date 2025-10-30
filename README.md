@@ -23,8 +23,11 @@
 ### 基本インストール
 
 ```bash
-# 推奨: uv を用いた基本インストール
+# 推奨: uv を用いた基本インストール（MCP サーバーのみ）
 uv pip install -e "."
+
+# 代替: pip を使用
+pip install -e "."
 
 # 開発環境（テスト・lint含む）
 uv pip install -e ".[dev]"
@@ -32,43 +35,198 @@ uv pip install -e ".[dev]"
 
 ### オプション機能の追加
 
-画像生成やHTTPストリーミングなど、追加機能ごとに依存関係を選択できます：
+本プロジェクトは、依存関係の軽量化のため、追加機能は **optional dependencies** として提供されます。
+必要な機能に応じて、以下から選択してインストールしてください。
+
+#### 機能別インストールガイド
+
+| 機能 | オプション | 用途 | 依存パッケージ数 |
+|------|---------|------|---|
+| **MCP サーバー基本** | なし | CSV 読み込み・MCP リソース/ツール提供 | 4 個 |
+| **画像生成** | `visualization` | グラフ・チャート生成（PNG/SVG） | +3 個 |
+| **HTTP ストリーミング** | `streaming` | FastAPI 経由の画像配信 | +3 個 |
+| **Web API** | `web` | REST API エンドポイント | +4 個 |
+| **データベース連携** | `db` | SQLite/PostgreSQL への永続化 | +2 個 |
+| **認証** | `auth` | JWT・パスワード認証機能 | +2 個 |
+| **非同期 I/O** | `io` | aiofiles・httpx 対応 | +2 個 |
+| **構造化ログ** | `logging` | structlog による詳細ログ出力 | +1 個 |
+| **すべて** | `full` | 全機能を有効化 | +17 個 |
+
+#### インストール例
 
 ```bash
-# 画像生成機能（matplotlib, pillow）
+# ① 画像生成機能のみ追加（グラフ生成用）
 uv pip install -e ".[visualization]"
 
-# HTTPストリーミング（FastAPI, uvicorn, cachetools）
+# ② HTTP ストリーミング対応（FastAPI + uvicorn + キャッシュ）
 uv pip install -e ".[streaming]"
 
-# Web API機能
+# ③ Web API（REST エンドポイント提供）
 uv pip install -e ".[web]"
 
-# すべての機能を含む完全インストール
-uv pip install -e ".[full]"
+# ④ 複合: 画像生成 + HTTP ストリーミング
+uv pip install -e ".[visualization,streaming]"
 
-# その他のオプション
-uv pip install -e ".[db]"        # DB連携（SQLAlchemy）
-uv pip install -e ".[auth]"      # 認証機能
-uv pip install -e ".[io]"        # 非同期I/O
-uv pip install -e ".[logging]"   # 構造化ログ（structlog）
+# ⑤ 開発環境 + 画像生成機能
+uv pip install -e ".[dev,visualization]"
+
+# ⑥ 開発環境 + すべての機能（推奨 for development）
+uv pip install -e ".[dev,full]"
+
+# ⑦ 本番環境: Web API + ストリーミング + ログ
+uv pip install -e ".[web,streaming,logging]"
+
+# ⑧ 完全インストール（すべての機能）
+uv pip install -e ".[full]"
 ```
 
-### 推奨セットアップ（画像生成機能込み）
+### 各オプション機能の詳細
+
+#### 🎨 `visualization` - 画像生成機能
+
+支出トレンドをグラフとして PNG/SVG 形式で生成します。
+
+**含まれるパッケージ:**
+
+- `matplotlib >= 3.8.0` - グラフ描画
+- `plotly >= 5.17.0` - インタラクティブチャート
+- `pillow >= 10.0.0` - 画像処理
+
+**使用例:**
 
 ```bash
-# 画像生成とHTTPストリーミング機能を含む開発環境
-uv pip install -e ".[full,dev]"
+uv pip install -e ".[visualization]"
+python -c "from src.household_mcp.visualization import ChartGenerator; print('OK')"
+```
 
-# 日本語フォントの配置（必須）
-# fonts/ ディレクトリに Noto Sans CJK フォントを配置
-# 詳細は「日本語フォント設定」セクションを参照
+**必要な設定:**
+
+- 日本語フォント配置（`fonts/` ディレクトリに Noto Sans CJK を配置）
+- 詳細は下記「日本語フォント設定」を参照
+
+---
+
+#### 🌐 `streaming` - HTTP ストリーミング対応
+
+画像をブラウザから直接配信可能な HTTP サーバー機能を提供します。
+
+**含まれるパッケージ:**
+
+- `fastapi >= 0.100.0` - Web フレームワーク
+- `uvicorn[standard] >= 0.23.0` - ASGI サーバー
+- `cachetools >= 5.3.0` - キャッシング機構
+
+**使用例:**
+
+```bash
+uv pip install -e ".[streaming]"
+python -m src.server --transport http --port 8080
+```
+
+**依存関係:**
+
+- `visualization` オプションと組み合わせて使用すると、グラフを HTTP 経由で配信可能
+
+---
+
+#### 🔌 `web` - REST API
+
+完全な REST API エンドポイントを公開し、HTTP クライアントからのアクセスを可能にします。
+
+**含まれるパッケージ:**
+
+- `fastapi >= 0.100.0`
+- `uvicorn[standard] >= 0.23.0`
+- `pydantic >= 2.11, < 3` - リクエスト/レスポンス検証
+- `python-multipart >= 0.0.6` - マルチパート形式対応
+
+**使用例:**
+
+```bash
+uv pip install -e ".[web]"
+uv run uvicorn src.household_mcp.server:app --port 8000
+```
+
+---
+
+#### 💾 `db` - データベース連携
+
+SQLAlchemy ORM を用いたデータベース永続化（将来の拡張向け）
+
+**含まれるパッケージ:**
+
+- `sqlalchemy >= 2.0.23` - ORM
+- `alembic >= 1.12.1` - マイグレーション管理
+
+**使用例:**
+
+```bash
+uv pip install -e ".[db]"
+# SQLite/PostgreSQL への永続化機能（将来実装）
+```
+
+---
+
+#### 🔐 `auth` - 認証機能
+
+JWT・パスワード認証を実装し、API の保護・ユーザー認証に対応。
+
+**含まれるパッケージ:**
+
+- `passlib[bcrypt] >= 1.7.4` - パスワードハッシング
+- `python-jose[cryptography] >= 3.3.0` - JWT 署名
+
+**使用例:**
+
+```bash
+uv pip install -e ".[auth]"
+# API 認証機能（将来実装）
+```
+
+---
+
+#### ⚡ `io` - 非同期 I/O
+
+非同期ファイル I/O・HTTP リクエスト機能を提供。
+
+**含まれるパッケージ:**
+
+- `aiofiles >= 23.2.1` - 非同期ファイル操作
+- `httpx >= 0.25.2` - 非同期 HTTP クライアント
+
+---
+
+#### 📊 `logging` - 構造化ログ
+
+JSON 形式の構造化ログを出力し、ログ解析・監視を容易にします。
+
+**含まれるパッケージ:**
+
+- `structlog >= 23.2.0` - ログ構造化フレームワーク
+
+**使用例:**
+
+```bash
+uv pip install -e ".[logging]"
+# 環境変数で有効化: HOUSEHOLD_MCP_LOGGING=structlog
+```
+
+---
+
+#### 🎁 `full` - 完全インストール
+
+すべてのオプション機能を有効化します。開発環境や試験用に推奨。
+
+```bash
+uv pip install -e ".[full]"
+uv pip install -e ".[full,dev]"  # 開発環境 + 全機能
 ```
 
 ### Poetry を使用する場合
 
 ```bash
 poetry install --with dev
+# オプション機能: poetry install -E visualization
 ```
 
 ### pre-commit フックの有効化
@@ -104,12 +262,14 @@ uv pip install -e ".[visualization]"
 ```
 
 **サポートされるグラフタイプ**:
+
 - 円グラフ（pie）: カテゴリ別支出割合
 - 棒グラフ（bar）: カテゴリ別比較
 - 折れ線グラフ（line）: 時系列トレンド
 - 面グラフ（area）: 累積トレンド
 
 **使用例**（実装予定 - TASK-604）:
+
 ```python
 # MCPツールから画像生成をリクエスト
 {

@@ -17,7 +17,7 @@ def create_http_app(
     allowed_origins: Optional[list[str]] = None,
     cache_size: int = 50,
     cache_ttl: int = 3600,
-):
+) -> object:
     """Create FastAPI application for chart streaming (lazy import).
 
     This wrapper defers importing FastAPI and the HTTP server implementation

@@ -76,10 +76,15 @@ def enhanced_monthly_summary(
     if output_format == "text":
         # Simple textual aggregation by category
         summary = (
-            df.groupby("大項目", observed=False)["金額（円）"].sum().abs().sort_values(ascending=False)
+            df.groupby("大項目", observed=False)["金額（円）"]
+            .sum()
+            .abs()
+            .sort_values(ascending=False)
         )
         total = int(summary.sum())
-        top5 = [{"category": str(k), "amount": int(v)} for k, v in summary.head(5).items()]
+        top5 = [
+            {"category": str(k), "amount": int(v)} for k, v in summary.head(5).items()
+        ]
         return {
             "success": True,
             "type": "text",
@@ -113,10 +118,14 @@ def enhanced_monthly_summary(
     gen = ChartGenerator()
     size = _parse_image_size(image_size)
     if graph_type == "pie":
-        buffer = gen.create_monthly_pie_chart(chart_df, title=f"{year}年{month}月 支出構成", image_size=size)
+        buffer = gen.create_monthly_pie_chart(
+            chart_df, title=f"{year}年{month}月 支出構成", image_size=size
+        )
     else:
         # Fallback to pie if unsupported graph_type for monthly summary
-        buffer = gen.create_monthly_pie_chart(chart_df, title=f"{year}年{month}月 支出構成", image_size=size)
+        buffer = gen.create_monthly_pie_chart(
+            chart_df, title=f"{year}年{month}月 支出構成", image_size=size
+        )
 
     image_bytes = buffer.getvalue()
 

@@ -81,7 +81,7 @@ def create_http_app(
         )
 
     @app.get("/api/charts/{chart_id}")
-    async def stream_chart(chart_id: str) -> StreamingResponse:
+    async def stream_chart(chart_id: str) -> "StreamingResponse":  # type: ignore[no-untyped-def]
         """Stream a generated chart image.
 
         Args:
@@ -99,9 +99,7 @@ def create_http_app(
         image_data = chart_cache.get(chart_id)
         if image_data is None:
             logger.warning(f"Chart not found: {chart_id}")
-            raise HTTPException(
-                status_code=404, detail=f"Chart '{chart_id}' not found"
-            )
+            raise HTTPException(status_code=404, detail=f"Chart '{chart_id}' not found")
 
         # Stream the image
         logger.info(f"Streaming chart: {chart_id} ({len(image_data)} bytes)")
@@ -112,7 +110,7 @@ def create_http_app(
         )
 
     @app.get("/api/charts/{chart_id}/info")
-    async def get_chart_info(chart_id: str) -> dict:
+    async def get_chart_info(chart_id: str) -> dict[str, object]:  # type: ignore[no-untyped-def]
         """Get information about a cached chart.
 
         Args:
@@ -126,9 +124,7 @@ def create_http_app(
         """
         image_data = chart_cache.get(chart_id)
         if image_data is None:
-            raise HTTPException(
-                status_code=404, detail=f"Chart '{chart_id}' not found"
-            )
+            raise HTTPException(status_code=404, detail=f"Chart '{chart_id}' not found")
 
         return {
             "chart_id": chart_id,
@@ -137,7 +133,7 @@ def create_http_app(
         }
 
     @app.get("/api/cache/stats")
-    async def get_cache_stats() -> dict:
+    async def get_cache_stats() -> dict[str, object]:  # type: ignore[no-untyped-def]
         """Get cache statistics.
 
         Returns:
@@ -146,7 +142,7 @@ def create_http_app(
         return chart_cache.stats()
 
     @app.delete("/api/cache")
-    async def clear_cache() -> dict:
+    async def clear_cache() -> dict[str, object]:  # type: ignore[no-untyped-def]
         """Clear all cached charts.
 
         Returns:
@@ -157,7 +153,7 @@ def create_http_app(
         return {"status": "success", "message": "Cache cleared"}
 
     @app.get("/health")
-    async def health_check() -> dict:
+    async def health_check() -> dict[str, object]:  # type: ignore[no-untyped-def]
         """Health check endpoint.
 
         Returns:
