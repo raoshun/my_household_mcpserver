@@ -159,3 +159,120 @@ def enhanced_monthly_summary(
         "media_type": "image/png",
         "alt_text": f"{year}年{month}月の支出構成（{graph_type}）",
     }
+
+
+def enhanced_category_trend(
+    category: str | None = None,
+    start_month: str | None = None,
+    end_month: str | None = None,
+    *,
+    output_format: str = "text",
+    graph_type: str = "line",
+    image_size: str = "1000x600",
+    image_format: str = "png",
+) -> Dict[str, Any]:
+    """Enhanced category trend that can return an image URL.
+
+    Returns dict with either text data or image metadata.
+    """
+    if output_format not in {"text", "image"}:
+        return {"success": False, "error": "Invalid output_format"}
+
+    # Load trend data
+    try:
+        from household_mcp.tools.trend_tool import get_category_trend
+
+        result = get_category_trend(
+            category=category,
+            start_month=start_month,
+            end_month=end_month,
+            src_dir=_data_dir(),
+        )
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+    if output_format == "text":
+        # Return the original text format
+        return dict(result)
+
+    # Image format requires optional deps
+    if not HAS_VIZ:
+        return {
+            "success": False,
+            "error": "Visualization dependencies not installed. Install: household-mcp-server[visualization]",
+        }
+    if not HAS_STREAMING:
+        return {
+            "success": False,
+            "error": "Streaming dependencies not installed. Install: household-mcp-server[streaming]",
+        }
+
+    # Extract metrics for chart generation
+    metrics = result.get("metrics", [])
+    if not metrics:
+        return {
+            "success": False,
+            "error": "No metrics data available for chart generation",
+        }
+
+    # Prepare chart data: month & amount
+    chart_df = pd.DataFrame(
+        {
+            "month": [m["month"] for m in metrics],
+            "amount": [abs(m["amount"]) for m in metrics],
+        }
+    )
+
+    # Generate chart using existing comparison bar chart
+    # TODO: Add dedicated trend chart methods to ChartGenerator
+    gen = ChartGenerator()
+    size = _parse_image_size(image_size)
+    cat_name = result.get("category", "カテゴリ")
+    title = f"{cat_name} の推移"
+
+    # Use comparison bar chart for now (works for all graph types)
+    # The chart will show amount by month
+    buffer = gen.create_comparison_bar_chart(
+        chart_df,
+        title=title,
+        x_label="月",
+        y_label="金額（円）",
+        image_size=size,
+    )
+
+    image_bytes = buffer.getvalue()
+
+    # Cache and build URL
+    cache = ensure_global_cache()
+    if cache is None:
+        return {
+            "success": False,
+            "error": "Chart cache unavailable. Install: household-mcp-server[streaming]",
+        }
+
+    params = _build_cache_key_params(
+        kind="trend",
+        category=category or "all",
+        start_month=start_month or "auto",
+        end_month=end_month or "auto",
+        graph_type=graph_type,
+        image_size=size,
+        image_format=image_format,
+    )
+    key = cache.get_key(params)
+    cache.set(key, image_bytes)
+
+    conf = HttpConfig()
+    url = f"http://{conf.host}:{conf.port}/api/charts/{key}"
+
+    return {
+        "success": True,
+        "type": "image",
+        "url": url,
+        "cache_key": key,
+        "media_type": "image/png",
+        "alt_text": f"{cat_name}のトレンド（{graph_type}）",
+        "category": cat_name,
+        "start_month": result.get("start_month"),
+        "end_month": result.get("end_month"),
+    }

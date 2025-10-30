@@ -26,8 +26,8 @@ from fastmcp import FastMCP
 
 from household_mcp.dataloader import HouseholdDataLoader
 from household_mcp.exceptions import DataSourceError
-from household_mcp.tools.trend_tool import category_trend_summary, get_category_trend
 from household_mcp.tools.enhanced_tools import enhanced_monthly_summary
+from household_mcp.tools.trend_tool import category_trend_summary, get_category_trend
 
 # Import HTTP server if streaming extras are available
 try:
@@ -114,16 +114,48 @@ def get_category_hierarchy() -> dict[str, list[str]]:
 @mcp.tool(
     "get_monthly_household",
 )
-def get_monthly_household(year: int, month: int) -> list[dict[str, Any]]:
+def get_monthly_household(
+    year: int,
+    month: int,
+    output_format: str = "text",
+    graph_type: str = "pie",
+    image_size: str = "800x600",
+) -> dict[str, Any] | list[dict[str, Any]]:
     """指定した年月の家計簿から収支を取得する関数。
 
     Args:
         year (int): 年
         month (int): 月
+        output_format (str): 出力形式 "text" または "image" (デフォルト: "text")
+        graph_type (str): グラフタイプ "pie", "bar", "line", "area" (デフォルト: "pie")
+        image_size (str): 画像サイズ (デフォルト: "800x600")
 
     Returns:
-        list[dict]: 支出のリスト
+        text形式: list[dict] - 支出のリスト
+        image形式: dict - 画像URL、キャッシュキー、メタデータを含む辞書
     """
+    if output_format == "image":
+        # 画像生成機能を使用
+        try:
+            from household_mcp.tools.enhanced_tools import enhanced_monthly_summary
+
+            result = enhanced_monthly_summary(
+                year=year,
+                month=month,
+                output_format="image",
+                graph_type=graph_type,
+                image_size=image_size,
+            )
+            return cast(dict[str, Any], result)
+        except ImportError as e:
+            return {
+                "success": False,
+                "error": f"画像生成機能が利用できません。必要な依存関係をインストールしてください: {e}",
+            }
+        except Exception as e:
+            return {"success": False, "error": f"画像生成中にエラーが発生しました: {e}"}
+
+    # テキスト形式（従来の動作）
     try:
         df = _get_data_loader().load_month(year, month)
         return cast(
@@ -184,9 +216,49 @@ def run_get_category_trend(
     category: Optional[str] = None,
     start_month: Optional[str] = None,
     end_month: Optional[str] = None,
+    output_format: str = "text",
+    graph_type: str = "line",
+    image_size: str = "1000x600",
 ) -> dict[str, Any]:
-    """カテゴリ別の支出トレンドを取得する MCP ツール。"""
+    """カテゴリ別の支出トレンドを取得する MCP ツール。
 
+    Args:
+        category: カテゴリ名（未指定時は上位カテゴリを返す）
+        start_month: 開始月（YYYY-MM形式、例: "2025-01"）
+        end_month: 終了月（YYYY-MM形式）
+        output_format: 出力形式 "text" または "image" (デフォルト: "text")
+        graph_type: グラフタイプ "line", "bar", "area" (デフォルト: "line")
+        image_size: 画像サイズ (デフォルト: "1000x600")
+
+    Returns:
+        text形式: トレンド情報を含む辞書
+        image形式: 画像URL、キャッシュキー、メタデータを含む辞書
+    """
+    if output_format == "image":
+        # 画像生成機能を使用
+        try:
+            from household_mcp.tools.enhanced_tools import (
+                enhanced_category_trend,
+            )
+
+            result = enhanced_category_trend(
+                category=category,
+                start_month=start_month,
+                end_month=end_month,
+                output_format="image",
+                graph_type=graph_type,
+                image_size=image_size,
+            )
+            return cast(dict[str, Any], result)
+        except ImportError as e:
+            return {
+                "success": False,
+                "error": f"画像生成機能が利用できません。必要な依存関係をインストールしてください: {e}",
+            }
+        except Exception as e:
+            return {"success": False, "error": f"画像生成中にエラーが発生しました: {e}"}
+
+    # テキスト形式（従来の動作）
     try:
         result = get_category_trend(
             category=category,
@@ -449,7 +521,7 @@ def tool_enhanced_monthly_summary(
     output_format="image" の場合、キャッシュに画像を格納しURLを返す。
     """
     try:
-        return enhanced_monthly_summary(
+        result = enhanced_monthly_summary(
             year,
             month,
             output_format=output_format,
@@ -457,6 +529,7 @@ def tool_enhanced_monthly_summary(
             image_size=image_size,
             image_format=image_format,
         )
+        return result  # type: ignore[return-value]
     except Exception as e:
         return {"success": False, "error": str(e)}
 
