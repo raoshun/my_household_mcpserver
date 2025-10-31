@@ -4,6 +4,24 @@
 
 日本語でレビューしてください。
 
+## CRITICAL: Do NOT Create Implementation Reports
+
+**重要**: 作業実績や実装完了に関するMarkdownレポートを自動的に作成しないでください。
+
+- ❌ **作成してはいけないもの**: `*_IMPLEMENTATION_REPORT.md`, `*_CHECKLIST.md`, `PROGRESS_REPORT.md` など
+- ✅ **代わりに更新するもの**: `requirements.md`, `design.md`, `tasks.md` の3つの公式ドキュメントのみ
+
+### 例外（ユーザーが明示的に要求した場合のみ）
+
+以下の場合に限り、追加のMarkdownファイルを作成できます：
+- ユーザーが「レポートを作成して」と明示的に依頼した場合
+- ユーザーが「チェックリストを作成して」と明示的に依頼した場合
+- 特定のファイル名を指定された場合
+
+### 理由
+
+すべての実装情報は `requirements.md` (WHAT)、`design.md` (HOW)、`tasks.md` (実施計画・進捗) に集約されます。追加のレポートファイルは情報の重複と管理コストを増やします。
+
 ## Overview
 
 This project follows **Kiro's Spec-Driven Development** methodology with a structured workflow using three core markdown files:
@@ -154,15 +172,166 @@ Before moving to tasks, confirm:
 - [ ] User has approved the design approach
 - [ ] Implementation approach is clear
 
+### Tasks → Implementation Transition
+
+Before starting implementation, confirm:
+
+- [ ] All tasks are properly defined in tasks.md
+- [ ] Task dependencies are clear
+- [ ] Implementation order is logical
+- [ ] User has approved the task breakdown
+- [ ] Success criteria for each task are defined
+
 ### Implementation Guidance
 
-When working on actual implementation:
+**CRITICAL RULE: No Implementation Before Specification**
 
-- Reference the approved tasks.md
-- Update task completion status
-- Report blockers or design changes needed
-- Maintain alignment with original requirements
-- Document any deviations with rationale
+When a user requests new functionality:
+
+1. **STOP** - Do not immediately start coding
+2. **CLARIFY** - Ask questions to understand the complete requirement
+3. **DOCUMENT FIRST** - Follow this sequence:
+   a. Add to `requirements.md` (FR-XXX) with acceptance criteria
+   b. Get user confirmation on requirements
+   c. Add to `design.md` (technical approach, architecture)
+   d. Get user confirmation on design
+   e. Add to `tasks.md` (task breakdown with checkboxes)
+   f. Get user confirmation on task plan
+   g. **ONLY THEN** start implementation
+
+4. **UPDATE AS YOU GO**:
+   - Reference the approved tasks.md
+   - Mark tasks as complete with [x] when done
+   - Update task completion status in real-time
+   - Report blockers or design changes needed
+   - Maintain alignment with original requirements
+   - Document any deviations with rationale
+
+**Example User Request**: "Add a new feature X"
+
+**WRONG Response**: ❌ Immediately writing code
+
+**CORRECT Response**: ✅
+```
+私は、機能Xの実装を始める前に、仕様を明文化します。
+
+まず、requirements.mdに要件を追加します：
+
+FR-XXX 機能X
+- [要件の詳細]
+- 受け入れ条件: [具体的な基準]
+
+この要件で問題ないでしょうか？確認後、design.mdで技術設計を行います。
+```
+
+### Retrospective Documentation
+
+If implementation was done without prior specification (emergency fix, prototype):
+
+1. **Document retrospectively** - Add FR/design/tasks entries with "[実装済み]" marker
+2. **Update all three files** to maintain consistency
+3. **Note the deviation** - Explain why spec-first was skipped
+4. **Propose process improvement** - Suggest how to prevent this in future
+
+## Git Commit Guidelines
+
+### Commit Granularity Rule
+
+**CRITICAL PRINCIPLE: Commit at Task Level**
+
+- Each commit should correspond to **one task** from `tasks.md`
+- Task completion triggers a commit
+- Commit message must reference the task ID
+
+### Commit Message Format
+
+```
+[TASK-XXX] Brief description of task
+
+- Detailed change 1
+- Detailed change 2
+- Related files modified
+
+Refs: FR-XXX (requirements.md)
+```
+
+**Examples:**
+
+✅ **GOOD Commits** (Task-level):
+```
+[TASK-701-1] Add REST API endpoints to http_server.py
+
+- Implemented GET /api/monthly endpoint
+- Implemented GET /api/available-months endpoint
+- Implemented GET /api/category-hierarchy endpoint
+- Added error handling and parameter validation
+
+Refs: FR-018-1
+```
+
+```
+[TASK-702-2] Implement HTML/CSS for webapp
+
+- Created index.html with responsive layout
+- Created css/style.css with CSS Variables
+- Implemented mobile/tablet/PC responsive design
+
+Refs: FR-018-2
+```
+
+❌ **BAD Commits** (Too granular or too broad):
+```
+Fixed typo                          # Too small, no task reference
+Updated multiple files              # Too vague
+Implemented entire webapp           # Too large, multiple tasks
+```
+
+### Commit Workflow
+
+1. Complete a task (or subtask if task is large)
+2. Mark task as [x] in `tasks.md`
+3. Stage related files: `git add <files>`
+4. Commit with task reference: `git commit -m "[TASK-XXX] ..."`
+5. Move to next task
+
+### When to Commit
+
+- ✅ After completing a TASK-XXX or TASK-XXX-Y (subtask)
+- ✅ After updating documentation (TASK-XXX-related)
+- ✅ After fixing a critical bug (create task retrospectively if needed)
+- ❌ In the middle of a task (work-in-progress)
+- ❌ Multiple unrelated changes together
+
+### Atomic Commits
+
+Each commit should be:
+- **Atomic**: Contains one complete, logical change
+- **Self-contained**: Can be reverted without breaking other features
+- **Testable**: Code compiles and tests pass
+- **Documented**: Related docs updated in same commit
+
+### Commit Frequency Guidelines
+
+| Task Size | Estimated Time | Commit Frequency |
+|-----------|----------------|------------------|
+| Small     | < 1 hour       | 1 commit         |
+| Medium    | 1-4 hours      | 1-2 commits      |
+| Large     | > 4 hours      | Split into subtasks, 1 commit per subtask |
+
+### Multi-Task Commits (Exceptional)
+
+Only combine tasks in one commit if:
+- Tasks are tightly coupled and cannot be separated
+- All tasks are trivial (e.g., typo fixes across multiple files)
+- Explicitly document in commit message: `[TASK-701, TASK-702] ...`
+
+### Documentation Commits
+
+Documentation updates can be committed separately if:
+- No code changes (docs-only update)
+- Use format: `[DOCS] Update requirements.md with FR-XXX`
+
+But prefer: Include doc updates with related task commit
 
 ## Error Recovery
 
