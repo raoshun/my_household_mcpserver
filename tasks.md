@@ -448,12 +448,19 @@
 
 ### 未実装タスク
 
-- [ ] **TASK-601**: 日本語フォント配置とロード検証（NFR-007）
-  - [ ] `fonts/` ディレクトリ作成
-  - [ ] Noto Sans CJK フォント配置（OFL ライセンス確認）
-  - [ ] ChartGenerator のフォント自動検出テスト
+- [x] **TASK-601**: 日本語フォント配置とロード検証（NFR-007）
+  - [x] `fonts/` ディレクトリ作成
+  - [x] Noto Sans CJK フォント配置（OFL ライセンス確認）
+  - [x] ChartGenerator のフォント自動検出テスト
   - 見積: 0.5d
-  - 完了基準: 日本語ラベル付きグラフが正常に生成される
+  - 完了基準: 日本語ラベル付きグラフが正常に生成される ✅
+  - 実装日: 2025-11-01（検証完了）
+  - 検証結果:
+    - フォント自動検出: `/home/shun-h/my_household_mcpserver/fonts/NotoSansCJKjp-Regular.otf`
+    - フォントサイズ: 16,467,736 bytes
+    - 円グラフ生成: 55,942 bytes（日本語タイトル・ラベル正常）
+    - 折れ線グラフ生成: 59,416 bytes（日本語カテゴリ名正常）
+    - テスト: `test_chart_generator_japanese_font_rendering` PASSED
 
 - [ ] **TASK-602**: HTTPストリーミング基盤実装（FR-005, NFR-005）
   - [ ] `src/household_mcp/streaming/image_streamer.py` 新規作成
