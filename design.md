@@ -1434,14 +1434,14 @@ webapp/
 
 #### 新規追加エンドポイント（http_server.py）
 
-| エンドポイント               | メソッド | 説明                       | レスポンス形式       |
-| ---------------------------- | -------- | -------------------------- | -------------------- |
-| `/api/monthly`               | GET      | 月次データ取得             | JSON（取引リスト）   |
-| `/api/available-months`      | GET      | 利用可能な年月一覧         | JSON（年月リスト）   |
-| `/api/category-hierarchy`    | GET      | カテゴリ階層情報           | JSON（階層構造）     |
-| `/api/charts/{chart_id}`     | GET      | チャート画像（既存）       | PNG画像ストリーム    |
-| `/api/cache/stats`           | GET      | キャッシュ統計（既存）     | JSON                 |
-| `/health`                    | GET      | ヘルスチェック（既存）     | JSON                 |
+| エンドポイント            | メソッド | 説明                   | レスポンス形式     |
+| ------------------------- | -------- | ---------------------- | ------------------ |
+| `/api/monthly`            | GET      | 月次データ取得         | JSON（取引リスト） |
+| `/api/available-months`   | GET      | 利用可能な年月一覧     | JSON（年月リスト） |
+| `/api/category-hierarchy` | GET      | カテゴリ階層情報       | JSON（階層構造）   |
+| `/api/charts/{chart_id}`  | GET      | チャート画像（既存）   | PNG画像ストリーム  |
+| `/api/cache/stats`        | GET      | キャッシュ統計（既存） | JSON               |
+| `/health`                 | GET      | ヘルスチェック（既存） | JSON               |
 
 #### `/api/monthly` 詳細
 
