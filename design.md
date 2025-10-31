@@ -1,9 +1,9 @@
 # 家計簿分析 MCP サーバー設計書
 
 - **バージョン**: 0.5.0
-- **更新日**: 2025-10-30
+- **更新日**: 2025-11-01
 - **作成者**: GitHub Copilot (AI assistant)
-- **対象要件**: [requirements.md](./requirements.md) に記載の FR-001〜FR-017、NFR-001〜NFR-013
+- **対象要件**: [requirements.md](./requirements.md) に記載の FR-001〜FR-018、NFR-001〜NFR-013
 
 ---
 
@@ -1386,7 +1386,233 @@ class DatabaseManager:
 
 ---
 
-## 11. 変更履歴
+## 11. Webアプリケーション設計（FR-018対応）
+
+### 11.1 アーキテクチャ概要
+
+Webアプリケーションは、バックエンドサーバーとは独立したフロントエンドとして実装し、HTTPリクエストによりAPIと通信する。
+
+```text
+┌─────────────────┐    HTTP (REST API)    ┌──────────────────────┐
+│  Webブラウザ    │ ◄─────────────────► │ FastAPI HTTPサーバー │
+│  (webapp/)      │   (localhost:8000)    │ (http_server.py)     │
+└─────────────────┘                       └──────────┬───────────┘
+                                                      │
+                                                      │ データ取得
+                                                      ▼
+                                            ┌──────────────────┐
+                                            │ HouseholdDataLoader│
+                                            │ (dataloader.py)    │
+                                            └──────────┬─────────┘
+                                                      │
+                                                      ▼
+                                            ┌──────────────────┐
+                                            │  CSV Files       │
+                                            │  (data/*.csv)    │
+                                            └──────────────────┘
+```
+
+### 11.2 ディレクトリ構造
+
+```text
+webapp/
+├── index.html              # メインHTML（SPA風UI）
+├── css/
+│   └── style.css          # レスポンシブCSSスタイル
+├── js/
+│   ├── api.js             # API通信クライアント
+│   ├── chart.js           # Chart.js統合・グラフ管理
+│   └── main.js            # アプリケーションロジック
+└── README.md              # Webアプリのドキュメント
+```
+
+### 11.3 REST APIエンドポイント設計
+
+#### 新規追加エンドポイント（http_server.py）
+
+| エンドポイント               | メソッド | 説明                       | レスポンス形式       |
+| ---------------------------- | -------- | -------------------------- | -------------------- |
+| `/api/monthly`               | GET      | 月次データ取得             | JSON（取引リスト）   |
+| `/api/available-months`      | GET      | 利用可能な年月一覧         | JSON（年月リスト）   |
+| `/api/category-hierarchy`    | GET      | カテゴリ階層情報           | JSON（階層構造）     |
+| `/api/charts/{chart_id}`     | GET      | チャート画像（既存）       | PNG画像ストリーム    |
+| `/api/cache/stats`           | GET      | キャッシュ統計（既存）     | JSON                 |
+| `/health`                    | GET      | ヘルスチェック（既存）     | JSON                 |
+
+#### `/api/monthly` 詳細
+
+**パラメータ:**
+- `year` (int, required): 年
+- `month` (int, required): 月（1-12）
+- `output_format` (str, optional): 出力形式（"json" または "image"）
+- `graph_type` (str, optional): グラフタイプ（"pie", "bar", "line", "area"）
+- `image_size` (str, optional): 画像サイズ（例: "800x600"）
+
+**レスポンス例（JSON形式）:**
+```json
+{
+  "success": true,
+  "year": 2025,
+  "month": 1,
+  "data": [
+    {
+      "日付": "2025-01-01T00:00:00",
+      "内容": "食材購入",
+      "大項目": "食費",
+      "金額（円）": -3500
+    }
+  ],
+  "count": 243
+}
+```
+
+#### `/api/available-months` 詳細
+
+**レスポンス例:**
+```json
+{
+  "success": true,
+  "months": [
+    {"year": 2022, "month": 1},
+    {"year": 2022, "month": 2},
+    {"year": 2025, "month": 6}
+  ]
+}
+```
+
+### 11.4 フロントエンド設計
+
+#### 技術スタック
+- **言語**: JavaScript ES6+（Vanilla JS）
+- **チャートライブラリ**: Chart.js 4.4.0（CDN経由）
+- **スタイリング**: カスタムCSS（CSS Variables + Flexbox/Grid）
+- **通信**: Fetch API（非同期）
+
+#### コンポーネント設計
+
+**APIClient (api.js)**
+```javascript
+class APIClient {
+  - baseUrl: string
+  + get(endpoint, params): Promise<Object>
+  + getAvailableMonths(): Promise<Array>
+  + getMonthlyData(year, month, ...): Promise<Object>
+  + getCategoryHierarchy(year, month): Promise<Object>
+  + getChartImageUrl(chartId): string
+  + healthCheck(): Promise<Object>
+}
+```
+
+**ChartManager (chart.js)**
+```javascript
+class ChartManager {
+  - canvas: HTMLCanvasElement
+  - chart: Chart
+  + createPieChart(data): void
+  + createBarChart(data): void
+  + createLineChart(data): void
+  + destroy(): void
+  + aggregateByCategory(data): Object
+  + aggregateByDate(data): Object
+  + generateColors(count): Array<string>
+}
+```
+
+**Application (main.js)**
+```javascript
+// グローバル状態管理
+- apiClient: APIClient
+- chartManager: ChartManager
+- currentData: Array
+- availableMonths: Array
+
+// 主要機能
++ loadAvailableMonths(): Promise<void>
++ loadMonthlyData(year, month): Promise<void>
++ updateSummaryStats(data): void
++ updateChart(data): void
++ updateTable(data): void
++ filterTable(): void
++ showLoading(show): void
++ showError(message): void
+```
+
+### 11.5 UI/UX設計
+
+#### レイアウト構成
+1. **ヘッダー**: タイトル、サブタイトル
+2. **コントロールパネル**: 年月選択、グラフタイプ選択、読み込みボタン
+3. **統計サマリー**: 4つのカード（総支出、件数、平均、最大）
+4. **グラフエリア**: 可変グラフ表示（Canvas）
+5. **データテーブル**: 検索・フィルタ機能付き取引一覧
+6. **フッター**: クレジット表記
+
+#### レスポンシブデザイン
+- **PC**: 3カラムレイアウト、グラフ横並び
+- **タブレット**: 2カラム、統計カード2x2配置
+- **モバイル**: 1カラム、縦積み、タッチ最適化
+
+#### カラースキーム（CSS Variables）
+```css
+--primary-color: #3b82f6
+--secondary-color: #10b981
+--danger-color: #ef4444
+--bg-color: #f8fafc
+--card-bg: #ffffff
+```
+
+### 11.6 データフロー
+
+```text
+1. ページ読み込み
+   → loadAvailableMonths() → GET /api/available-months
+   → 年月セレクトボックス生成
+
+2. データ読み込みボタンクリック
+   → loadMonthlyData(year, month) → GET /api/monthly
+   → updateSummaryStats() → 統計カード更新
+   → updateChart() → Chart.js描画
+   → updateTable() → テーブルHTML生成
+   → updateCategoryFilter() → フィルタ選択肢更新
+
+3. 検索・フィルタ入力
+   → filterTable() → DOM操作でtr表示/非表示
+
+4. グラフタイプ変更
+   → updateChart() → Chart.js再描画
+```
+
+### 11.7 エラーハンドリング
+
+- **ネットワークエラー**: エラーメッセージ表示 + リトライ提案
+- **APIエラー（4xx/5xx）**: HTTPステータスとエラー詳細を表示
+- **データ未取得**: 空状態のUIを表示
+- **CORS問題**: サーバー側でCORS設定が必要（http_server.pyで対応済み）
+
+### 11.8 セキュリティ考慮事項
+
+- **XSS対策**: `escapeHtml()`関数でユーザー入力をエスケープ
+- **CORS設定**: FastAPIで`allow_origins=["*"]`（開発用、本番では制限推奨）
+- **CSP**: 将来的にContent-Security-Policyヘッダー追加を検討
+- **入力検証**: APIリクエストパラメータのバリデーション
+
+### 11.9 パフォーマンス最適化
+
+- **キャッシング**: ブラウザキャッシュ（静的ファイル）
+- **遅延読み込み**: Chart.js CDN、画像の遅延読み込み
+- **DOM操作最適化**: 一括innerHTML更新、documentFragmentの活用
+- **デバウンス**: 検索入力にデバウンス適用（将来拡張）
+
+### 11.10 テスト方針
+
+- **手動テスト**: 各ブラウザ（Chrome, Firefox, Safari, Edge）で動作確認
+- **レスポンシブテスト**: デベロッパーツールでモバイル/タブレット表示確認
+- **API統合テスト**: curlでエンドポイント動作確認
+- **E2Eテスト**: 将来的にPlaywright/Puppeteerを検討
+
+---
+
+## 12. 変更履歴
 
 | 日付       | バージョン | 概要                                                 |
 | ---------- | ---------- | ---------------------------------------------------- |
@@ -1394,6 +1620,7 @@ class DatabaseManager:
 | 2025-10-03 | 0.2.0      | CSV 前提アーキテクチャに刷新、トレンド分析設計を追加 |
 | 2025-10-04 | 0.3.0      | 画像生成・HTTPストリーミング機能設計を追加           |
 | 2025-10-30 | 0.4.0      | 重複検出・解決機能設計を追加（FR-009対応）           |
+| 2025-11-01 | 0.5.0      | Webアプリケーション設計を追加（FR-018対応）          |
 
 ---
 
