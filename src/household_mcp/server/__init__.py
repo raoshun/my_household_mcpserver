@@ -9,9 +9,9 @@ public API. New HTTP server functionality is available from
 
 from __future__ import annotations
 
+import sys
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
-import sys
 
 # Re-export the HTTP app factory from the non-conflicting web package
 try:
@@ -43,7 +43,58 @@ _server = _load_legacy_server_module()
 
 # Re-export expected symbols for tests and external code
 list_tools = getattr(_server, "list_tools", None)
+list_tools_for_test = getattr(_server, "list_tools_for_test", None)
 mcp = getattr(_server, "mcp", None)
 app = getattr(_server, "app", None)
+_db_manager = getattr(_server, "_db_manager", None)
+_data_loader = getattr(_server, "_data_loader", None)
 
-__all__ = ["list_tools", "mcp", "app", "create_http_app"]
+# Re-export duplicate detection tools
+# These are decorated with @mcp.tool, so we need to get the underlying function
+_tool_detect_duplicates = getattr(_server, "tool_detect_duplicates", None)
+_tool_get_duplicate_candidates = getattr(_server, "tool_get_duplicate_candidates", None)
+_tool_confirm_duplicate = getattr(_server, "tool_confirm_duplicate", None)
+_tool_restore_duplicate = getattr(_server, "tool_restore_duplicate", None)
+_tool_get_duplicate_stats = getattr(_server, "tool_get_duplicate_stats", None)
+
+# Extract the actual function from FunctionTool objects if needed
+tool_detect_duplicates = (
+    getattr(_tool_detect_duplicates, "func", _tool_detect_duplicates)
+    if _tool_detect_duplicates
+    else None
+)
+tool_get_duplicate_candidates = (
+    getattr(_tool_get_duplicate_candidates, "func", _tool_get_duplicate_candidates)
+    if _tool_get_duplicate_candidates
+    else None
+)
+tool_confirm_duplicate = (
+    getattr(_tool_confirm_duplicate, "func", _tool_confirm_duplicate)
+    if _tool_confirm_duplicate
+    else None
+)
+tool_restore_duplicate = (
+    getattr(_tool_restore_duplicate, "func", _tool_restore_duplicate)
+    if _tool_restore_duplicate
+    else None
+)
+tool_get_duplicate_stats = (
+    getattr(_tool_get_duplicate_stats, "func", _tool_get_duplicate_stats)
+    if _tool_get_duplicate_stats
+    else None
+)
+
+__all__ = [
+    "list_tools",
+    "list_tools_for_test",
+    "mcp",
+    "app",
+    "create_http_app",
+    "_db_manager",
+    "_data_loader",
+    "tool_detect_duplicates",
+    "tool_get_duplicate_candidates",
+    "tool_confirm_duplicate",
+    "tool_restore_duplicate",
+    "tool_get_duplicate_stats",
+]

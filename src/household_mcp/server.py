@@ -24,8 +24,10 @@ else:
 
 from fastmcp import FastMCP
 
+from household_mcp.database import DatabaseManager
 from household_mcp.dataloader import HouseholdDataLoader
 from household_mcp.exceptions import DataSourceError
+from household_mcp.tools import duplicate_tools
 from household_mcp.tools.enhanced_tools import enhanced_monthly_summary
 from household_mcp.tools.trend_tool import category_trend_summary, get_category_trend
 
@@ -66,6 +68,7 @@ mcp = FastMCP("my_household_mcp")
 # Lazily initialize data loader to avoid import-time failures in environments
 # (e.g., CI) where the data directory isn't present.
 _data_loader: Optional[HouseholdDataLoader] = None
+_db_manager: Optional[DatabaseManager] = None
 
 
 def _data_dir() -> str:
@@ -83,6 +86,18 @@ def _get_data_loader() -> HouseholdDataLoader:
         # Instantiate lazily to avoid import-time failures
         _data_loader = HouseholdDataLoader(src_dir=_data_dir())
     return _data_loader
+
+
+def _get_db_manager() -> DatabaseManager:
+    """データベースマネージャーを取得（遅延初期化）."""
+    global _db_manager
+    if _db_manager is None:
+        db_path = os.path.join(_data_dir(), "household.db")
+        _db_manager = DatabaseManager(db_path)
+        _db_manager.initialize_database()
+        # duplicate_toolsにデータベースマネージャーを設定
+        duplicate_tools.set_database_manager(_db_manager)
+    return _db_manager
 
 
 # transportにstreamable-httpが含まれる場合はmime_typeをtext/event-streamに
@@ -532,6 +547,135 @@ def tool_enhanced_monthly_summary(
         return {"success": False, "error": str(e)}
 
 
+# 重複検出ツール群
+@mcp.tool("detect_duplicates")
+def tool_detect_duplicates(
+    date_tolerance_days: int = 0,
+    amount_tolerance_abs: float = 0.0,
+    amount_tolerance_pct: float = 0.0,
+    min_similarity_score: float = 0.8,
+) -> Dict[str, Any]:
+    """重複している取引を検出します。
+
+    使用例:
+    - 「重複している取引を見つけて」
+    - 「同じ支出が二重に登録されていないか確認して」
+
+    Args:
+        date_tolerance_days: 日付の誤差許容範囲（±日数、デフォルト: 0=完全一致）
+        amount_tolerance_abs: 金額の絶対誤差許容範囲（±円、デフォルト: 0=完全一致）
+        amount_tolerance_pct: 金額の割合誤差許容範囲（±%、デフォルト: 0=完全一致）
+        min_similarity_score: 最小類似度スコア（0.0-1.0、デフォルト: 0.8）
+
+    Returns:
+        検出された重複候補の件数とメッセージ
+    """
+    try:
+        _get_db_manager()  # データベースを初期化
+        return duplicate_tools.detect_duplicates(
+            date_tolerance_days=date_tolerance_days,
+            amount_tolerance_abs=amount_tolerance_abs,
+            amount_tolerance_pct=amount_tolerance_pct,
+            min_similarity_score=min_similarity_score,
+        )
+    except Exception as e:
+        return {"success": False, "error": f"重複検出に失敗しました: {str(e)}"}
+
+
+@mcp.tool("get_duplicate_candidates")
+def tool_get_duplicate_candidates(limit: int = 10) -> Dict[str, Any]:
+    """未判定の重複候補を取得します。
+
+    使用例:
+    - 「重複候補を見せて」
+    - 「次の重複候補は?」
+
+    Args:
+        limit: 取得する候補の最大件数（デフォルト: 10）
+
+    Returns:
+        重複候補のリスト（取引詳細を含む）
+    """
+    try:
+        _get_db_manager()  # データベースを初期化
+        return duplicate_tools.get_duplicate_candidates(limit=limit)
+    except Exception as e:
+        return {"success": False, "error": f"重複候補の取得に失敗しました: {str(e)}"}
+
+
+@mcp.tool("confirm_duplicate")
+def tool_confirm_duplicate(
+    check_id: int,
+    decision: str,
+) -> Dict[str, Any]:
+    """重複判定結果を記録します。
+
+    使用例:
+    - 「これは重複です」→ decision="duplicate"
+    - 「これは別の取引です」→ decision="not_duplicate"
+    - 「スキップ」→ decision="skip"
+
+    Args:
+        check_id: 重複候補のチェックID
+        decision: 判定結果（"duplicate", "not_duplicate", "skip"のいずれか）
+
+    Returns:
+        判定結果の記録状況
+    """
+    try:
+        _get_db_manager()  # データベースを初期化
+        if decision not in ["duplicate", "not_duplicate", "skip"]:
+            return {
+                "success": False,
+                "error": f"無効な判定: {decision}。'duplicate', 'not_duplicate', 'skip'のいずれかを指定してください。",
+            }
+        return duplicate_tools.confirm_duplicate(
+            check_id=check_id,
+            decision=decision,  # type: ignore[arg-type]
+        )
+    except Exception as e:
+        return {"success": False, "error": f"判定の記録に失敗しました: {str(e)}"}
+
+
+@mcp.tool("restore_duplicate")
+def tool_restore_duplicate(transaction_id: int) -> Dict[str, Any]:
+    """誤って重複とマークした取引を復元します。
+
+    使用例:
+    - 「さっきの判定は間違えた。復元して」
+    - 「取引IDxx を復元して」
+
+    Args:
+        transaction_id: 復元する取引のID
+
+    Returns:
+        復元結果
+    """
+    try:
+        _get_db_manager()  # データベースを初期化
+        return duplicate_tools.restore_duplicate(transaction_id=transaction_id)
+    except Exception as e:
+        return {"success": False, "error": f"取引の復元に失敗しました: {str(e)}"}
+
+
+@mcp.tool("get_duplicate_stats")
+def tool_get_duplicate_stats() -> Dict[str, Any]:
+    """重複検出の統計情報を取得します。
+
+    使用例:
+    - 「重複はどれくらいある?」
+    - 「重複の状況を教えて」
+
+    Returns:
+        重複検出の統計情報
+    """
+    try:
+        _get_db_manager()  # データベースを初期化
+        return duplicate_tools.get_duplicate_stats()
+    except Exception as e:
+        return {"success": False, "error": f"統計情報の取得に失敗しました: {str(e)}"}
+
+
 # Expose an async helper to list tools for smoke tests
 from typing import (  # noqa: E402  (import after FastMCP for clarity)
     NamedTuple,
@@ -558,6 +702,12 @@ async def list_tools() -> Sequence[Any]:
         "get_monthly_household",
         "get_category_trend",
         "enhanced_monthly_summary",
+        # Duplicate detection tools
+        "detect_duplicates",
+        "get_duplicate_candidates",
+        "confirm_duplicate",
+        "restore_duplicate",
+        "get_duplicate_stats",
     ]
     return [_SimpleTool(name=n) for n in tool_names]
 
