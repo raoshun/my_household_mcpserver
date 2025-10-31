@@ -58,8 +58,8 @@ class TestCategoryAnalysisTool:
         ]
         return analyzer
 
-    @patch("household_mcp.server._get_data_loader")
-    @patch("household_mcp.server._data_dir")
+    @patch("household_mcp.server._server_module._get_data_loader")
+    @patch("household_mcp.server._server_module._data_dir")
     @patch("household_mcp.analysis.trends.CategoryTrendAnalyzer")
     def test_category_analysis_success(
         self,
@@ -98,7 +98,7 @@ class TestCategoryAnalysisTool:
             assert "amount" in month_data
             assert "mom_change" in month_data
 
-    @patch("household_mcp.server._get_data_loader")
+    @patch("household_mcp.server._server_module._get_data_loader")
     def test_category_analysis_no_data(self, mock_get_loader, mock_data_loader):
         """Test category_analysis when no CSV files are available."""
         from household_mcp.server import category_analysis
@@ -117,8 +117,8 @@ class TestCategoryAnalysisTool:
         assert result["category"] == "食費"
         assert result["months"] == 3
 
-    @patch("household_mcp.server._get_data_loader")
-    @patch("household_mcp.server._data_dir")
+    @patch("household_mcp.server._server_module._get_data_loader")
+    @patch("household_mcp.server._server_module._data_dir")
     @patch("household_mcp.analysis.trends.CategoryTrendAnalyzer")
     def test_category_analysis_category_not_found(
         self, mock_analyzer_class, mock_data_dir, mock_get_loader, mock_data_loader
@@ -142,8 +142,8 @@ class TestCategoryAnalysisTool:
         assert "存在しないカテゴリ" in result["error"]
         assert "データが見つかりませんでした" in result["error"]
 
-    @patch("household_mcp.server._get_data_loader")
-    @patch("household_mcp.server._data_dir")
+    @patch("household_mcp.server._server_module._get_data_loader")
+    @patch("household_mcp.server._server_module._data_dir")
     @patch("household_mcp.analysis.trends.CategoryTrendAnalyzer")
     def test_category_analysis_analyzer_exception(
         self, mock_analyzer_class, mock_data_dir, mock_get_loader, mock_data_loader
@@ -169,8 +169,8 @@ class TestCategoryAnalysisTool:
         assert "エラーが発生しました" in result["error"]
         assert "食費" in result["error"]
 
-    @patch("household_mcp.server._get_data_loader")
-    @patch("household_mcp.server._data_dir")
+    @patch("household_mcp.server._server_module._get_data_loader")
+    @patch("household_mcp.server._server_module._data_dir")
     @patch("household_mcp.analysis.trends.CategoryTrendAnalyzer")
     def test_category_analysis_fewer_months_available(
         self, mock_analyzer_class, mock_data_dir, mock_get_loader, mock_analyzer
@@ -215,8 +215,8 @@ class TestCategoryAnalysisTool:
         assert result["months"] == 2  # Adjusted to available months
         assert len(result["monthly_breakdown"]) == 2
 
-    @patch("household_mcp.server._get_data_loader")
-    @patch("household_mcp.server._data_dir")
+    @patch("household_mcp.server._server_module._get_data_loader")
+    @patch("household_mcp.server._server_module._data_dir")
     @patch("household_mcp.analysis.trends.CategoryTrendAnalyzer")
     def test_category_analysis_data_source_error(
         self, mock_analyzer_class, mock_data_dir, mock_get_loader, mock_data_loader
@@ -239,8 +239,10 @@ class TestCategoryAnalysisTool:
         result = category_analysis(category="食費", months=3)
 
         # Verify Japanese error message
+        # DataSourceError from analyzer is caught by inner exception handler
         assert "error" in result
-        assert "データソースエラー" in result["error"]
+        assert "エラーが発生しました" in result["error"]
+        assert "CSV file is corrupted" in result["error"]
 
     def test_category_analysis_response_structure(self):
         """Test that category_analysis response has the correct structure."""

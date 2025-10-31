@@ -49,6 +49,19 @@ app = getattr(_server, "app", None)
 _db_manager = getattr(_server, "_db_manager", None)
 _data_loader = getattr(_server, "_data_loader", None)
 
+# Re-export functions needed for tests
+_data_dir = getattr(_server, "_data_dir", None)
+_get_data_loader = getattr(_server, "_get_data_loader", None)
+_get_db_manager = getattr(_server, "_get_db_manager", None)
+
+# Extract category_analysis function (may be wrapped in FunctionTool)
+_tool_category_analysis = getattr(_server, "category_analysis", None)
+category_analysis = (
+    getattr(_tool_category_analysis, "fn", _tool_category_analysis)
+    if _tool_category_analysis
+    else None
+)
+
 # Re-export duplicate detection tools
 # These are decorated with @mcp.tool, so we need to get the underlying function
 _tool_detect_duplicates = getattr(_server, "tool_detect_duplicates", None)
@@ -84,6 +97,9 @@ tool_get_duplicate_stats = (
     else None
 )
 
+# Export the actual module for test mocking
+_server_module = _server
+
 __all__ = [
     "list_tools",
     "list_tools_for_test",
@@ -92,9 +108,14 @@ __all__ = [
     "create_http_app",
     "_db_manager",
     "_data_loader",
+    "_data_dir",
+    "_get_data_loader",
+    "_get_db_manager",
+    "category_analysis",
     "tool_detect_duplicates",
     "tool_get_duplicate_candidates",
     "tool_confirm_duplicate",
     "tool_restore_duplicate",
     "tool_get_duplicate_stats",
+    "_server_module",
 ]
