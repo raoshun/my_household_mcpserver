@@ -325,58 +325,102 @@ http://localhost:8080
 
 詳細は [`webapp/README.md`](webapp/README.md) を参照してください。
 
-### 画像生成機能（オプション）
+### 画像生成機能
 
-画像生成機能を使用するには、追加の依存関係とフォント設定が必要です：
+MCPツールから直接グラフ画像を生成して、AIエージェントに視覚的な洞察を提供できます。
+
+#### インストール
+
+画像生成機能を使用するには、`visualization` と `streaming` extras が必要です：
 
 ```bash
 # 画像生成に必要な依存関係をインストール
-uv pip install -e ".[visualization]"
+uv pip install -e ".[visualization,streaming]"
 
-# 日本語フォントを配置
-# fonts/ ディレクトリに Noto Sans CJK を配置
-# 詳細は「日本語フォント設定」セクションを参照
+# または、すべてのオプション機能を一括インストール
+uv pip install -e ".[full]"
 ```
 
-**サポートされるグラフタイプ**:
+#### 日本語フォント設定
 
-- 円グラフ（pie）: カテゴリ別支出割合
-- 棒グラフ（bar）: カテゴリ別比較
-- 折れ線グラフ（line）: 時系列トレンド
-- 面グラフ（area）: 累積トレンド
+日本語ラベル付きグラフを生成するには、CJKフォントが必要です：
 
-**MCP ツールからの使用例**:
+```bash
+# fonts/ ディレクトリの作成（既に存在する場合はスキップ）
+mkdir -p fonts
+
+# Noto Sans CJK フォントのダウンロード（Ubuntu/Debian）
+# システムに既にインストールされている場合は自動検出されます
+sudo apt-get install fonts-noto-cjk
+
+# または、プロジェクト内に配置
+# fonts/NotoSansCJKjp-Regular.otf を配置
+```
+
+ChartGeneratorは以下の順序でフォントを自動検出します：
+
+1. `fonts/NotoSansCJKjp-Regular.otf`（プロジェクトディレクトリ）
+2. システムフォントディレクトリ（`/usr/share/fonts/`など）
+
+#### 起動方法
+
+##### 1. ストリーミングモード（推奨）
+
+HTTPサーバーを起動して、生成した画像をブラウザから取得可能にします：
+
+```bash
+# HTTPストリーミングサーバーを起動（ポート8000）
+uv run python -m uvicorn household_mcp.web.http_server:create_http_app --factory --reload --host 0.0.0.0 --port 8000
+
+# MCP クライアントから接続（stdio）
+# AIエージェントはMCP経由でツールを呼び出し、HTTPサーバーから画像を取得
+```
+
+##### 2. stdioモード（画像生成なし）
+
+テキストベースのMCP通信のみ：
+
+```bash
+uv run mcp install src/household_mcp/server.py
+```
+
+#### サポートされるグラフタイプ
+
+- **円グラフ（pie）**: カテゴリ別支出割合
+- **棒グラフ（bar）**: カテゴリ別比較
+- **折れ線グラフ（line）**: 時系列トレンド
+- **面グラフ（area）**: 累積トレンド
+
+#### MCPツールからの使用例
+
+Enhanced MCPツールを使用して、画像形式でレスポンスを取得：
 
 ```python
 # 月次サマリーを画像で取得
 {
-  "tool": "get_monthly_household",
+  "tool": "enhanced_monthly_summary",
   "arguments": {
     "year": 2025,
     "month": 10,
-    "output_format": "image",
-    "graph_type": "pie",
-    "image_size": "800x600",
-    "image_format": "png"
+    "output_format": "image",  # "text" または "image"
+    "graph_type": "pie",       # "pie", "bar", "line", "area"
+    "image_size": "800x600",   # WxH形式
+    "image_format": "png"      # "png" または "svg"
   }
 }
 
-# レスポンス
+# レスポンス例
 {
   "success": true,
   "type": "image",
-  "url": "http://localhost:8000/api/charts/abc123...",
-  "metadata": {
-    "graph_type": "pie",
-    "format": "png",
-    "size": "800x600",
-    "cache_key": "abc123..."
-  }
+  "url": "http://localhost:8000/api/charts/abc123def456",
+  "chart_id": "abc123def456",
+  "size_bytes": 55942
 }
 
 # カテゴリトレンドを画像で取得
 {
-  "tool": "get_category_trend",
+  "tool": "enhanced_category_trend",
   "arguments": {
     "category": "食費",
     "start_month": "2024-01",
@@ -587,13 +631,116 @@ GET http://localhost:8000/health
 
 #### ツール一覧
 
-| 名称                    | 説明                                                  | 出力形式        |
-| ----------------------- | ----------------------------------------------------- | --------------- |
-| `get_monthly_household` | 指定年月の支出明細一覧と月次サマリー                  | テキスト / 画像 |
-| `get_category_trend`    | カテゴリ別トレンド分析（前月比・前年比・移動平均）    | テキスト / 画像 |
-| `category_analysis`     | カテゴリ別の期間分析（前月比・最大最小・トップN支出） | テキスト        |
-| `find_categories`       | 利用可能なカテゴリ一覧を取得                          | テキスト        |
-| `monthly_summary`       | 月次サマリ（収入・支出・カテゴリ別集計）              | テキスト        |
+| 名称                         | 説明                                                  | 出力形式        |
+| ---------------------------- | ----------------------------------------------------- | --------------- |
+| `get_monthly_household`      | 指定年月の支出明細一覧と月次サマリー                  | テキスト        |
+| `get_category_trend`         | カテゴリ別トレンド分析（前月比・前年比・移動平均）    | テキスト        |
+| `category_analysis`          | カテゴリ別の期間分析（前月比・最大最小・トップN支出） | テキスト        |
+| `find_categories`            | 利用可能なカテゴリ一覧を取得                          | テキスト        |
+| `monthly_summary`            | 月次サマリ（収入・支出・カテゴリ別集計）              | テキスト        |
+| `enhanced_monthly_summary`   | 月次サマリー（画像対応）                              | テキスト / 画像 |
+| `enhanced_category_trend`    | カテゴリトレンド（画像対応）                          | テキスト / 画像 |
+
+### HTTP API エンドポイント
+
+ストリーミングモードで起動した場合、以下のHTTP APIエンドポイントが利用可能です：
+
+#### チャート画像配信
+
+```text
+GET /api/charts/{chart_id}
+```
+
+生成されたチャート画像をストリーミング配信します。
+
+**パラメータ:**
+
+- `chart_id` (path): チャートのキャッシュキー（MCPツールのレスポンスから取得）
+
+**レスポンス:**
+
+- `Content-Type: image/png`
+- StreamingResponse（チャンク配信、8KB単位）
+
+**使用例:**
+
+```bash
+# MCPツールで画像生成後、返されたURLを使用
+curl http://localhost:8000/api/charts/abc123def456 -o chart.png
+```
+
+#### チャート情報取得
+
+```text
+GET /api/charts/{chart_id}/info
+```
+
+キャッシュされたチャートのメタデータを取得します。
+
+**レスポンス:**
+
+```json
+{
+  "chart_id": "abc123def456",
+  "size_bytes": 55942,
+  "media_type": "image/png"
+}
+```
+
+#### キャッシュ統計
+
+```text
+GET /api/cache/stats
+```
+
+チャートキャッシュの統計情報を取得します。
+
+**レスポンス:**
+
+```json
+{
+  "current_size": 12,
+  "max_size": 50,
+  "ttl": 3600,
+  "hit_rate": 0.75
+}
+```
+
+#### キャッシュクリア
+
+```text
+DELETE /api/cache
+```
+
+すべてのキャッシュされたチャート画像をクリアします。
+
+**レスポンス:**
+
+```json
+{
+  "status": "success",
+  "message": "Cache cleared"
+}
+```
+
+#### ヘルスチェック
+
+```text
+GET /health
+```
+
+サーバーの稼働状況を確認します。
+
+**レスポンス:**
+
+```json
+{
+  "status": "healthy",
+  "cache_size": 12
+}
+```
+
+詳細は [`docs/api.md`](docs/api.md) を参照してください。
 
 ### 画像生成のパフォーマンスとキャッシング
 
