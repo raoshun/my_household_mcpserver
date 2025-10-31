@@ -142,8 +142,21 @@
 
 ## 追加タスク（メンテナンス / 改善）
 
-- [ ] **TASK-M01**: 依存最小化ポリシー文書化（README に optional extras 追記）
-- [ ] **TASK-M02**: `logging` extra 選択時の構成ヘルパー追加（structlog 初期化）
+- [x] **TASK-M01**: 依存最小化ポリシー文書化（README に optional extras 追記）
+  - [x] README.mdに依存最小化ポリシーセクション追加
+  - [x] コア機能vs拡張機能の設計原則を明文化
+  - [x] 必須依存4パッケージのみで基本機能動作を保証
+  - 実装日: 2025-11-01
+
+- [x] **TASK-M02**: `logging` extra 選択時の構成ヘルパー追加（structlog 初期化）
+  - [x] `src/household_mcp/logging_config.py` 新規作成
+  - [x] `setup_logging()` 関数実装（標準/structlog切り替え、JSON形式対応）
+  - [x] `get_logger()` 関数実装（structlog/標準loggingの自動選択）
+  - [x] structlog未インストール時の適切なフォールバック機能
+  - [x] 単体テスト追加（4 passed, 2 skipped）
+  - [x] README.mdに使用例を記載
+  - 実装日: 2025-11-01
+
 - [ ] **TASK-M03**: Analyzer 側キャッシュ統計インターフェース統一 (`CategoryTrendAnalyzer.cache_stats`) 追加
 - [ ] **TASK-M04**: 例外メッセージ多言語方針（現在: 日/英 混在）整理
 - [ ] **TASK-M05**: CI ワークフロー (lint + test + coverage) 追加

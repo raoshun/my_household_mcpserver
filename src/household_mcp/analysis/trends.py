@@ -210,6 +210,41 @@ class CategoryTrendAnalyzer:
 
         return len(self._cache)
 
+    def cache_stats(self) -> dict[str, int | list[str]]:
+        """Return detailed cache statistics.
+
+        Returns:
+            Dictionary containing:
+            - size: Number of cached month combinations
+            - entries: List of cached month range keys
+            - total_months: Total number of unique months across all cache entries
+
+        Example:
+            >>> analyzer = CategoryTrendAnalyzer(src_dir="data")
+            >>> analyzer.metrics_for_category([(2022, 1), (2022, 2)], category="食費")
+            >>> stats = analyzer.cache_stats()
+            >>> print(stats)
+            {'size': 1, 'entries': ['2022-01~2022-02'], 'total_months': 2}
+        """
+        entries: list[str] = []
+        unique_months: set[MonthTuple] = set()
+
+        for months in self._cache.keys():
+            if months:
+                # Format: "YYYY-MM~YYYY-MM"
+                start = f"{months[0][0]}-{months[0][1]:02d}"
+                end = f"{months[-1][0]}-{months[-1][1]:02d}"
+                entries.append(f"{start}~{end}")
+
+                # Collect unique months
+                unique_months.update(months)
+
+        return {
+            "size": len(self._cache),
+            "entries": entries,
+            "total_months": len(unique_months),
+        }
+
     def _compute_signature(
         self, months: Tuple[MonthTuple, ...]
     ) -> Tuple[Tuple[str, float], ...]:

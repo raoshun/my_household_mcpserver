@@ -81,3 +81,41 @@ def test_metrics_for_query(analyzer: CategoryTrendAnalyzer) -> None:
 
     assert len(metrics) == 2
     assert all(metric.category == "食費" for metric in metrics)
+
+
+def test_cache_stats(analyzer: CategoryTrendAnalyzer) -> None:
+    """Test cache_stats method returns correct statistics."""
+    # Clear cache first
+    analyzer.clear_cache()
+
+    # Initially cache should be empty
+    stats = analyzer.cache_stats()
+    assert stats["size"] == 0
+    entries = stats["entries"]
+    assert isinstance(entries, list)
+    assert len(entries) == 0
+    assert stats["total_months"] == 0
+
+    # Load some data to populate cache
+    analyzer.metrics_for_category([(2025, 6), (2025, 7)], category="食費")
+
+    # Check cache stats after loading
+    stats = analyzer.cache_stats()
+    assert stats["size"] == 1
+    entries = stats["entries"]
+    assert isinstance(entries, list)
+    assert len(entries) == 1
+    assert "2025-06~2025-07" in entries
+    assert stats["total_months"] == 2
+
+    # Load more data with overlapping months
+    analyzer.metrics_for_category([(2025, 7), (2025, 8)], category="交通")
+
+    # Check cache stats with multiple entries
+    stats = analyzer.cache_stats()
+    assert stats["size"] == 2
+    entries = stats["entries"]
+    assert isinstance(entries, list)
+    assert len(entries) == 2
+    # Total unique months: (2025,6), (2025,7), (2025,8)
+    assert stats["total_months"] == 3
