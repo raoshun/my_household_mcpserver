@@ -3,7 +3,11 @@
 - **バージョン**: 0.5.0
 - **更新日**: 2025-11-01
 - **作成者**: GitHub Copilot (AI assistant)
-- **対象要件**: [requirements.md](./requirements.md) に記載の FR-001〜FR-018、NFR-001〜NFR-013
+- **対象要件**: [requirements.md](./requirements.md) v1.2 に記載の FR-001〜FR-018、NFR-001〜NFR-013
+- **実装状況**:
+  - FR-001〜FR-003, FR-018（Webアプリ）: 実装済み
+  - FR-004〜FR-006（画像生成・ストリーミング）: 部分実装（基盤のみ）
+  - FR-007〜FR-017: 計画中（Node.js/TS版）
 
 ---
 
@@ -1442,6 +1446,7 @@ webapp/
 #### `/api/monthly` 詳細
 
 **パラメータ:**
+
 - `year` (int, required): 年
 - `month` (int, required): 月（1-12）
 - `output_format` (str, optional): 出力形式（"json" または "image"）
@@ -1449,6 +1454,7 @@ webapp/
 - `image_size` (str, optional): 画像サイズ（例: "800x600"）
 
 **レスポンス例（JSON形式）:**
+
 ```json
 {
   "success": true,
@@ -1469,6 +1475,7 @@ webapp/
 #### `/api/available-months` 詳細
 
 **レスポンス例:**
+
 ```json
 {
   "success": true,
@@ -1483,6 +1490,7 @@ webapp/
 ### 11.4 フロントエンド設計
 
 #### 技術スタック
+
 - **言語**: JavaScript ES6+（Vanilla JS）
 - **チャートライブラリ**: Chart.js 4.4.0（CDN経由）
 - **スタイリング**: カスタムCSS（CSS Variables + Flexbox/Grid）
@@ -1490,7 +1498,8 @@ webapp/
 
 #### コンポーネント設計
 
-**APIClient (api.js)**
+##### APIClient (api.js)
+
 ```javascript
 class APIClient {
   - baseUrl: string
@@ -1503,7 +1512,8 @@ class APIClient {
 }
 ```
 
-**ChartManager (chart.js)**
+##### ChartManager (chart.js)
+
 ```javascript
 class ChartManager {
   - canvas: HTMLCanvasElement
@@ -1518,7 +1528,8 @@ class ChartManager {
 }
 ```
 
-**Application (main.js)**
+##### Application (main.js)
+
 ```javascript
 // グローバル状態管理
 - apiClient: APIClient
@@ -1540,6 +1551,7 @@ class ChartManager {
 ### 11.5 UI/UX設計
 
 #### レイアウト構成
+
 1. **ヘッダー**: タイトル、サブタイトル
 2. **コントロールパネル**: 年月選択、グラフタイプ選択、読み込みボタン
 3. **統計サマリー**: 4つのカード（総支出、件数、平均、最大）
@@ -1548,11 +1560,13 @@ class ChartManager {
 6. **フッター**: クレジット表記
 
 #### レスポンシブデザイン
+
 - **PC**: 3カラムレイアウト、グラフ横並び
 - **タブレット**: 2カラム、統計カード2x2配置
 - **モバイル**: 1カラム、縦積み、タッチ最適化
 
 #### カラースキーム（CSS Variables）
+
 ```css
 --primary-color: #3b82f6
 --secondary-color: #10b981
