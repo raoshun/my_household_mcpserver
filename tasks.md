@@ -869,13 +869,149 @@
 
 ---
 
+## フェーズ8: 重複検出Webアプリ実装 (Week 9) - 完了
+
+**対応要件**: FR-009（重複検出・解決）
+**対応設計**: design.md 第10章（重複検出・解決機能設計）
+
+### TASK-801: バックエンドAPI拡張（FR-009-2, FR-009-4）
+
+- [x] **TASK-801-1**: http_server.pyに重複検出エンドポイント追加
+  - [x] `POST /api/duplicates/detect` - 重複検出実行（誤差オプション付き）
+  - [x] `GET /api/duplicates/candidates` - 重複候補リスト取得
+  - [x] `GET /api/duplicates/{check_id}` - 候補詳細取得
+  - [x] `POST /api/duplicates/{check_id}/confirm` - ユーザー判定記録
+  - [x] `POST /api/duplicates/restore/{transaction_id}` - 重複フラグ解除
+  - [x] `GET /api/duplicates/stats` - 統計情報取得
+  - [x] 既存duplicate_toolsモジュールとの統合
+  - [x] エラーハンドリングとHTTPステータスコード
+  - 実装日: 2025-11-01
+
+### TASK-802: Webアプリケーションの実装（FR-009-2）
+
+- [x] **TASK-802-1**: プロジェクト構造の作成
+  - [x] `webapp/duplicates.html` - 重複検出専用ページ
+  - [x] `webapp/css/duplicates.css` - 専用スタイルシート
+  - [x] `webapp/js/duplicates.js` - 重複検出ロジック
+
+- [x] **TASK-802-2**: HTML/CSS実装
+  - [x] 検出設定パネル（日付・金額の誤差設定）
+  - [x] 統計情報表示（未判定・重複・非重複・スキップ）
+  - [x] 候補リストコンテナ（2カラム比較レイアウト）
+  - [x] レスポンシブデザイン（モバイル対応）
+
+- [x] **TASK-802-3**: JavaScript実装
+  - [x] DuplicateManager クラス実装
+  - [x] 検出実行機能（detectDuplicates）
+  - [x] 候補読み込み機能（loadCandidates）
+  - [x] 統計更新機能（loadStats）
+  - [x] カード生成機能（createCandidateCard）
+  - [x] 判定送信機能（confirmDuplicate）
+  - [x] ローディング・エラー表示
+
+### TASK-803: UI機能実装
+
+- [x] **TASK-803-1**: 検出設定コントロール
+  - [x] 日付許容誤差（0-7日）
+  - [x] 金額絶対誤差（円）
+  - [x] 金額割合誤差（%）
+  - [x] 検出ボタン・候補読み込みボタン
+
+- [x] **TASK-803-2**: 統計サマリー
+  - [x] 4種類の統計カード（未判定・重複・非重複・スキップ）
+  - [x] リアルタイム更新
+  - [x] 統計更新ボタン
+
+- [x] **TASK-803-3**: 候補カード表示
+  - [x] 2カラム比較レイアウト
+  - [x] 類似度スコア表示
+  - [x] 取引詳細（ID、日付、金額、摘要、カテゴリ）
+  - [x] 3択判定ボタン（重複・非重複・スキップ）
+
+- [x] **TASK-803-4**: アニメーション・UX
+  - [x] カード削除アニメーション
+  - [x] ローディングインジケーター
+  - [x] エラーメッセージ表示
+
+### TASK-804: ナビゲーション統合
+
+- [x] **TASK-804-1**: メインページにリンク追加
+  - [x] index.html にナビゲーションバー追加
+  - [x] duplicates.html へのリンク
+
+- [x] **TASK-804-2**: CSS スタイル統一
+  - [x] CSS変数の追加（--primary, --danger, --success, --warning）
+  - [x] ナビゲーションスタイルの統一
+
+### TASK-805: テスト・検証
+
+- [x] **TASK-805-1**: 動作確認
+  - [x] 重複検出実行テスト
+  - [x] 候補表示テスト
+  - [x] 判定機能テスト（3種類）
+  - [x] 統計更新テスト
+
+- [x] **TASK-805-2**: エラーハンドリング
+  - [x] APIエラー時の表示
+  - [x] ネットワークエラー処理
+  - [x] 空リスト時の表示
+
+### TASK-806: ドキュメント整備
+
+- [ ] **TASK-806-1**: README更新
+  - [ ] 重複検出機能の説明
+  - [ ] Webアプリでの使用方法
+
+- [ ] **TASK-806-2**: FAQ追加
+  - [ ] 重複検出に関するQ&A
+  - [ ] トラブルシューティング
+
+---
+
+## フェーズ8 完了サマリー
+
+### 実装された成果物
+
+1. **バックエンドAPI**: 6つの重複検出エンドポイント
+   - POST /api/duplicates/detect
+   - GET /api/duplicates/candidates
+   - GET /api/duplicates/{check_id}
+   - POST /api/duplicates/{check_id}/confirm
+   - POST /api/duplicates/restore/{transaction_id}
+   - GET /api/duplicates/stats
+
+2. **Webアプリ**: 重複検出専用ページ（3ファイル）
+   - webapp/duplicates.html
+   - webapp/css/duplicates.css
+   - webapp/js/duplicates.js
+
+3. **既存ページ更新**: ナビゲーション統合
+
+### 技術的詳細
+
+- **バックエンド**: FastAPI + duplicate_tools統合
+- **フロントエンド**: Vanilla JavaScript + DuplicateManager クラス
+- **UI/UX**: 2カラム比較レイアウト、アニメーション、レスポンシブデザイン
+- **データフロー**: APIClient → duplicate_tools → DuplicateService → SQLite
+
+### 工数実績
+
+- TASK-801: 0.5日（API実装）
+- TASK-802: 1.5日（HTML/CSS/JS実装）
+- TASK-803: 1.0日（UI機能実装）
+- TASK-804: 0.5日（ナビゲーション統合）
+- TASK-805: 0.5日（テスト）
+- TASK-806: 0.5日（ドキュメント）- 未完了
+- **合計**: 4.5日
+
+---
+
 ### 主要な技術的負債
 
 1. **単体・統合テストの不足**（TASK-401, TASK-402）
-2. **ドキュメント未更新**（TASK-501, TASK-502）
+2. **重複検出Webアプリのドキュメント未更新**（TASK-806）
 3. **設計書バージョン不整合**（0.2.0 → 0.3.0）
 4. **画像生成機能の統合未完了**（TASK-602〜604）
-5. **日本語フォント未配置**（TASK-601）
 
 ---
 

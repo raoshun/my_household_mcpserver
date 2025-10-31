@@ -266,6 +266,142 @@ def create_http_app(
             logger.exception(f"Error getting category hierarchy: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
+    # Duplicate detection endpoints
+    @app.post("/api/duplicates/detect")
+    async def detect_duplicates(  # type: ignore[no-untyped-def]
+        date_tolerance_days: int = Query(0, description="Date tolerance in days"),  # type: ignore[assignment]
+        amount_tolerance_abs: float = Query(0.0, description="Absolute amount tolerance"),  # type: ignore[assignment]
+        amount_tolerance_pct: float = Query(0.0, description="Percentage amount tolerance"),  # type: ignore[assignment]
+    ) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+        """Detect duplicate transactions.
+
+        Args:
+            date_tolerance_days: Date tolerance in days (default: 0)
+            amount_tolerance_abs: Absolute amount tolerance (default: 0.0)
+            amount_tolerance_pct: Percentage amount tolerance (default: 0.0)
+
+        Returns:
+            Detection results with count
+        """
+        try:
+            from household_mcp.tools import duplicate_tools
+
+            result = duplicate_tools.detect_duplicates(
+                date_tolerance_days=date_tolerance_days,
+                amount_tolerance_abs=amount_tolerance_abs,
+                amount_tolerance_pct=amount_tolerance_pct,
+            )
+            return result  # type: ignore[return-value]
+        except Exception as e:
+            logger.exception(f"Error detecting duplicates: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/api/duplicates/candidates")
+    async def get_duplicate_candidates(  # type: ignore[no-untyped-def]
+        limit: int = Query(10, description="Maximum number of candidates to return"),  # type: ignore[assignment]
+    ) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+        """Get list of duplicate candidates.
+
+        Args:
+            limit: Maximum number of candidates to return (default: 10)
+
+        Returns:
+            List of duplicate candidate pairs
+        """
+        try:
+            from household_mcp.tools import duplicate_tools
+
+            result = duplicate_tools.get_duplicate_candidates(limit=limit)
+            return result  # type: ignore[return-value]
+        except Exception as e:
+            logger.exception(f"Error getting duplicate candidates: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/api/duplicates/{check_id}")
+    async def get_duplicate_detail(check_id: int) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+        """Get details of a duplicate candidate.
+
+        Args:
+            check_id: Duplicate check ID
+
+        Returns:
+            Detailed information about the duplicate candidate
+        """
+        try:
+            from household_mcp.tools import duplicate_tools
+
+            result = duplicate_tools.get_duplicate_candidate_detail(check_id=check_id)
+            return result  # type: ignore[return-value]
+        except Exception as e:
+            logger.exception(f"Error getting duplicate detail: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.post("/api/duplicates/{check_id}/confirm")
+    async def confirm_duplicate(  # type: ignore[no-untyped-def]
+        check_id: int,
+        decision: str = Query(..., description="Decision: duplicate, not_duplicate, or skip"),  # type: ignore[assignment]
+    ) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+        """Confirm duplicate decision.
+
+        Args:
+            check_id: Duplicate check ID
+            decision: Decision (duplicate, not_duplicate, or skip)
+
+        Returns:
+            Confirmation result
+        """
+        if decision not in ["duplicate", "not_duplicate", "skip"]:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid decision. Must be 'duplicate', 'not_duplicate', or 'skip'",
+            )
+
+        try:
+            from household_mcp.tools import duplicate_tools
+
+            result = duplicate_tools.confirm_duplicate(
+                check_id=check_id, decision=decision  # type: ignore[arg-type]
+            )
+            return result  # type: ignore[return-value]
+        except Exception as e:
+            logger.exception(f"Error confirming duplicate: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.post("/api/duplicates/restore/{transaction_id}")
+    async def restore_duplicate(transaction_id: int) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+        """Restore a transaction marked as duplicate.
+
+        Args:
+            transaction_id: Transaction ID to restore
+
+        Returns:
+            Restoration result
+        """
+        try:
+            from household_mcp.tools import duplicate_tools
+
+            result = duplicate_tools.restore_duplicate(transaction_id=transaction_id)
+            return result  # type: ignore[return-value]
+        except Exception as e:
+            logger.exception(f"Error restoring duplicate: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/api/duplicates/stats")
+    async def get_duplicate_stats() -> dict[str, Any]:  # type: ignore[no-untyped-def]
+        """Get duplicate detection statistics.
+
+        Returns:
+            Statistics about detected duplicates
+        """
+        try:
+            from household_mcp.tools import duplicate_tools
+
+            result = duplicate_tools.get_duplicate_stats()
+            return result  # type: ignore[return-value]
+        except Exception as e:
+            logger.exception(f"Error getting duplicate stats: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
     # Store cache and streamer as app state for external access
     app.state.chart_cache = chart_cache
     app.state.image_streamer = image_streamer
