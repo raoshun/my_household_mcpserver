@@ -1,5 +1,10 @@
 # Household MCP Server
 
+[![CI](https://github.com/raoshun/my_household_mcpserver/actions/workflows/ci.yml/badge.svg)](https://github.com/raoshun/my_household_mcpserver/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/raoshun/my_household_mcpserver/branch/main/graph/badge.svg)](https://codecov.io/gh/raoshun/my_household_mcpserver)
+[![Python 3.11-3.14](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 家計簿CSVをインメモリで分析し、AIエージェントとの自然言語会話に必要な情報を提供する MCP（Model Context Protocol）サーバーです。
 
 ## 概要
@@ -638,6 +643,49 @@ uv run bandit -r src/   # セキュリティスキャン
 
 # すべてのチェックを一括実行
 uv run task all-checks  # ※ tasks.json に定義
+```
+
+### CI/CD パイプライン
+
+本プロジェクトはGitHub Actionsで包括的なCIワークフローを実行しています：
+
+**テストマトリクス:**
+
+- Python 3.11, 3.12, 3.13, 3.14 での並列テスト
+- pre-commit フック検証（markdownlint, black, flake8, mypy）
+- カバレッジ収集（80%閾値）とCodecov連携
+
+**Lintジョブ:**
+
+- black, isort, flake8, mypy, bandit による静的解析
+- Python 3.12環境での実行
+
+**オプショナル依存テスト:**
+
+- 7つのextrasグループ個別検証（visualization, streaming, web, db, auth, io, logging）
+- スモークテスト（`-m "not slow" --maxfail=1`）
+
+**完全インストールテスト:**
+
+- `[full]` extra でのすべての依存関係同時インストール
+- 完全なテストスイート実行
+
+**ワークフロートリガー:**
+
+- Push to `main`
+- Pull Request to `main`
+- 手動トリガー（`workflow_dispatch`）
+
+詳細は [`.github/workflows/ci.yml`](.github/workflows/ci.yml) を参照してください。
+
+**ローカルでの事前検証:**
+
+```bash
+# pre-commitフックのインストール
+uv run pre-commit install
+
+# すべてのファイルに対してpre-commitを実行
+uv run pre-commit run --all-files
 ```
 
 ### 実用的な使用例

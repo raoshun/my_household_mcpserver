@@ -157,9 +157,37 @@
   - [x] README.mdに使用例を記載
   - 実装日: 2025-11-01
 
-- [ ] **TASK-M03**: Analyzer 側キャッシュ統計インターフェース統一 (`CategoryTrendAnalyzer.cache_stats`) 追加
+- [x] **TASK-M03**: Analyzer 側キャッシュ統計インターフェース統一 (`CategoryTrendAnalyzer.cache_stats`) 追加
+  - [x] `cache_stats()` メソッド実装（詳細な統計情報を返却）
+  - [x] 返却情報: size（キャッシュエントリ数）、entries（月範囲リスト）、total_months（ユニーク月数）
+  - [x] 既存の `cache_size()` と `clear_cache()` を補完する統一インターフェース
+  - [x] 単体テスト追加（test_cache_stats: 空キャッシュ、単一エントリ、複数エントリのテスト）
+  - 用途: キャッシュ効果測定、メモリ使用量監視、デバッグ・パフォーマンスチューニング
+  - 実装日: 2025-11-01
+
 - [ ] **TASK-M04**: 例外メッセージ多言語方針（現在: 日/英 混在）整理
-- [ ] **TASK-M05**: CI ワークフロー (lint + test + coverage) 追加
+- [x] **TASK-M05**: CI ワークフロー強化（Python 3.11-3.14 マトリクス + Codecov連携）
+  - [x] `.github/workflows/ci.yml` 大幅改善
+  - [x] **テストマトリクスジョブ**（test-matrix）:
+    - Python 3.11, 3.12, 3.13, 3.14 でのマトリクステスト
+    - pre-commit フック統合（markdownlint, black, flake8, mypy）
+    - カバレッジ収集（pytest-cov, 80%閾値）
+    - Codecov連携（Python 3.12のみ、fail_ci_if_error: false）
+    - HTMLカバレッジレポートのアーティファクトアップロード
+  - [x] **Lintジョブ**（lint）:
+    - black, isort, flake8, mypy, bandit の独立実行
+    - Python 3.12のみで実行（lintは1バージョンで十分）
+    - bandit: JSON + 標準出力レポート生成
+  - [x] **オプショナル依存テスト**（optional-extras）:
+    - 7つのextraグループ個別テスト（visualization, streaming, web, db, auth, io, logging）
+    - スモークテスト（`-m "not slow" --maxfail=1 --no-cov`）
+    - fail-fast: false（すべてのextraを確認）
+  - [x] **完全インストールテスト**（full-install）:
+    - `[full]` extra での全依存関係同時インストール
+    - 完全なテストスイート実行（カバレッジ80%）
+  - [x] `workflow_dispatch` トリガー追加（手動実行可能）
+  - 実装日: 2025-11-01
+  - 完了基準: ✅ Python 3.11-3.14でテスト可能、✅ Codecov連携、✅ 各extrasの動作確認
 
 ---
 

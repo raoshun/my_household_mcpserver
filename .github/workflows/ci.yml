@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch: # Allow manual trigger
 
 env:
   # Husky v7+ をCIインストール時のみ無効化（npm scripts実行時にフックをスキップ）
@@ -12,18 +13,26 @@ env:
   HUSKY: 0
 
 jobs:
-  build-test:
+  # ============================================================================
+  # メインテストジョブ: Lint + Test + Coverage（Python 3.11-3.14 マトリクス）
+  # ============================================================================
+  test-matrix:
+    name: Test (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
     env:
       HOUSEHOLD_DATA_DIR: tests/fixtures/data
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install uv
         run: |
@@ -46,7 +55,7 @@ jobs:
       - name: Create virtual environment and install dependencies
         run: |
           uv venv
-          uv pip install -e .[web,visualization]
+          uv pip install -e .[web,visualization,logging]
           uv pip install pytest pytest-cov black isort flake8 mypy bandit[toml] pre-commit
 
       - name: Run pre-commit (all files)
@@ -54,33 +63,87 @@ jobs:
         with:
           extra_args: --all-files
 
-      - name: Run tests
+      - name: Run tests with coverage
         run: |
-          uv run pytest --cov=src/household_mcp --cov-report=term-missing --cov-fail-under=80
+          uv run pytest --cov=src/household_mcp --cov-report=term-missing --cov-report=xml --cov-report=html --cov-fail-under=80
 
-      - name: Run lint (black, isort, flake8, mypy)
-        run: |
-          uv run black --check src tests
-          uv run isort --check src tests
-          uv run flake8 src tests
-          uv run mypy src/
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.12'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
 
-      - name: Upload coverage report
+      - name: Upload HTML coverage report
+        if: matrix.python-version == '3.12'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: htmlcov/
 
-  optional-extras:
+  # ============================================================================
+  # Lintジョブ: コード品質チェック（Python 3.12のみ）
+  # ============================================================================
+  lint:
+    name: Lint (black, isort, flake8, mypy, bandit)
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        extras: [web, viz, db, auth, io, logging]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: |
+          pip install uv
+
+      - name: Install dependencies
+        run: |
+          uv venv
+          uv pip install -e .[web,visualization,logging]
+          uv pip install black isort flake8 mypy bandit[toml]
+
+      - name: Check code formatting (black)
+        run: |
+          uv run black --check src tests
+
+      - name: Check import sorting (isort)
+        run: |
+          uv run isort --check src tests
+
+      - name: Lint code (flake8)
+        run: |
+          uv run flake8 src tests
+
+      - name: Type check (mypy)
+        run: |
+          uv run mypy src/
+
+      - name: Security scan (bandit)
+        run: |
+          uv run bandit -r src/ -f json -o bandit-report.json || true
+          uv run bandit -r src/
+
+  # ============================================================================
+  # オプショナル依存関係テスト: 各extrasの動作確認（スモークテスト）
+  # ============================================================================
+  optional-extras:
+    name: Test optional extras (${{ matrix.extras }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        extras: [visualization, streaming, web, db, auth, io, logging]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -94,12 +157,58 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y fonts-noto-cjk
 
-      - name: Create virtual environment and install dependencies
+      - name: Prepare sample data directory
+        run: |
+          mkdir -p tests/fixtures/data
+
+      - name: Install dependencies with ${{ matrix.extras }} extra
         run: |
           uv venv
-          uv pip install -e .[web,visualization,${{ matrix.extras }}]
+          uv pip install -e .[${{ matrix.extras }}]
           uv pip install pytest pytest-cov
 
-      - name: Run tests (smoke)
+      - name: Run smoke tests
+        env:
+          HOUSEHOLD_DATA_DIR: tests/fixtures/data
         run: |
           uv run pytest -m "not slow" --maxfail=1 --no-cov
+
+  # ============================================================================
+  # 完全インストールテスト: すべてのextrasを同時インストール
+  # ============================================================================
+  full-install:
+    name: Test full installation (all extras)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: |
+          pip install uv
+
+      - name: Install system fonts for Japanese support
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-cjk
+
+      - name: Prepare sample data directory
+        run: |
+          mkdir -p tests/fixtures/data
+
+      - name: Install all dependencies (full extra)
+        run: |
+          uv venv
+          uv pip install -e .[full]
+          uv pip install pytest pytest-cov
+
+      - name: Run all tests
+        env:
+          HOUSEHOLD_DATA_DIR: tests/fixtures/data
+        run: |
+          uv run pytest --cov=src/household_mcp --cov-report=term-missing --cov-fail-under=80
