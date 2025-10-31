@@ -77,14 +77,20 @@
 
 ## フェーズ4: テスト & 品質ゲート (Week 4)
 
-- [ ] **TASK-401**: 単体テスト追加（TS-001〜TS-006）
-  - [ ] `tests/unit/test_dataloader.py` に読み込みケースを追加
+- [x] **TASK-401**: 単体テスト追加（TS-001〜TS-006）
+  - [x] `tests/unit/test_dataloader.py` に読み込みケースを追加（8テスト：エラー処理、フィルタリング、検証）
   - [x] `tests/unit/analysis/test_trends.py` で指標計算結果を検証（既存）
   - [x] `tests/unit/tools/test_get_category_trend.py` を追加（基本ケース）
+  - カバレッジ向上: `dataloader.py` 81%, `trends.py` 86%, `trend_tool.py` 84%
+  - 実装日: 2025-11-01
 
-- [ ] **TASK-402**: 統合テスト整備（TS-007〜TS-009）
-  - [ ] `tests/integration/test_trend_pipeline.py` で E2E フローを検証
-  - [ ] データ不足・カテゴリ未指定などのエッジケース確認
+- [x] **TASK-402**: 統合テスト整備（TS-007〜TS-009）
+  - [x] `tests/integration/test_trend_pipeline.py` で E2E フローを検証（8テスト）
+  - [x] エンドツーエンドパイプライン（resolve_trend_query → analyzer → formatter）
+  - [x] エラーケース: 存在しないカテゴリ、不正な日付範囲
+  - [x] エッジケース: カテゴリ未指定（全カテゴリ）、単月分析、キャッシュ動作
+  - [x] 複数月集計と前年同月比計算の検証
+  - 実装日: 2025-11-01
 
 - [x] **TASK-403**: 自動化と品質ゲート（NFR-002, NFR-003）
   - [x] All Checks タスクが PASS（format/isort/flake8/mypy/bandit/pytest）
