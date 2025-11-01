@@ -6,6 +6,7 @@
 // Global state
 let apiClient;
 let chartManager;
+let trendManager;
 let currentData = [];
 let availableMonths = [];
 
@@ -16,18 +17,50 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize API client and chart manager
     apiClient = new APIClient();
     chartManager = new ChartManager('main-chart');
+    trendManager = new TrendManager(apiClient);
 
     // Set up event listeners
     setupEventListeners();
+    setupTabNavigation();
 
     // Load available months
     await loadAvailableMonths();
+
+    // Initialize trend manager with available months
+    await trendManager.initialize(availableMonths);
 
     // Perform health check
     await performHealthCheck();
 
     console.log('Application initialized successfully');
 });
+
+/**
+ * Setup tab navigation between Monthly and Trend views
+ */
+function setupTabNavigation() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabName = button.dataset.tab;
+
+            // Update button states
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            const activeTab = document.getElementById(`${tabName}-tab`);
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
+        });
+    });
+}
 
 /**
  * Set up event listeners
@@ -98,7 +131,7 @@ function populateYearMonthSelects() {
     const years = [...new Set(availableMonths.map(m => m.year))].sort((a, b) => b - a);
 
     // Populate year select
-    yearSelect.innerHTML = years.map(year => 
+    yearSelect.innerHTML = years.map(year =>
         `<option value="${year}">${year}年</option>`
     ).join('');
 
@@ -124,7 +157,7 @@ function updateMonthOptions() {
         .map(m => m.month)
         .sort((a, b) => b - a);
 
-    monthSelect.innerHTML = months.map(month => 
+    monthSelect.innerHTML = months.map(month =>
         `<option value="${month}">${month}月</option>`
     ).join('');
 }
@@ -183,12 +216,12 @@ async function loadMonthlyData(year, month) {
  */
 function updateSummaryStats(data) {
     const totalExpense = data.reduce((sum, item) => {
-        const amount = Math.abs(parseFloat(item['金額'] || item.amount || 0));
+        const amount = Math.abs(parseFloat(item['金額（円）'] || item['金額'] || item.amount || 0));
         return sum + amount;
     }, 0);
 
-    const maxExpense = Math.max(...data.map(item => 
-        Math.abs(parseFloat(item['金額'] || item.amount || 0))
+    const maxExpense = Math.max(...data.map(item =>
+        Math.abs(parseFloat(item['金額（円）'] || item['金額'] || item.amount || 0))
     ), 0);
 
     const avgExpense = data.length > 0 ? totalExpense / data.length : 0;
@@ -232,7 +265,7 @@ function updateTable(data) {
         const date = item['日付'] || item.date || '';
         const description = item['内容'] || item.description || '';
         const category = item['大項目'] || item.category || '未分類';
-        const amount = Math.abs(parseFloat(item['金額'] || item.amount || 0));
+        const amount = Math.abs(parseFloat(item['金額（円）'] || item['金額'] || item.amount || 0));
 
         return `
             <tr>
@@ -281,8 +314,8 @@ function filterTable() {
         const description = cells[1].textContent.toLowerCase();
         const category = cells[2].textContent;
 
-        const matchesSearch = !searchTerm || 
-            date.includes(searchTerm) || 
+        const matchesSearch = !searchTerm ||
+            date.includes(searchTerm) ||
             description.includes(searchTerm);
 
         const matchesCategory = !selectedCategory || category === selectedCategory;

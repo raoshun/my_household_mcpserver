@@ -184,8 +184,8 @@ class ChartManager {
     aggregateByCategory(data) {
         const totals = {};
         data.forEach(item => {
-            const category = item['大項目'] || item.category || '未分類';
-            const amount = Math.abs(parseFloat(item['金額'] || item.amount || 0));
+            const category = item['大項目'] || item['カテゴリ'] || item.category || '未分類';
+            const amount = Math.abs(parseFloat(item['金額（円）'] || item['金額'] || item.amount || 0));
             totals[category] = (totals[category] || 0) + amount;
         });
         return totals;
@@ -201,7 +201,7 @@ class ChartManager {
         data.forEach(item => {
             const date = item['日付'] || item.date || '';
             const dateStr = date.split(' ')[0]; // Extract date part
-            const amount = Math.abs(parseFloat(item['金額'] || item.amount || 0));
+            const amount = Math.abs(parseFloat(item['金額（円）'] || item['金額'] || item.amount || 0));
             totals[dateStr] = (totals[dateStr] || 0) + amount;
         });
         return totals;

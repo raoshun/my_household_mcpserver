@@ -100,6 +100,42 @@ class APIClient {
     async getCacheStats() {
         return await this.get('/api/cache/stats');
     }
+
+    /**
+     * Get monthly summary trend data
+     * @param {number} startYear - Start year
+     * @param {number} startMonth - Start month (1-12)
+     * @param {number} endYear - End year
+     * @param {number} endMonth - End month (1-12)
+     * @returns {Promise<Object>} - Monthly summary data
+     */
+    async getMonthlySummary(startYear, startMonth, endYear, endMonth) {
+        return await this.get('/api/trend/monthly_summary', {
+            start_year: startYear,
+            start_month: startMonth,
+            end_year: endYear,
+            end_month: endMonth
+        });
+    }
+
+    /**
+     * Get category breakdown trend data
+     * @param {number} startYear - Start year
+     * @param {number} startMonth - Start month (1-12)
+     * @param {number} endYear - End year
+     * @param {number} endMonth - End month (1-12)
+     * @param {number} topN - Number of top categories (default: 5)
+     * @returns {Promise<Object>} - Category breakdown data
+     */
+    async getCategoryBreakdown(startYear, startMonth, endYear, endMonth, topN = 5) {
+        return await this.get('/api/trend/category_breakdown', {
+            start_year: startYear,
+            start_month: startMonth,
+            end_year: endYear,
+            end_month: endMonth,
+            top_n: topN
+        });
+    }
 }
 
 // Export for use in other scripts

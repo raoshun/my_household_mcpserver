@@ -323,6 +323,180 @@ td:last-child {
     color: var(--danger-color);
 }
 
+/* Tab Navigation */
+.tab-navigation {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.tab-button {
+    padding: 12px 24px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    top: 2px;
+}
+
+.tab-button:hover {
+    color: var(--primary-color);
+    background-color: var(--bg-light);
+}
+
+.tab-button.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Trend Control Panel */
+.trend-control-panel {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 30px;
+}
+
+.period-selection {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.preset-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.preset-btn {
+    padding: 10px 20px;
+    background-color: var(--bg-light);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.preset-btn:hover {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.preset-btn.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.custom-period {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px;
+    background-color: var(--bg-light);
+    border-radius: 8px;
+}
+
+.period-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.period-row label {
+    min-width: 60px;
+    font-weight: 500;
+}
+
+.period-row select {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.95rem;
+}
+
+/* Trend Tabs */
+.trend-tabs-section {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: var(--shadow-md);
+}
+
+.trend-tab-nav {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.trend-tab-btn {
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--text-secondary);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    top: 2px;
+}
+
+.trend-tab-btn:hover {
+    color: var(--primary-color);
+}
+
+.trend-tab-btn.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.trend-chart-container {
+    display: none;
+}
+
+.trend-chart-container.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+.trend-chart-container h3 {
+    margin-bottom: 20px;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.trend-chart-container canvas {
+    max-height: 400px;
+}
+
 /* Footer */
 footer {
     text-align: center;

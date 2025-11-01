@@ -307,6 +307,93 @@
       },
       "isBackground": true,
       "problemMatcher": []
+    },
+    {
+      "label": "Start HTTP API Server",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "run",
+        "python",
+        "-m",
+        "uvicorn",
+        "household_mcp.web.http_server:create_http_app",
+        "--factory",
+        "--reload",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^.*$",
+          "file": 1,
+          "location": 2,
+          "message": 3
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*Uvicorn running.*$",
+          "endsPattern": "^.*Application startup complete.*$"
+        }
+      }
+    },
+    {
+      "label": "Start Webapp HTTP Server",
+      "type": "shell",
+      "command": "python3",
+      "args": ["-m", "http.server", "8080"],
+      "options": {
+        "cwd": "${workspaceFolder}/webapp"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": false
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^.*$",
+          "file": 1,
+          "location": 2,
+          "message": 3
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*Serving HTTP.*$",
+          "endsPattern": "^.*Serving HTTP on.*$"
+        }
+      }
+    },
+    {
+      "label": "Start Full Webapp Stack",
+      "dependsOrder": "parallel",
+      "dependsOn": ["Start HTTP API Server", "Start Webapp HTTP Server"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
     }
   ],
   "inputs": [
