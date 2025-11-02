@@ -296,15 +296,15 @@ exclude = [
 
 [tool.ruff.lint]
 select = [
-    "E",     # pycodestyle (PEP 8)
-    "F",     # pyflakes
-    "I",     # isort (import order)
-    "W",     # pycodestyle warnings
-    "C90",   # mccabe (complexity)
-    "D",     # pydocstyle (docstrings)
-    "B",     # flake8-bugbear
-    "UP",    # pyupgrade
-    "RUF",   # Ruff-specific
+    "E",   # pycodestyle (PEP 8)
+    "F",   # pyflakes
+    "I",   # isort (import order)
+    "W",   # pycodestyle warnings
+    "C90", # mccabe (complexity)
+    "D",   # pydocstyle (docstrings)
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "RUF", # Ruff-specific
 ]
 ignore = [
     "E203",   # black 互換: slice notation whitespace

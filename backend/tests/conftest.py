@@ -14,13 +14,26 @@ def pytest_configure():
     if str(src_path) not in sys.path:
         sys.path.insert(0, str(src_path))
 
-    # Suppress matplotlib glyph warnings globally (already filtered in code, double-safety)
+    # Debug: Print dependency availability
+    import os
+    data_dir = os.environ.get("HOUSEHOLD_DATA_DIR", "tests/fixtures/data")
+    if not data_dir.startswith("/"):
+        data_path = root / data_dir
+    else:
+        data_path = Path(data_dir)
+    print(f"\n📁 Data directory: {data_path}")
+    print(f"   Exists: {data_path.exists()}")
+    if data_path.exists():
+        csv_files = list(data_path.glob("*.csv"))
+        print(f"   CSV files: {len(csv_files)}")
+
+    # noqa: E501 - matplotlib glyph warnings (already filtered in code)
     warnings.filterwarnings(
         "ignore",
         message=r"Glyph .* missing from current font",
         category=UserWarning,
     )
-    # Suppress dateutil utcfromtimestamp deprecation warning in test output
+    # Suppress dateutil utcfromtimestamp deprecation warning in output
     warnings.filterwarnings(
         "ignore",
         message=r"datetime\.datetime\.utcfromtimestamp\(\) is deprecated",
