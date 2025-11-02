@@ -564,12 +564,17 @@
   - [x] バックエンドテスト成功確認（207 passed, 13 skipped, 80.93% coverage）
   - 完了日: 2025-11-02
 
-- [ ] **TASK-700-6**: デプロイメント手順の整備
-  - [ ] Docker Compose設定（backend + frontend）
-  - [ ] nginx リバースプロキシ設定
-  - [ ] 環境変数設定ガイド
-  - [ ] プロダクション起動スクリプト
-  - 見積: 0.5d
+- [x] **TASK-700-6**: デプロイメント手順の整備
+  - [x] Docker Compose設定（backend + frontend + nginx）
+  - [x] backend/Dockerfile（Python 3.11-slim、uv パッケージマネージャ）
+  - [x] frontend/Dockerfile（nginx-alpine、静的ファイルサーバー）
+  - [x] nginx リバースプロキシ設定（CORS、セキュリティヘッダー）
+  - [x] 環境変数設定ガイド（.env.example）
+  - [x] プロダクション起動スクリプト（start-dev.sh、start-prod.sh、stop.sh）
+  - [x] デプロイメントガイド（docs/deployment.md）
+  - [x] README.md更新（デプロイメントセクション追加）
+  - 完了日: 2025-11-02
+  - コミット: `feat(deploy): add Docker Compose deployment configuration`
 
 - [ ] **TASK-700-7**: フロントエンドの単体テスト追加
   - [ ] Jest + Testing Library セットアップ
@@ -583,8 +588,9 @@
 1. ✅ リモートにプッシュ（完了）
 2. ✅ CI/CD更新（完了）
 3. ✅ GitHub Actions動作確認（完了）
-4. ⏳ デプロイメント設定の整備（TASK-700-6）
+4. ✅ デプロイメント設定の整備（TASK-700-6、完了）
 5. ⏳ フロントエンドテストの追加（TASK-700-7）
+6. ⏳ デプロイメント動作検証（TASK-700-8、推奨）
 
 ---
 
