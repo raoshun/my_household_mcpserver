@@ -41,16 +41,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 function setupTabNavigation() {
     const tabButtons = document.querySelectorAll('.tab-button');
 
-    tabButtons.forEach(button => {
+    tabButtons.forEach((button) => {
         button.addEventListener('click', () => {
             const tabName = button.dataset.tab;
 
             // Update button states
-            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabButtons.forEach((btn) => btn.classList.remove('active'));
             button.classList.add('active');
 
             // Update tab content
-            document.querySelectorAll('.tab-content').forEach(content => {
+            document.querySelectorAll('.tab-content').forEach((content) => {
                 content.classList.remove('active');
             });
 
@@ -128,12 +128,12 @@ function populateYearMonthSelects() {
     if (!yearSelect || !monthSelect) return;
 
     // Get unique years
-    const years = [...new Set(availableMonths.map(m => m.year))].sort((a, b) => b - a);
+    const years = [...new Set(availableMonths.map((m) => m.year))].sort((a, b) => b - a);
 
     // Populate year select
-    yearSelect.innerHTML = years.map(year =>
-        `<option value="${year}">${year}年</option>`
-    ).join('');
+    yearSelect.innerHTML = years
+        .map((year) => `<option value="${year}">${year}年</option>`)
+        .join('');
 
     // Set default to latest year
     if (years.length > 0) {
@@ -153,13 +153,13 @@ function updateMonthOptions() {
 
     const selectedYear = parseInt(yearSelect.value);
     const months = availableMonths
-        .filter(m => m.year === selectedYear)
-        .map(m => m.month)
+        .filter((m) => m.year === selectedYear)
+        .map((m) => m.month)
         .sort((a, b) => b - a);
 
-    monthSelect.innerHTML = months.map(month =>
-        `<option value="${month}">${month}月</option>`
-    ).join('');
+    monthSelect.innerHTML = months
+        .map((month) => `<option value="${month}">${month}月</option>`)
+        .join('');
 }
 
 /**
@@ -220,15 +220,19 @@ function updateSummaryStats(data) {
         return sum + amount;
     }, 0);
 
-    const maxExpense = Math.max(...data.map(item =>
-        Math.abs(parseFloat(item['金額（円）'] || item['金額'] || item.amount || 0))
-    ), 0);
+    const maxExpense = Math.max(
+        ...data.map((item) =>
+            Math.abs(parseFloat(item['金額（円）'] || item['金額'] || item.amount || 0))
+        ),
+        0
+    );
 
     const avgExpense = data.length > 0 ? totalExpense / data.length : 0;
 
     document.getElementById('total-expense').textContent = `¥${totalExpense.toLocaleString()}`;
     document.getElementById('transaction-count').textContent = `${data.length}件`;
-    document.getElementById('average-expense').textContent = `¥${Math.round(avgExpense).toLocaleString()}`;
+    document.getElementById('average-expense').textContent =
+        `¥${Math.round(avgExpense).toLocaleString()}`;
     document.getElementById('max-expense').textContent = `¥${maxExpense.toLocaleString()}`;
 }
 
@@ -261,13 +265,16 @@ function updateTable(data) {
     const tbody = document.getElementById('data-table-body');
     if (!tbody) return;
 
-    tbody.innerHTML = data.map(item => {
-        const date = item['日付'] || item.date || '';
-        const description = item['内容'] || item.description || '';
-        const category = item['大項目'] || item.category || '未分類';
-        const amount = Math.abs(parseFloat(item['金額（円）'] || item['金額'] || item.amount || 0));
+    tbody.innerHTML = data
+        .map((item) => {
+            const date = item['日付'] || item.date || '';
+            const description = item['内容'] || item.description || '';
+            const category = item['大項目'] || item.category || '未分類';
+            const amount = Math.abs(
+                parseFloat(item['金額（円）'] || item['金額'] || item.amount || 0)
+            );
 
-        return `
+            return `
             <tr>
                 <td>${escapeHtml(date)}</td>
                 <td>${escapeHtml(description)}</td>
@@ -275,7 +282,8 @@ function updateTable(data) {
                 <td>¥${amount.toLocaleString()}</td>
             </tr>
         `;
-    }).join('');
+        })
+        .join('');
 }
 
 /**
@@ -287,8 +295,11 @@ function updateCategoryFilter(data) {
 
     const categories = ChartManager.getCategories(data);
 
-    categoryFilter.innerHTML = '<option value="">すべてのカテゴリ</option>' +
-        categories.map(cat => `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`).join('');
+    categoryFilter.innerHTML =
+        '<option value="">すべてのカテゴリ</option>' +
+        categories
+            .map((cat) => `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`)
+            .join('');
 }
 
 /**
@@ -306,7 +317,7 @@ function filterTable() {
 
     const rows = tbody.getElementsByTagName('tr');
 
-    Array.from(rows).forEach(row => {
+    Array.from(rows).forEach((row) => {
         const cells = row.getElementsByTagName('td');
         if (cells.length === 0) return;
 
@@ -314,13 +325,12 @@ function filterTable() {
         const description = cells[1].textContent.toLowerCase();
         const category = cells[2].textContent;
 
-        const matchesSearch = !searchTerm ||
-            date.includes(searchTerm) ||
-            description.includes(searchTerm);
+        const matchesSearch =
+            !searchTerm || date.includes(searchTerm) || description.includes(searchTerm);
 
         const matchesCategory = !selectedCategory || category === selectedCategory;
 
-        row.style.display = (matchesSearch && matchesCategory) ? '' : 'none';
+        row.style.display = matchesSearch && matchesCategory ? '' : 'none';
     });
 }
 
@@ -377,7 +387,7 @@ function escapeHtml(text) {
         '<': '&lt;',
         '>': '&gt;',
         '"': '&quot;',
-        "'": '&#039;'
+        "'": '&#039;',
     };
-    return String(text).replace(/[&<>"']/g, m => map[m]);
+    return String(text).replace(/[&<>"']/g, (m) => map[m]);
 }

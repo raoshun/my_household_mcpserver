@@ -155,7 +155,7 @@ describe('ChartManager', () => {
         });
 
         test('should handle missing canvas', () => {
-            const invalidManager = new (chartManager.constructor)('non-existent');
+            const invalidManager = new chartManager.constructor('non-existent');
             expect(invalidManager.canvas).toBeNull();
             expect(invalidManager.ctx).toBeNull();
         });
