@@ -11,7 +11,7 @@ class TrendManager {
         this.charts = {
             monthly: null,
             cumulative: null,
-            category: null
+            category: null,
         };
     }
 
@@ -37,10 +37,10 @@ class TrendManager {
         if (!startYearSelect || !endYearSelect) return;
 
         // Get unique years
-        const years = [...new Set(this.availableMonths.map(m => m.year))].sort((a, b) => b - a);
+        const years = [...new Set(this.availableMonths.map((m) => m.year))].sort((a, b) => b - a);
 
         // Populate year selects
-        years.forEach(year => {
+        years.forEach((year) => {
             startYearSelect.add(new Option(`${year}年`, year));
             endYearSelect.add(new Option(`${year}年`, year));
         });
@@ -58,7 +58,7 @@ class TrendManager {
     setupEventListeners() {
         // Preset buttons
         const presetButtons = document.querySelectorAll('.preset-btn');
-        presetButtons.forEach(btn => {
+        presetButtons.forEach((btn) => {
             btn.addEventListener('click', (e) => {
                 const preset = e.target.dataset.preset;
                 this.applyPreset(preset);
@@ -75,7 +75,7 @@ class TrendManager {
 
         // Trend tab navigation
         const trendTabButtons = document.querySelectorAll('.trend-tab-btn');
-        trendTabButtons.forEach(btn => {
+        trendTabButtons.forEach((btn) => {
             btn.addEventListener('click', (e) => {
                 const trendType = e.target.dataset.trend;
                 this.switchTrendTab(trendType);
@@ -95,7 +95,7 @@ class TrendManager {
      */
     async applyPreset(preset) {
         // Update active button
-        document.querySelectorAll('.preset-btn').forEach(btn => {
+        document.querySelectorAll('.preset-btn').forEach((btn) => {
             btn.classList.toggle('active', btn.dataset.preset === preset);
         });
 
@@ -155,7 +155,7 @@ class TrendManager {
         }
 
         // Deactivate preset buttons
-        document.querySelectorAll('.preset-btn').forEach(btn => {
+        document.querySelectorAll('.preset-btn').forEach((btn) => {
             btn.classList.remove('active');
         });
 
@@ -185,12 +185,19 @@ class TrendManager {
 
             // Load monthly summary
             const summaryResult = await this.apiClient.getMonthlySummary(
-                startYear, startMonth, endYear, endMonth
+                startYear,
+                startMonth,
+                endYear,
+                endMonth
             );
 
             // Load category breakdown
             const categoryResult = await this.apiClient.getCategoryBreakdown(
-                startYear, startMonth, endYear, endMonth, 5
+                startYear,
+                startMonth,
+                endYear,
+                endMonth,
+                5
             );
 
             if (summaryResult.success && categoryResult.success) {
@@ -200,7 +207,6 @@ class TrendManager {
             } else {
                 throw new Error('データの読み込みに失敗しました');
             }
-
         } catch (error) {
             console.error('Error loading trend data:', error);
             this.showError('トレンドデータの読み込みに失敗しました: ' + error.message);
@@ -216,10 +222,10 @@ class TrendManager {
         const ctx = document.getElementById('monthly-trend-chart');
         if (!ctx) return;
 
-        const labels = data.map(d => d.year_month);
-        const income = data.map(d => d.income);
-        const expense = data.map(d => d.expense);
-        const balance = data.map(d => d.balance);
+        const labels = data.map((d) => d.year_month);
+        const income = data.map((d) => d.income);
+        const expense = data.map((d) => d.expense);
+        const balance = data.map((d) => d.balance);
 
         // Destroy previous chart
         if (this.charts.monthly) {
@@ -237,7 +243,7 @@ class TrendManager {
                         borderColor: 'rgb(16, 185, 129)',
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
                         tension: 0.3,
-                        fill: true
+                        fill: true,
                     },
                     {
                         label: '支出',
@@ -245,7 +251,7 @@ class TrendManager {
                         borderColor: 'rgb(239, 68, 68)',
                         backgroundColor: 'rgba(239, 68, 68, 0.1)',
                         tension: 0.3,
-                        fill: true
+                        fill: true,
                     },
                     {
                         label: '収支差額',
@@ -253,9 +259,9 @@ class TrendManager {
                         borderColor: 'rgb(59, 130, 246)',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         tension: 0.3,
-                        fill: true
-                    }
-                ]
+                        fill: true,
+                    },
+                ],
             },
             options: {
                 responsive: true,
@@ -266,28 +272,28 @@ class TrendManager {
                     },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
+                            label: function (context) {
                                 let label = context.dataset.label || '';
                                 if (label) {
                                     label += ': ';
                                 }
                                 label += '¥' + context.parsed.y.toLocaleString();
                                 return label;
-                            }
-                        }
-                    }
+                            },
+                        },
+                    },
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            callback: function(value) {
+                            callback: function (value) {
                                 return '¥' + value.toLocaleString();
-                            }
-                        }
-                    }
-                }
-            }
+                            },
+                        },
+                    },
+                },
+            },
         });
     }
 
@@ -298,8 +304,8 @@ class TrendManager {
         const ctx = document.getElementById('cumulative-trend-chart');
         if (!ctx) return;
 
-        const labels = data.map(d => d.year_month);
-        const cumulative = data.map(d => d.cumulative_balance);
+        const labels = data.map((d) => d.year_month);
+        const cumulative = data.map((d) => d.cumulative_balance);
 
         // Destroy previous chart
         if (this.charts.cumulative) {
@@ -310,15 +316,17 @@ class TrendManager {
             type: 'line',
             data: {
                 labels: labels,
-                datasets: [{
-                    label: '累積収支',
-                    data: cumulative,
-                    borderColor: 'rgb(139, 92, 246)',
-                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                    tension: 0.3,
-                    fill: true,
-                    borderWidth: 3
-                }]
+                datasets: [
+                    {
+                        label: '累積収支',
+                        data: cumulative,
+                        borderColor: 'rgb(139, 92, 246)',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        tension: 0.3,
+                        fill: true,
+                        borderWidth: 3,
+                    },
+                ],
             },
             options: {
                 responsive: true,
@@ -329,22 +337,22 @@ class TrendManager {
                     },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
+                            label: function (context) {
                                 return '累積収支: ¥' + context.parsed.y.toLocaleString();
-                            }
-                        }
-                    }
+                            },
+                        },
+                    },
                 },
                 scales: {
                     y: {
                         ticks: {
-                            callback: function(value) {
+                            callback: function (value) {
                                 return '¥' + value.toLocaleString();
-                            }
-                        }
-                    }
-                }
-            }
+                            },
+                        },
+                    },
+                },
+            },
         });
     }
 
@@ -372,22 +380,22 @@ class TrendManager {
             'rgb(34, 197, 94)',
             'rgb(59, 130, 246)',
             'rgb(168, 85, 247)',
-            'rgb(236, 72, 153)'
+            'rgb(236, 72, 153)',
         ];
 
         const datasets = categories.map((category, index) => ({
             label: category,
-            data: data.map(d => d[category] || 0),
+            data: data.map((d) => d[category] || 0),
             backgroundColor: colors[index % colors.length],
             borderColor: colors[index % colors.length],
-            borderWidth: 1
+            borderWidth: 1,
         }));
 
         this.charts.category = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: labels,
-                datasets: datasets
+                datasets: datasets,
             },
             options: {
                 responsive: true,
@@ -398,32 +406,32 @@ class TrendManager {
                     },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
+                            label: function (context) {
                                 let label = context.dataset.label || '';
                                 if (label) {
                                     label += ': ';
                                 }
                                 label += '¥' + context.parsed.y.toLocaleString();
                                 return label;
-                            }
-                        }
-                    }
+                            },
+                        },
+                    },
                 },
                 scales: {
                     x: {
-                        stacked: true
+                        stacked: true,
                     },
                     y: {
                         stacked: true,
                         beginAtZero: true,
                         ticks: {
-                            callback: function(value) {
+                            callback: function (value) {
                                 return '¥' + value.toLocaleString();
-                            }
-                        }
-                    }
-                }
-            }
+                            },
+                        },
+                    },
+                },
+            },
         });
     }
 
@@ -432,12 +440,12 @@ class TrendManager {
      */
     switchTrendTab(trendType) {
         // Update button states
-        document.querySelectorAll('.trend-tab-btn').forEach(btn => {
+        document.querySelectorAll('.trend-tab-btn').forEach((btn) => {
             btn.classList.toggle('active', btn.dataset.trend === trendType);
         });
 
         // Update chart containers
-        document.querySelectorAll('.trend-chart-container').forEach(container => {
+        document.querySelectorAll('.trend-chart-container').forEach((container) => {
             container.classList.remove('active');
         });
 

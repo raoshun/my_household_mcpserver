@@ -36,12 +36,14 @@ class ChartManager {
             type: 'pie',
             data: {
                 labels: labels,
-                datasets: [{
-                    data: values,
-                    backgroundColor: colors,
-                    borderWidth: 2,
-                    borderColor: '#ffffff'
-                }]
+                datasets: [
+                    {
+                        data: values,
+                        backgroundColor: colors,
+                        borderWidth: 2,
+                        borderColor: '#ffffff',
+                    },
+                ],
             },
             options: {
                 responsive: true,
@@ -51,10 +53,10 @@ class ChartManager {
                         position: 'right',
                         labels: {
                             font: {
-                                size: 12
+                                size: 12,
                             },
-                            padding: 15
-                        }
+                            padding: 15,
+                        },
                     },
                     tooltip: {
                         callbacks: {
@@ -64,11 +66,11 @@ class ChartManager {
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                 const percentage = ((value / total) * 100).toFixed(1);
                                 return `${label}: ¥${value.toLocaleString()} (${percentage}%)`;
-                            }
-                        }
-                    }
-                }
-            }
+                            },
+                        },
+                    },
+                },
+            },
         });
     }
 
@@ -88,39 +90,41 @@ class ChartManager {
             type: 'bar',
             data: {
                 labels: labels,
-                datasets: [{
-                    label: '支出額 (¥)',
-                    data: values,
-                    backgroundColor: colors,
-                    borderWidth: 2,
-                    borderColor: '#ffffff'
-                }]
+                datasets: [
+                    {
+                        label: '支出額 (¥)',
+                        data: values,
+                        backgroundColor: colors,
+                        borderWidth: 2,
+                        borderColor: '#ffffff',
+                    },
+                ],
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {
                     legend: {
-                        display: false
+                        display: false,
                     },
                     tooltip: {
                         callbacks: {
                             label: (context) => {
                                 const value = context.parsed.y || 0;
                                 return `¥${value.toLocaleString()}`;
-                            }
-                        }
-                    }
+                            },
+                        },
+                    },
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            callback: (value) => `¥${value.toLocaleString()}`
-                        }
-                    }
-                }
-            }
+                            callback: (value) => `¥${value.toLocaleString()}`,
+                        },
+                    },
+                },
+            },
         });
     }
 
@@ -133,23 +137,25 @@ class ChartManager {
 
         const dailyTotals = this.aggregateByDate(data);
         const labels = Object.keys(dailyTotals).sort();
-        const values = labels.map(date => dailyTotals[date]);
+        const values = labels.map((date) => dailyTotals[date]);
 
         this.chart = new Chart(this.ctx, {
             type: 'line',
             data: {
                 labels: labels,
-                datasets: [{
-                    label: '日別支出額 (¥)',
-                    data: values,
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                    borderWidth: 3,
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                }]
+                datasets: [
+                    {
+                        label: '日別支出額 (¥)',
+                        data: values,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                    },
+                ],
             },
             options: {
                 responsive: true,
@@ -160,19 +166,19 @@ class ChartManager {
                             label: (context) => {
                                 const value = context.parsed.y || 0;
                                 return `支出: ¥${value.toLocaleString()}`;
-                            }
-                        }
-                    }
+                            },
+                        },
+                    },
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            callback: (value) => `¥${value.toLocaleString()}`
-                        }
-                    }
-                }
-            }
+                            callback: (value) => `¥${value.toLocaleString()}`,
+                        },
+                    },
+                },
+            },
         });
     }
 
@@ -183,9 +189,11 @@ class ChartManager {
      */
     aggregateByCategory(data) {
         const totals = {};
-        data.forEach(item => {
+        data.forEach((item) => {
             const category = item['大項目'] || item['カテゴリ'] || item.category || '未分類';
-            const amount = Math.abs(parseFloat(item['金額（円）'] || item['金額'] || item.amount || 0));
+            const amount = Math.abs(
+                parseFloat(item['金額（円）'] || item['金額'] || item.amount || 0)
+            );
             totals[category] = (totals[category] || 0) + amount;
         });
         return totals;
@@ -198,10 +206,12 @@ class ChartManager {
      */
     aggregateByDate(data) {
         const totals = {};
-        data.forEach(item => {
+        data.forEach((item) => {
             const date = item['日付'] || item.date || '';
             const dateStr = date.split(' ')[0]; // Extract date part
-            const amount = Math.abs(parseFloat(item['金額（円）'] || item['金額'] || item.amount || 0));
+            const amount = Math.abs(
+                parseFloat(item['金額（円）'] || item['金額'] || item.amount || 0)
+            );
             totals[dateStr] = (totals[dateStr] || 0) + amount;
         });
         return totals;
@@ -214,8 +224,16 @@ class ChartManager {
      */
     generateColors(count) {
         const baseColors = [
-            '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
-            '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
+            '#3b82f6',
+            '#10b981',
+            '#f59e0b',
+            '#ef4444',
+            '#8b5cf6',
+            '#ec4899',
+            '#06b6d4',
+            '#84cc16',
+            '#f97316',
+            '#6366f1',
         ];
 
         if (count <= baseColors.length) {
@@ -238,7 +256,7 @@ class ChartManager {
      */
     static getCategories(data) {
         const categories = new Set();
-        data.forEach(item => {
+        data.forEach((item) => {
             const category = item['大項目'] || item.category || '未分類';
             categories.add(category);
         });

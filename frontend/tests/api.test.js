@@ -103,7 +103,7 @@ describe('APIClient', () => {
         });
 
         test('should initialize with custom base URL', () => {
-            const customClient = new (apiClient.constructor)('http://custom:9000');
+            const customClient = new apiClient.constructor('http://custom:9000');
             expect(customClient.baseUrl).toBe('http://custom:9000');
         });
     });

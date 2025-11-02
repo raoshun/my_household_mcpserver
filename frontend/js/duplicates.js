@@ -11,9 +11,15 @@ class DuplicateManager {
 
     init() {
         // Bind event listeners
-        document.getElementById('detect-btn').addEventListener('click', () => this.detectDuplicates());
-        document.getElementById('load-candidates-btn').addEventListener('click', () => this.loadCandidates());
-        document.getElementById('refresh-stats-btn').addEventListener('click', () => this.loadStats());
+        document
+            .getElementById('detect-btn')
+            .addEventListener('click', () => this.detectDuplicates());
+        document
+            .getElementById('load-candidates-btn')
+            .addEventListener('click', () => this.loadCandidates());
+        document
+            .getElementById('refresh-stats-btn')
+            .addEventListener('click', () => this.loadStats());
 
         // Load initial stats
         this.loadStats();
@@ -24,8 +30,10 @@ class DuplicateManager {
      */
     async detectDuplicates() {
         const dateTolerance = parseInt(document.getElementById('date-tolerance').value) || 0;
-        const amountToleranceAbs = parseFloat(document.getElementById('amount-tolerance-abs').value) || 0;
-        const amountTolerancePct = parseFloat(document.getElementById('amount-tolerance-pct').value) || 0;
+        const amountToleranceAbs =
+            parseFloat(document.getElementById('amount-tolerance-abs').value) || 0;
+        const amountTolerancePct =
+            parseFloat(document.getElementById('amount-tolerance-pct').value) || 0;
 
         const resultDiv = document.getElementById('detection-result');
         resultDiv.textContent = '検出中...';
@@ -34,9 +42,9 @@ class DuplicateManager {
         try {
             const response = await fetch(
                 `${this.apiClient.baseUrl}/api/duplicates/detect?` +
-                `date_tolerance_days=${dateTolerance}&` +
-                `amount_tolerance_abs=${amountToleranceAbs}&` +
-                `amount_tolerance_pct=${amountTolerancePct}`,
+                    `date_tolerance_days=${dateTolerance}&` +
+                    `amount_tolerance_abs=${amountToleranceAbs}&` +
+                    `amount_tolerance_pct=${amountTolerancePct}`,
                 { method: 'POST' }
             );
 
@@ -47,7 +55,8 @@ class DuplicateManager {
             const data = await response.json();
 
             if (data.success) {
-                resultDiv.textContent = data.message || `${data.detected_count}件の重複候補を検出しました`;
+                resultDiv.textContent =
+                    data.message || `${data.detected_count}件の重複候補を検出しました`;
                 resultDiv.className = 'result-message success';
 
                 // Reload stats and candidates
@@ -84,7 +93,7 @@ class DuplicateManager {
 
             if (data.success && data.candidates && data.candidates.length > 0) {
                 container.innerHTML = '';
-                data.candidates.forEach(candidate => {
+                data.candidates.forEach((candidate) => {
                     container.appendChild(this.createCandidateCard(candidate));
                 });
             } else if (data.success && data.candidates.length === 0) {
@@ -114,7 +123,8 @@ class DuplicateManager {
             if (data.success && data.stats) {
                 document.getElementById('pending-count').textContent = data.stats.pending || 0;
                 document.getElementById('duplicate-count').textContent = data.stats.duplicate || 0;
-                document.getElementById('not-duplicate-count').textContent = data.stats.not_duplicate || 0;
+                document.getElementById('not-duplicate-count').textContent =
+                    data.stats.not_duplicate || 0;
                 document.getElementById('skipped-count').textContent = data.stats.skipped || 0;
             }
         } catch (error) {
@@ -164,7 +174,7 @@ class DuplicateManager {
         card.appendChild(actions);
 
         // Add event listeners to action buttons
-        actions.querySelectorAll('button').forEach(btn => {
+        actions.querySelectorAll('button').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const decision = btn.dataset.decision;
                 this.confirmDuplicate(candidate.check_id, decision, card);
@@ -203,12 +213,16 @@ class DuplicateManager {
                 <span class="field-label">カテゴリ:</span>
                 <span class="field-value">${this.escapeHtml(transaction.category || '-')}</span>
             </div>
-            ${transaction.subcategory ? `
+            ${
+                transaction.subcategory
+                    ? `
             <div class="transaction-field">
                 <span class="field-label">サブカテゴリ:</span>
                 <span class="field-value">${this.escapeHtml(transaction.subcategory)}</span>
             </div>
-            ` : ''}
+            `
+                    : ''
+            }
         `;
 
         col.innerHTML = html;
@@ -241,7 +255,8 @@ class DuplicateManager {
                     // Check if there are any candidates left
                     const container = document.getElementById('candidates-container');
                     if (container.children.length === 0) {
-                        container.innerHTML = '<p class="placeholder">すべての候補を判定しました</p>';
+                        container.innerHTML =
+                            '<p class="placeholder">すべての候補を判定しました</p>';
                     }
                 }, 300);
 
