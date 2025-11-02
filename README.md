@@ -971,12 +971,60 @@ brew install font-noto-sans-cjk-jp
 fc-cache -fv
 ```
 
+## デプロイメント
+
+Docker Compose を使用した簡単なデプロイメントをサポートしています。
+
+### クイックスタート（開発環境）
+
+```bash
+# 環境変数の設定
+cp .env.example .env
+
+# 開発環境を起動
+./scripts/start-dev.sh
+```
+
+アクセス:
+
+- **フロントエンド**: <http://localhost:8080>
+- **バックエンド API**: <http://localhost:8000>
+- **API ドキュメント**: <http://localhost:8000/docs>
+
+### 本番環境のデプロイ
+
+```bash
+# 本番環境を起動（nginx リバースプロキシ含む）
+./scripts/start-prod.sh
+```
+
+アクセス:
+
+- **メインURL**: <http://localhost>
+- **API ドキュメント**: <http://localhost/api/docs>
+
+### サービス管理
+
+```bash
+# サービスの停止
+./scripts/stop.sh
+
+# ログの確認
+docker compose logs -f
+
+# サービスの再起動
+docker compose restart
+```
+
+詳細なデプロイメント手順、設定、トラブルシューティングについては [デプロイメントガイド](docs/deployment.md) を参照してください。
+
 ## ドキュメント
 
 - [利用ガイド](docs/usage.md) - 詳細な使用方法とパラメータ説明
 - [サンプル会話例](docs/examples.md) - LLMクライアントでの実践的なプロンプト例
 - [FAQ](docs/FAQ.md) - よくある質問とトラブルシューティング
 - [API リファレンス](docs/api.md) - HTTPエンドポイント仕様
+- [デプロイメントガイド](docs/deployment.md) - Docker Composeを使用したデプロイメント手順
 
 ## 開発
 

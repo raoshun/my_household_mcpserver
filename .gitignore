@@ -16,6 +16,11 @@ __pycache__/
 poetry.lock
 uv.lock
 
+# Environment files
+.env
+.env.local
+.env.*.local
+
 # Ignore db files
 *.db*
 *.csv

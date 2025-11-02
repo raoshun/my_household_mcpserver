@@ -510,6 +510,84 @@
 - [x] **スタイル定義**: `src/household_mcp/visualization/styles.py` 実装済み
 - [x] **例外クラス**: `ChartGenerationError` 定義済み（`src/household_mcp/exceptions.py`）
 
+---
+
+## フェーズ7: Frontend/Backend分離 (Week 8)
+
+**対応設計**: design.md アーキテクチャ変更  
+**対応要件**: FR-018（Webアプリケーション）、FR-020（デプロイメント）
+
+- [x] **TASK-700-1**: shared/ディレクトリ作成（共有リソース用）
+  - [x] shared/.gitkeep 追加
+  - [x] 将来の共有モデル・型・ユーティリティの準備
+  - 完了日: 2025-11-02
+  - コミット: `feat(arch): create shared/ directory for cross-component resources`
+
+- [x] **TASK-700-2**: backend/ディレクトリ移設
+  - [x] src/ → backend/src/ に移動
+  - [x] tests/ → backend/tests/ に移動
+  - [x] pyproject.toml → backend/pyproject.toml に移動
+  - [x] frontend/ ディレクトリ完全実装
+    - HTML: index.html（月次分析・トレンド分析）、duplicates.html（重複検出UI）
+    - CSS: style.css（共通スタイル）、duplicates.css（重複検出専用）
+    - JavaScript: api.js（APIクライアント）、chart.js（Chart.js管理）、main.js（アプリエントリ）、trend.js（トレンド管理）、duplicates.js（重複検出UI）
+  - [x] VS Code tasks.json更新（working directory対応）
+  - [x] ドキュメント更新（README, design, requirements, tasks）
+  - 完了日: 2025-11-02
+  - コミット: `refactor(arch): migrate backend code to backend/ directory`
+  - Breaking changes:
+    - テスト実行: `cd backend && uv run pytest`
+    - APIサーバー: `cd backend && uv run uvicorn household_mcp.web.http_server:create_http_app --factory`
+    - フロントエンド: `cd frontend && python3 -m http.server 8080`
+
+- [x] **TASK-700-3**: ドキュメント更新（TASK-700-2に統合）
+  - [x] README.md更新（新ディレクトリ構造、セットアップ手順）
+  - [x] requirements.md更新（FR-018フロントエンド要件追加）
+  - [x] design.md更新（アーキテクチャ分離の詳細）
+  - [x] tasks.md更新（進捗追跡）
+  - [x] docs/更新（api.md, usage.md, FAQ.md のパス修正）
+  - 完了日: 2025-11-02
+
+- [x] **TASK-700-4**: CI/CD パイプライン更新
+  - [x] GitHub Actions ワークフロー更新（.github/workflows/ci.yml）
+  - [x] working-directory: backend を全ジョブに追加
+  - [x] テストデータパス更新: tests/fixtures/data → backend/tests/fixtures/data
+  - [x] カバレッジパス更新: ./coverage.xml → ./backend/coverage.xml
+  - [x] アーティファクトパス更新: htmlcov/ → backend/htmlcov/
+  - [x] 全ジョブで動作確認: test-matrix, lint, optional-extras, full-install
+  - 完了日: 2025-11-02
+  - コミット: `ci: update GitHub Actions for backend/ directory structure`
+
+- [x] **TASK-700-5**: リモートへのプッシュとCI動作確認
+  - [x] git push origin main（コミット3件）
+  - [x] GitHub Actions CI の動作確認
+  - [x] バックエンドテスト成功確認（207 passed, 13 skipped, 80.93% coverage）
+  - 完了日: 2025-11-02
+
+- [ ] **TASK-700-6**: デプロイメント手順の整備
+  - [ ] Docker Compose設定（backend + frontend）
+  - [ ] nginx リバースプロキシ設定
+  - [ ] 環境変数設定ガイド
+  - [ ] プロダクション起動スクリプト
+  - 見積: 0.5d
+
+- [ ] **TASK-700-7**: フロントエンドの単体テスト追加
+  - [ ] Jest + Testing Library セットアップ
+  - [ ] APIクライアント（api.js）のテスト
+  - [ ] チャート管理（chart.js）のテスト
+  - [ ] トレンド管理（trend.js）のテスト
+  - 見積: 1.0d
+
+### 次のステップ（優先順位順）
+
+1. ✅ リモートにプッシュ（完了）
+2. ✅ CI/CD更新（完了）
+3. ✅ GitHub Actions動作確認（完了）
+4. ⏳ デプロイメント設定の整備（TASK-700-6）
+5. ⏳ フロントエンドテストの追加（TASK-700-7）
+
+---
+
 ### 未実装タスク
 
 - [x] **TASK-601**: 日本語フォント配置とロード検証（NFR-007）
