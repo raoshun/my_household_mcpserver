@@ -55,6 +55,13 @@ jobs:
           if [ -d "data" ]; then
             cp data/収入・支出詳細_2024-*.csv backend/tests/fixtures/data/ 2>/dev/null || true
           fi
+          # Create minimal CSV fixture for all months if not already present
+          for month in {01..12}; do
+            FILEPATH="backend/tests/fixtures/data/収入・支出詳細_2024-${month}-01_2024-${month}-28.csv"
+            if [ ! -f "$FILEPATH" ]; then
+              printf "日付,内容,大項目,中項目,計算対象,金額（円）\n2024-01-01,テスト取引,食費,食事,expense,1000\n" > "$FILEPATH"
+            fi
+          done
 
       - name: Create virtual environment and install dependencies
         working-directory: backend
@@ -168,6 +175,13 @@ jobs:
           if [ -d "data" ]; then
             cp data/収入・支出詳細_2024-*.csv backend/tests/fixtures/data/ 2>/dev/null || true
           fi
+          # Create minimal CSV fixture for all months if not already present
+          for month in {01..12}; do
+            FILEPATH="backend/tests/fixtures/data/収入・支出詳細_2024-${month}-01_2024-${month}-28.csv"
+            if [ ! -f "$FILEPATH" ]; then
+              printf "日付,内容,大項目,中項目,計算対象,金額（円）\n2024-01-01,テスト取引,食費,食事,expense,1000\n" > "$FILEPATH"
+            fi
+          done
 
       - name: Install dependencies with ${{ matrix.extras }} extra
         working-directory: backend
@@ -214,6 +228,13 @@ jobs:
           if [ -d "data" ]; then
             cp data/収入・支出詳細_2024-*.csv backend/tests/fixtures/data/ 2>/dev/null || true
           fi
+          # Create minimal CSV fixture for all months if not already present
+          for month in {01..12}; do
+            FILEPATH="backend/tests/fixtures/data/収入・支出詳細_2024-${month}-01_2024-${month}-28.csv"
+            if [ ! -f "$FILEPATH" ]; then
+              printf "日付,内容,大項目,中項目,計算対象,金額（円）\n2024-01-01,テスト取引,食費,食事,expense,1000\n" > "$FILEPATH"
+            fi
+          done
 
       - name: Install all dependencies (full extra)
         working-directory: backend
