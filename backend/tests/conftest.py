@@ -37,14 +37,14 @@ def anyio_backend():
 # ========================= Optional Extras Auto-Skip =========================
 # Detect optional dependencies availability
 try:  # DB extras (sqlalchemy)
-    import sqlalchemy  # type: ignore  # noqa: F401
+    import sqlalchemy  # noqa: F401
 
     HAS_DB = True
 except Exception:
     HAS_DB = False
 
 try:  # Web/streaming extras (fastapi)
-    import fastapi  # type: ignore  # noqa: F401
+    import fastapi  # noqa: F401
 
     HAS_WEB = True
 except Exception:
@@ -53,7 +53,7 @@ except Exception:
 
 def pytest_collection_modifyitems(
     config: pytest.Config, items: list[pytest.Item]
-) -> None:  # type: ignore[override]
+) -> None:
     root = Path(str(config.rootpath))
     for item in list(items):
         path = Path(str(item.fspath))
@@ -93,7 +93,7 @@ def extras_available() -> dict[str, bool]:
     return {"db": HAS_DB, "web": HAS_WEB}
 
 
-def pytest_ignore_collect(collection_path: Path, config: pytest.Config) -> bool:  # type: ignore[override]
+def pytest_ignore_collect(collection_path: Path, config: pytest.Config) -> bool:
     """Ignore collecting tests that require unavailable optional extras.
 
     Uses pathlib.Path per pytest 9 deprecations. This prevents ImportError
@@ -124,7 +124,7 @@ def pytest_ignore_collect(collection_path: Path, config: pytest.Config) -> bool:
 
 
 @pytest.fixture(autouse=True)
-def _reset_streaming_global_cache_between_tests():
+def _reset_streaming_global_cache_between_tests() -> None:
     """Reset streaming global cache before each test to avoid order coupling.
 
     Some tests assert the initial state of GLOBAL_CHART_CACHE. Since other tests
@@ -132,7 +132,7 @@ def _reset_streaming_global_cache_between_tests():
     test independence.
     """
     try:
-        import household_mcp.streaming.global_cache as gc  # type: ignore
+        import household_mcp.streaming.global_cache as gc
 
         gc.GLOBAL_CHART_CACHE = None
     except Exception:

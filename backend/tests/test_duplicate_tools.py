@@ -16,7 +16,7 @@ try:
     HAS_DB = True
 except ImportError:
     HAS_DB = False
-    DatabaseManager = None  # type: ignore[assignment]
+    DatabaseManager = None
 
 from household_mcp.tools import duplicate_tools  # noqa: E402
 

@@ -19,10 +19,10 @@ try:
     HAS_DB = True
 except Exception:
     HAS_DB = False
-    DatabaseManager = None  # type: ignore[assignment]
-    Transaction = None  # type: ignore[assignment]
-    DetectionOptions = None  # type: ignore[assignment]
-    DuplicateDetector = None  # type: ignore[assignment]
+    DatabaseManager = None
+    Transaction = None
+    DetectionOptions = None
+    DuplicateDetector = None
 
 pytestmark = pytest.mark.skipif(not HAS_DB, reason="requires db extras (sqlalchemy)")
 

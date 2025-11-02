@@ -16,8 +16,8 @@ try:
     HAS_WEB = True
 except Exception:  # pragma: no cover - import guard for optional extras
     HAS_WEB = False
-    TestClient = None  # type: ignore[assignment]
-    create_http_app = None  # type: ignore[assignment]
+    TestClient = None
+    create_http_app = None
 
 pytestmark = pytest.mark.skipif(
     not HAS_WEB, reason="requires web/streaming extras (fastapi)"
