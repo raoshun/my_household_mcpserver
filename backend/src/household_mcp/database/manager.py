@@ -17,6 +17,19 @@ def set_sqlite_pragma(dbapi_conn: Any, _connection_record: Any) -> None:
     """SQLite接続時にプラグマを設定."""
     cursor = dbapi_conn.cursor()
     cursor.execute("PRAGMA foreign_keys=ON")
+    # テストやローカル実行の高速化用チューニング（安全性より速度優先）
+    # 有効化条件: 環境変数 HOUSEHOLD_SQLITE_FAST=1（デフォルト有効）
+    fast = os.getenv("HOUSEHOLD_SQLITE_FAST", "1") == "1"
+    if fast:
+        try:
+            cursor.execute("PRAGMA journal_mode=MEMORY")
+        except Exception:
+            # 一部環境で失敗しても致命的ではない
+            pass
+        cursor.execute("PRAGMA synchronous=OFF")
+        cursor.execute("PRAGMA temp_store=MEMORY")
+        # 負の値はKB単位のページを示しメモリキャッシュ拡張
+        cursor.execute("PRAGMA cache_size=-64000")
     cursor.close()
 
 
@@ -108,8 +121,13 @@ class DatabaseManager:
         return self.session_factory()
 
     def close(self) -> None:
-        """エンジンをクローズ."""
+        """エンジンとすべての接続をクローズ.
+
+        テスト終了時やアプリケーション終了時に明示的に呼び出すことで、
+        ResourceWarning を回避できます。
+        """
         if self._engine is not None:
+            # 全コネクションプールを破棄（接続クローズを確実に）
             self._engine.dispose()
             self._engine = None
             self._session_factory = None

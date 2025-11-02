@@ -1,9 +1,9 @@
 # 家計簿分析 MCP サーバー タスク計画
 
-- **バージョン**: 0.5.0
-- **更新日**: 2025-11-01
+- **バージョン**: 0.6.0
+- **更新日**: 2025-11-02
 - **対象設計**: [design.md](./design.md)
-- **対象要件**: FR-001〜FR-018, NFR-001〜NFR-013
+- **対象要件**: FR-001〜FR-020, NFR-001〜NFR-015
 
 ---
 
@@ -998,6 +998,73 @@
 
 - TASK-801: 0.5日（API実装）
 - TASK-802: 1.5日（HTML/CSS/JS実装）
+
+---
+
+## フェーズ9: リポジトリ分割（FR-020, NFR-014/015）
+
+目的: フロントエンドとバックエンドの責務分離とDX向上のため、モノレポ構成（`backend/`, `frontend/`, `shared/`）へ移行する。
+
+### 9.1 設計レビューと準備
+
+- [x] **TASK-901**: FR-020/NFR-014-015 の要件確定（requirements.md 反映）
+- [x] **TASK-902**: モノレポ構成設計の作成（design.md §11 追加）
+
+### 9.2 ディレクトリ作成と初期ファイル
+
+- [x] **TASK-903**: ルートにディレクトリ作成
+  - [x] `backend/`（空のREADME.md配置）
+  - [x] `frontend/`（空のREADME.md配置）
+  - [x] `shared/`（.gitkeep配置、将来用）
+
+### 9.3 フロントエンド移設（安全ステップ）
+
+- [x] **TASK-904**: `webapp/` → `frontend/` へ移動
+  - [x] `index.html`, `duplicates.html`, `css/`, `js/` の全ファイルを移動（コピー済み、後で旧ファイル削除）
+  - [x] `Start Webapp HTTP Server` タスクの `cwd` を `frontend/` に更新
+  - [x] `webapp/README.md` → `frontend/README.md` に統合（内容を更新）
+
+### 9.4 バックエンド移設（本体）
+
+- [x] **TASK-905**: `src/` と `tests/` を `backend/` へ移動
+  - [x] `src/` → `backend/src/`
+  - [x] `tests/` → `backend/tests/`
+  - [x] ルート `pyproject.toml` → `backend/pyproject.toml`（移動）
+  - [x] import/path/mypy/pytest の参照を `backend/` 前提に更新（タスクcwd更新とシンボリックリンク `backend/data` を設置）
+
+### 9.5 タスク/スクリプト/CI更新
+
+- [x] **TASK-906**: VS Code タスクを新構成に追従
+  - [x] All Checks: `uv -C backend run ...` に委譲
+  - [x] Start HTTP API Server: `-C backend` で実行
+  - [x] Start Dev Server: `cwd=backend` で実行
+  - [x] Start Full Webapp Stack: API(backend) + Web(frontend) 同時起動
+- [ ] **TASK-907**: CI ワークフロー（あれば）を `backend/` パスに更新
+  - [ ] Lint/Type/Tests/Codecov の作業ディレクトリ更新
+
+### 9.6 ドキュメント/リンク更新
+
+- [ ] **TASK-908**: README.md / docs/*.md のリンク修正
+  - [ ] `webapp/` → `frontend/`、`src/`/`tests/` → `backend/src`/`backend/tests`
+  - [ ] ルート README に新構成の図と操作手順を追記
+
+### 9.7 動作確認（受け入れ条件 TS-017〜TS-020）
+
+- [x] **TASK-909**: TS-017 構成確認
+  - [ ] ルート直下に `backend/` と `frontend/` が存在し、それぞれ README がある
+- [x] **TASK-910**: TS-018 ルート品質ゲート
+  - [x] ルートから All Checks（format/isort/flake8/mypy/bandit/pytest）が PASS
+- [x] **TASK-911**: TS-019 バックエンド起動/テスト
+  - [x] `uv -C backend run pytest` が成功
+  - [x] API サーバ起動（8000）確認
+- [x] **TASK-912**: TS-020 フロントエンド配信
+  - [x] `frontend/` で `python -m http.server 8080` が起動し主要ページが表示
+
+### 9.8 完了条件
+
+- [ ] すべての受け入れテスト（TS-017〜TS-020）合格
+- [ ] ルートの開発体験（Start Full Webapp Stack）が維持
+- [ ] ドキュメントに新構成の図解/手順が反映
 - TASK-803: 1.0日（UI機能実装）
 - TASK-804: 0.5日（ナビゲーション統合）
 - TASK-805: 0.5日（テスト）

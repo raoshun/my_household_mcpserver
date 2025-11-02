@@ -297,9 +297,7 @@ class TransactionManager:
 
         # Bandit: update_fields are pre-validated field names from allowed list
         # nosec B608
-        query = (
-            "UPDATE transactions\n" f"SET {', '.join(update_fields)}\n" "WHERE id = ?\n"
-        )  # nosec B608: update_fields are whitelisted column names
+        query = f"UPDATE transactions\nSET {', '.join(update_fields)}\nWHERE id = ?\n"  # nosec B608: update_fields are whitelisted column names
 
         with self.db_connection.transaction() as conn:
             cursor = conn.cursor()
@@ -1102,7 +1100,8 @@ class AccountManager:
             cursor = connection.cursor()
             # Bandit: set_clause is built from validated fields; values are parameterized
             cursor.execute(
-                f"UPDATE accounts SET {set_clause} WHERE id = ?", values  # nosec B608
+                f"UPDATE accounts SET {set_clause} WHERE id = ?",
+                values,  # nosec B608
             )
 
     def delete_account(self, account_id: int) -> Dict[str, Any]:

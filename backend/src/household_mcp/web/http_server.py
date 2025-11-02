@@ -270,8 +270,12 @@ def create_http_app(
     @app.post("/api/duplicates/detect")
     async def detect_duplicates(  # type: ignore[no-untyped-def]
         date_tolerance_days: int = Query(0, description="Date tolerance in days"),  # type: ignore[assignment]
-        amount_tolerance_abs: float = Query(0.0, description="Absolute amount tolerance"),  # type: ignore[assignment]
-        amount_tolerance_pct: float = Query(0.0, description="Percentage amount tolerance"),  # type: ignore[assignment]
+        amount_tolerance_abs: float = Query(
+            0.0, description="Absolute amount tolerance"
+        ),  # type: ignore[assignment]
+        amount_tolerance_pct: float = Query(
+            0.0, description="Percentage amount tolerance"
+        ),  # type: ignore[assignment]
     ) -> dict[str, Any]:  # type: ignore[no-untyped-def]
         """Detect duplicate transactions.
 
@@ -339,7 +343,9 @@ def create_http_app(
     @app.post("/api/duplicates/{check_id}/confirm")
     async def confirm_duplicate(  # type: ignore[no-untyped-def]
         check_id: int,
-        decision: str = Query(..., description="Decision: duplicate, not_duplicate, or skip"),  # type: ignore[assignment]
+        decision: str = Query(
+            ..., description="Decision: duplicate, not_duplicate, or skip"
+        ),  # type: ignore[assignment]
     ) -> dict[str, Any]:  # type: ignore[no-untyped-def]
         """Confirm duplicate decision.
 
@@ -360,7 +366,8 @@ def create_http_app(
             from household_mcp.tools import duplicate_tools
 
             result = duplicate_tools.confirm_duplicate(
-                check_id=check_id, decision=decision  # type: ignore[arg-type]
+                check_id=check_id,
+                decision=decision,  # type: ignore[arg-type]
             )
             return result  # type: ignore[return-value]
         except Exception as e:

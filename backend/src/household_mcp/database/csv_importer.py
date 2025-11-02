@@ -51,22 +51,23 @@ class CSVImporter:
 
         source_file = os.path.basename(csv_path)
 
+        # 1回のクエリで当該ファイルの既存 row_number を取得（重複チェックを高速化）
+        existing_rows = {
+            rn
+            for (rn,) in self.db.query(Transaction.row_number)
+            .filter(Transaction.source_file == source_file)
+            .all()
+        }
+
+        to_insert: List[Transaction] = []
+
         for idx, row in df.iterrows():
             try:
                 # インデックスを整数に変換
                 row_num = int(idx) if isinstance(idx, (int, float)) else 0
 
-                # 既存チェック（source_file + row_number）
-                existing = (
-                    self.db.query(Transaction)
-                    .filter(
-                        Transaction.source_file == source_file,
-                        Transaction.row_number == row_num,
-                    )
-                    .first()
-                )
-
-                if existing:
+                # 既存ならスキップ（ユニーク制約 idx_source_file_row にも一致）
+                if row_num in existing_rows:
                     skipped += 1
                     continue
 
@@ -77,7 +78,7 @@ class CSVImporter:
                 amount_key = "金額（円）" if "金額（円）" in row else "金額(円)"
                 amount_value = Decimal(str(row[amount_key]))
 
-                # 新規登録
+                # 新規登録オブジェクト作成（後で一括挿入）
                 trans = Transaction(
                     source_file=source_file,
                     row_number=row_num,
@@ -91,19 +92,24 @@ class CSVImporter:
                     is_target=int(row.get("計算対象", 1)),
                 )
 
-                self.db.add(trans)
+                to_insert.append(trans)
                 imported += 1
 
             except Exception as e:
                 row_num = int(idx) if isinstance(idx, (int, float)) else -1
                 errors.append({"row": row_num, "error": str(e)})
 
-        # コミット
+        # 一括挿入で高速化
         try:
+            if to_insert:
+                # bulk_save_objects は ORM オブジェクトの一括挿入で高速
+                self.db.bulk_save_objects(to_insert, return_defaults=False)
             self.db.commit()
         except Exception as e:
             self.db.rollback()
             errors.append({"row": -1, "error": f"コミットエラー: {str(e)}"})
+            # コミット失敗時はインポート数を0扱いに戻す
+            imported = 0
 
         return {"imported": imported, "skipped": skipped, "errors": errors}
 

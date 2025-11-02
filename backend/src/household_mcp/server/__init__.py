@@ -49,6 +49,43 @@ app = getattr(_server, "app", None)
 _db_manager = getattr(_server, "_db_manager", None)
 _data_loader = getattr(_server, "_data_loader", None)
 
+# Re-export _data_dir and _get_data_loader - keep references to original functions
+# These will be accessed when tests mock household_mcp.server._data_dir or ._get_data_loader
+_data_dir = getattr(_server, "_data_dir", None)
+_get_data_loader = getattr(_server, "_get_data_loader", None)
+
+# CRITICAL: Replace _server module's internal functions with our re-exported ones
+# so that when category_analysis() calls _get_data_loader(), it uses the one from
+# this module (which tests can mock), not the original _server module's version
+setattr(_server, "_data_dir", _data_dir)
+setattr(_server, "_get_data_loader", _get_data_loader)
+
+# Re-export commonly used analysis tools (unwrap if decorated)
+_monthly_summary = getattr(_server, "monthly_summary", None)
+monthly_summary = (
+    getattr(_monthly_summary, "fn", getattr(_monthly_summary, "func", _monthly_summary))
+    if _monthly_summary is not None
+    else None
+)
+
+_category_analysis = getattr(_server, "category_analysis", None)
+category_analysis = (
+    getattr(
+        _category_analysis,
+        "fn",
+        getattr(_category_analysis, "func", _category_analysis),
+    )
+    if _category_analysis is not None
+    else None
+)
+
+_find_categories = getattr(_server, "find_categories", None)
+find_categories = (
+    getattr(_find_categories, "fn", getattr(_find_categories, "func", _find_categories))
+    if _find_categories is not None
+    else None
+)
+
 # Re-export duplicate detection tools
 # These are decorated with @mcp.tool, so we need to get the underlying function
 _tool_detect_duplicates = getattr(_server, "tool_detect_duplicates", None)
@@ -59,27 +96,47 @@ _tool_get_duplicate_stats = getattr(_server, "tool_get_duplicate_stats", None)
 
 # Extract the actual function from FunctionTool objects if needed
 tool_detect_duplicates = (
-    getattr(_tool_detect_duplicates, "func", _tool_detect_duplicates)
+    getattr(
+        _tool_detect_duplicates,
+        "fn",
+        getattr(_tool_detect_duplicates, "func", _tool_detect_duplicates),
+    )
     if _tool_detect_duplicates
     else None
 )
 tool_get_duplicate_candidates = (
-    getattr(_tool_get_duplicate_candidates, "func", _tool_get_duplicate_candidates)
+    getattr(
+        _tool_get_duplicate_candidates,
+        "fn",
+        getattr(_tool_get_duplicate_candidates, "func", _tool_get_duplicate_candidates),
+    )
     if _tool_get_duplicate_candidates
     else None
 )
 tool_confirm_duplicate = (
-    getattr(_tool_confirm_duplicate, "func", _tool_confirm_duplicate)
+    getattr(
+        _tool_confirm_duplicate,
+        "fn",
+        getattr(_tool_confirm_duplicate, "func", _tool_confirm_duplicate),
+    )
     if _tool_confirm_duplicate
     else None
 )
 tool_restore_duplicate = (
-    getattr(_tool_restore_duplicate, "func", _tool_restore_duplicate)
+    getattr(
+        _tool_restore_duplicate,
+        "fn",
+        getattr(_tool_restore_duplicate, "func", _tool_restore_duplicate),
+    )
     if _tool_restore_duplicate
     else None
 )
 tool_get_duplicate_stats = (
-    getattr(_tool_get_duplicate_stats, "func", _tool_get_duplicate_stats)
+    getattr(
+        _tool_get_duplicate_stats,
+        "fn",
+        getattr(_tool_get_duplicate_stats, "func", _tool_get_duplicate_stats),
+    )
     if _tool_get_duplicate_stats
     else None
 )
@@ -92,6 +149,11 @@ __all__ = [
     "create_http_app",
     "_db_manager",
     "_data_loader",
+    "_data_dir",
+    "_get_data_loader",
+    "monthly_summary",
+    "category_analysis",
+    "find_categories",
     "tool_detect_duplicates",
     "tool_get_duplicate_candidates",
     "tool_confirm_duplicate",

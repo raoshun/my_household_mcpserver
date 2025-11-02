@@ -76,7 +76,7 @@
 }
 ```
 
-画像はHTTPエンドポイント経由でアクセスできます：
+画像はHTTPエンドポイント（backend の FastAPI サーバ）経由でアクセスできます：
 
 ```bash
 # ブラウザまたはcurlで画像取得
@@ -328,7 +328,7 @@ curl http://localhost:8000/api/cache/stats
 
 ## HTTP エンドポイント
 
-HTTPストリーミングモードで起動した場合に利用可能です。
+backend の FastAPI アプリ（create_http_app）を起動した場合に利用可能です。
 
 ### 画像取得
 

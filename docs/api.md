@@ -278,7 +278,14 @@
 
 ## HTTP エンドポイント
 
-HTTPストリーミングモード（`--transport streamable-http`）で起動した場合に利用可能です。
+HTTP API は FastAPI アプリ（`household_mcp.web.http_server:create_http_app`）を Uvicorn で起動すると利用できます。
+
+起動例（backend/ にて）:
+
+```bash
+uv run python -m uvicorn household_mcp.web.http_server:create_http_app \
+  --factory --reload --host 0.0.0.0 --port 8000
+```
 
 ### GET /api/charts/{chart_id}
 

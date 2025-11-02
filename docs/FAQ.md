@@ -32,11 +32,12 @@ uv pip install -e ".[visualization]"
 
 ### Q4: HTTPサーバーとして起動したい
 
-**A**: `streaming` または `web` オプションが必要です。
+**A**: `streaming` または `web` オプションが必要です（backend/ で実行）。
 
 ```bash
 uv pip install -e ".[streaming]"
-python -m src.server --transport streamable-http --port 8000
+uv run python -m uvicorn household_mcp.web.http_server:create_http_app \
+  --factory --reload --host 0.0.0.0 --port 8000
 ```
 
 ## データと CSV

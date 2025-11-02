@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>重複検出 - 家計簿分析</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/duplicates.css">
+</head>
+<body>
+    <header>
+        <h1>家計簿分析 - 重複検出</h1>
+        <nav>
+            <a href="index.html">メイン画面</a>
+            <a href="duplicates.html" class="active">重複検出</a>
+        </nav>
+    </header>
+
+    <main>
+        <!-- 検出設定パネル -->
+        <section id="detection-panel" class="card">
+            <h2>重複検出設定</h2>
+            <div class="form-group">
+                <label for="date-tolerance">日付の許容誤差（日）:</label>
+                <input type="number" id="date-tolerance" value="0" min="0" max="7">
+                <span class="help-text">0 = 完全一致、1-7 = ±N日以内</span>
+            </div>
+            <div class="form-group">
+                <label for="amount-tolerance-abs">金額の絶対誤差（円）:</label>
+                <input type="number" id="amount-tolerance-abs" value="0" min="0" step="1">
+                <span class="help-text">例: 10円以内の誤差を許容</span>
+            </div>
+            <div class="form-group">
+                <label for="amount-tolerance-pct">金額の割合誤差（%）:</label>
+                <input type="number" id="amount-tolerance-pct" value="0" min="0" max="100" step="0.1">
+                <span class="help-text">例: 1%以内の誤差を許容</span>
+            </div>
+            <div class="button-group">
+                <button id="detect-btn" class="btn-primary">重複を検出</button>
+                <button id="load-candidates-btn" class="btn-secondary">候補を読み込み</button>
+            </div>
+            <div id="detection-result" class="result-message"></div>
+        </section>
+
+        <!-- 統計情報 -->
+        <section id="stats-panel" class="card">
+            <h2>統計情報</h2>
+            <div id="stats-content" class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-label">未判定の候補:</span>
+                    <span class="stat-value" id="pending-count">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">重複と判定:</span>
+                    <span class="stat-value" id="duplicate-count">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">重複でないと判定:</span>
+                    <span class="stat-value" id="not-duplicate-count">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">スキップ:</span>
+                    <span class="stat-value" id="skipped-count">-</span>
+                </div>
+            </div>
+            <button id="refresh-stats-btn" class="btn-secondary">統計を更新</button>
+        </section>
+
+        <!-- 候補リスト -->
+        <section id="candidates-panel" class="card">
+            <h2>重複候補</h2>
+            <div id="candidates-container">
+                <p class="placeholder">「重複を検出」または「候補を読み込み」ボタンをクリックしてください</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 家計簿分析システム</p>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/duplicates.js"></script>
+</body>
+</html>

@@ -11,6 +11,20 @@
 
 このプロジェクトは、ローカルの家計簿CSV（`data/` 配下）を pandas で分析し、AI エージェントからの自然言語リクエストに応答する MCP サーバーを提供します。ユーザーは複雑なクエリ言語を学ぶことなく、日常会話で家計データの洞察を得ることができます。
 
+### リポジトリ構成（Monorepo）
+
+リポジトリはフロントエンドとバックエンドに分割されています（FR-020）。
+
+- `backend/`: Python 製の MCP/HTTP API サーバー（テストは `backend/tests/`）
+- `frontend/`: 静的 Web アプリ（Vanilla JS + Chart.js）。ローカルHTTPサーバで配信。
+
+VS Code のタスク（.vscode/tasks.json）がモノレポ構成に対応しています。
+
+- バックエンドの開発: 「Install Dependencies」「Run Tests」「Start HTTP API Server」
+- 追加依存の導入: 「Install Web/Streaming Extras」（FastAPI/uvicorn/SQLAlchemyなど）
+- フロントエンドの起動: 「Start Webapp HTTP Server」
+- まとめ実行: 「Start Full Webapp Stack」（API 8000 + Web 8080）
+
 ## 主な機能
 
 - **自然言語インターフェース**: 日本語でカテゴリ別・期間別の支出推移を確認
@@ -272,19 +286,22 @@ pre-commit install
 
 ## 使用方法
 
-### MCP サーバーの起動
+### MCP / HTTP サーバーの起動（Monorepo 構成）
 
 ```bash
-# 標準 MCP サーバー起動（stdio モード）
-python -m src.server
+# 1) 依存インストール（backend/ で）
+uv install --dev
 
-# HTTPストリーミングモード（画像配信対応）
-# 注: streaming または web extras のインストールが必要
-uv pip install -e ".[streaming]"
-python -m src.server --transport streamable-http --port 8000
+# 2) オプション依存（API/可視化/DB が必要な場合）
+uv pip install -e ".[web,streaming,visualization,db]"
 
-# または uvicorn で直接起動
-uv run uvicorn household_mcp.http_server:app --host 0.0.0.0 --port 8000
+# 3) API サーバー起動（backend/ にて）
+uv run python -m uvicorn household_mcp.web.http_server:create_http_app \
+  --factory --reload --host 0.0.0.0 --port 8000
+
+# 代替: VS Code タスク
+# - Start HTTP API Server（backend/）
+# - Start Full Webapp Stack（API 8000 + Web 8080 を並列起動）
 ```
 
 ### 🌐 Webアプリケーションの使用
@@ -293,18 +310,19 @@ HTTPサーバと通信してインタラクティブに家計簿を操作でき�
 
 #### 起動方法
 
-1. **バックエンドサーバーの起動**
+1. **バックエンドサーバーの起動（backend/）**
 
 ```bash
 # API サーバーを起動（ポート8000）
-uv run python -m uvicorn household_mcp.web.http_server:create_http_app --factory --reload --host 0.0.0.0 --port 8000
+uv run python -m uvicorn household_mcp.web.http_server:create_http_app \
+  --factory --reload --host 0.0.0.0 --port 8000
 ```
 
-次にWebアプリを起動します：
+次に Web アプリを起動します：
 
 ```bash
-# webapp ディレクトリに移動してHTTPサーバーを起動（ポート8080）
-cd webapp
+# frontend ディレクトリに移動してHTTPサーバーを起動（ポート8080）
+cd frontend
 python3 -m http.server 8080
 ```
 
@@ -323,7 +341,7 @@ http://localhost:8080
 - ✅ **検索・フィルタ** - 日付や内容で検索、カテゴリでフィルタリング
 - ✅ **レスポンシブデザイン** - PC・タブレット・スマートフォン対応
 
-詳細は [`webapp/README.md`](webapp/README.md) を参照してください。
+詳細は [`frontend/README.md`](frontend/README.md) を参照してください。
 
 ### 画像生成機能
 

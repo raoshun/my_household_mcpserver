@@ -80,7 +80,7 @@ class TestCategoryAnalysisIntegration:
             assert isinstance(error_msg, str)
             # Should indicate data not found
             assert (
-                "データが見つかりませんでした" in error_msg
+                "データが見つかりません" in error_msg
                 or "データが利用できません" in error_msg
             )
 

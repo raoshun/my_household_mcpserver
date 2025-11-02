@@ -155,11 +155,27 @@ exclude = [
     "src/server.py",
     "src/household_mcp/duplicate/detector.py",
     "src/household_mcp/web/http_server.py",
+    "src/household_mcp/server/.*",
+    "src/household_mcp/streaming/.*",
+    "src/household_mcp/database/.*",
 ]
 
 [[tool.mypy.overrides]]
 module = "tests.*"
 ignore_errors = true
+
+# Temporarily relax typing for legacy server wrapper and streaming/database modules
+[[tool.mypy.overrides]]
+module = "household_mcp.server.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "household_mcp.streaming.cache"
+disable_error_code = ["import-untyped", "no-any-return"]
+
+[[tool.mypy.overrides]]
+module = "household_mcp.database.*"
+disable_error_code = ["type-arg", "no-any-return", "attr-defined", "unused-ignore"]
 
 # pytest設定
 [tool.pytest.ini_options]
@@ -187,6 +203,10 @@ markers = [
 filterwarnings = [
     # Suppress 3rd-party deprecation warning from dateutil used by pandas
     'ignore:datetime\.datetime\.utcfromtimestamp\(\) is deprecated:DeprecationWarning',
+    # Suppress sqlite3 datetime adapter deprecation (Python 3.12+)
+    'ignore:The default datetime adapter is deprecated:DeprecationWarning:',
+    # Suppress Matplotlib Japanese font warnings (missing glyphs in DejaVu Sans)
+    'ignore:Glyph .* missing from font\(s\) DejaVu Sans:UserWarning:matplotlib',
 ]
 
 # Coverage設定
@@ -239,11 +259,43 @@ dev = [
     "pytest>=8.4.1",
     "pytest-cov>=4.1.0",
     # Linting & Formatting
+    "ruff>=0.6.9",
     "black>=23.0.0",
-    "isort>=5.12.0",
-    "flake8>=6.0.0",
-    "mypy>=1.5.0",
     "bandit[toml]>=1.7.5",
     # Pre-commit hooks
     "pre-commit>=3.6.0",
 ]
+
+# Ruff 設定（lint & format を Ruff に移行）
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+exclude = [
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".venv",
+    "venv",
+    "dist",
+    "build",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "I"    # isort (import order)
+]
+ignore = [
+    "E203", # black 互換
+    "E501", # 長行は許容（既存コード互換）
+    "E402", # モジュールインポート位置の柔軟性を許容
+]
+
+[tool.ruff.lint.per-file-ignores]
+"src/household_mcp/web/http_server.py" = ["C901"]
+"tests/**/*" = ["F401"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

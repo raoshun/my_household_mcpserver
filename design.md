@@ -1,9 +1,9 @@
 # 家計簿分析 MCP サーバー設計書
 
-- **バージョン**: 0.5.0
-- **更新日**: 2025-11-01
+- **バージョン**: 0.6.0
+- **更新日**: 2025-11-02
 - **作成者**: GitHub Copilot (AI assistant)
-- **対象要件**: [requirements.md](./requirements.md) v1.2 に記載の FR-001〜FR-018、NFR-001〜NFR-013
+- **対象要件**: [requirements.md](./requirements.md) v1.2 に記載の FR-001〜FR-020、NFR-001〜NFR-015
 - **実装状況**:
   - FR-001〜FR-003, FR-018（Webアプリ）: 実装済み
   - FR-004〜FR-006（画像生成・ストリーミング）: 部分実装（基盤のみ）
@@ -270,6 +270,98 @@ my_household_mcpserver/
 ├── tasks.md
 └── ...
 ```
+
+---
+
+## 11. モノレポ構成設計（FR-020対応）
+
+本セクションでは、フロントエンドとバックエンドを分離しメンテナンス性を向上させるためのモノレポ構成を定義する。対象要件は FR-020、関連NFRは NFR-014（モジュール分離）と NFR-015（DX）。
+
+### 11.1 リポジトリレイアウト（提案）
+
+```text
+my_household_mcpserver/
+├── backend/                         # Python バックエンド（MCP/HTTP API/分析）
+│   ├── pyproject.toml               # ルートから移設（uv/依存/extras定義）
+│   ├── src/
+│   │   └── household_mcp/          # 既存の Python パッケージをそのまま移動
+│   ├── tests/                       # 既存の Python テスト一式を移動
+│   ├── scripts/                     # バックエンド専用の補助スクリプト
+│   └── README.md                    # バックエンド固有の利用/開発ガイド
+├── frontend/                        # Web フロントエンド（静的サイト）
+│   ├── index.html                   # 既存 webapp/ から移動
+│   ├── duplicates.html              # 既存 webapp/ から移動
+│   ├── css/                         # 既存 webapp/css/ から移動
+│   ├── js/                          # 既存 webapp/js/ から移動
+│   └── README.md                    # フロントエンド固有の利用/開発ガイド
+├── shared/                          # 共有（将来、当面は空で可）
+├── data/                            # データはリポジトリ直下に維持（後方互換）
+├── docs/                            # 全体ドキュメント（パス更新のみ）
+├── README.md                        # リポジトリ全体のトップREADME
+├── Makefile                         # ルートタスクの委譲（backend/frontendへ）
+└── .github/                         # CI（パス更新、backend をワークディレクトリに）
+```
+
+注記:
+
+- 既存の `src/`, `tests/`, `webapp/` はそれぞれ `backend/src`, `backend/tests`, `frontend/` へ移設。
+- `data/` はルートに残し、バックエンドからは相対パス `../data` で参照（設定で上書き可能）。
+- 共有スキーマや定数が将来必要になれば `shared/` を活用。
+
+### 11.2 タスク/コマンドの統一方針（DX）
+
+- ルート実行（開発者体験の統一）
+- フォーマット: `uv -C backend run black .`
+- インポート整形: `uv -C backend run isort .`
+- Lint: `uv -C backend run flake8`
+- 型: `uv -C backend run mypy src/`
+- セキュリティ: `uv -C backend run bandit -r src/`
+- テスト: `uv -C backend run pytest`
+
+- サーバ起動（開発）
+- API: `uv -C backend run uvicorn household_mcp.web.http_server:create_http_app --factory --reload --host 0.0.0.0 --port 8000`
+- Web: `python3 -m http.server 8080`（cwd=frontend/）
+- VS Code の既存タスクはルートから backend/frontend へ委譲（`options.cwd` または `-C` を使用）。
+
+### 11.3 CORS/ポート設計
+
+- バックエンド: `http://localhost:8000`
+- フロントエンド: `http://localhost:8080`
+- CORS: FastAPI の `CORSMiddleware` で `allow_origins=["http://localhost:8080"]` を基本とし、開発時のみ `*` を許可可能。
+
+### 11.4 移行計画（ファイル移動マッピング）
+
+| 旧パス                          | 新パス                                  |
+|---------------------------------|-----------------------------------------|
+| `src/`                          | `backend/src/`                           |
+| `tests/`                        | `backend/tests/`                         |
+| `webapp/`                       | `frontend/`                              |
+| `pyproject.toml`                | `backend/pyproject.toml`                 |
+| `scripts/`（Python系のみ）     | `backend/scripts/` へ、汎用はルート維持    |
+| `README.md`（ルート）          | ルートに維持（内容更新）                  |
+| `docs/`                         | ルートに維持（リンク更新）                |
+
+注意点:
+
+- Python パッケージルートが `backend/src` に変わるため、mypy/pytest/path などの参照を更新。
+- VS Code タスク（All Checks / Start HTTP API / Start Webapp など）は `backend/` と `frontend/` に対応させる。
+
+### 11.5 リスク/ロールバック
+
+- 影響範囲が広いため、移行は以下の順でコミットを分割：
+    1) ディレクトリ作成 + README 追加（空の器）
+    2) フロントエンド移設（`webapp/` → `frontend/`）
+    3) バックエンド移設（`src/`, `tests/`, `pyproject.toml` → `backend/`）
+    4) タスク/スクリプト/CI の参照更新
+    5) ドキュメントパス修正
+- 各ステップで `All Checks` を実行してグリーンを確認。問題があれば直前コミットへロールバック可能。
+
+### 11.6 受け入れ基準との対応
+
+- TS-017: ルートに `backend/` と `frontend/` が存在し、それぞれ README がある
+- TS-018: ルートの All Checks がグリーン（backend を対象として実行）
+- TS-019: `backend/` で `uv run pytest` が成功、API サーバ起動可能
+- TS-020: `frontend/` で `python -m http.server 8080` により主要ページが表示
 
 ---
 

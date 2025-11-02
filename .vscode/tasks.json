@@ -22,6 +22,22 @@
       "problemMatcher": []
     },
     {
+      "label": "Install Web/Streaming Extras",
+      "type": "shell",
+      "command": "uv",
+      "args": ["pip", "install", "-e", ".[web,streaming,visualization,db]"],
+      "group": "build",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
       "label": "Learning Support: Generate Learning Path",
       "type": "shell",
       "command": "python",
@@ -183,6 +199,9 @@
       "command": "uv",
       "args": ["install", "--dev"],
       "group": "build",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
       "presentation": {
         "echo": true,
         "reveal": "always",
@@ -199,6 +218,9 @@
         "kind": "test",
         "isDefault": true
       },
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
       "presentation": {
         "echo": true,
         "reveal": "always",
@@ -210,8 +232,11 @@
       "label": "Format Code",
       "type": "shell",
       "command": "uv",
-      "args": ["run", "black", "."],
+      "args": ["run", "ruff", "format", "."],
       "group": "build",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
       "presentation": {
         "echo": true,
         "reveal": "silent",
@@ -223,8 +248,11 @@
       "label": "Sort Imports",
       "type": "shell",
       "command": "uv",
-      "args": ["run", "isort", "."],
+      "args": ["run", "ruff", "check", "--select", "I", "--fix", "."],
       "group": "build",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
       "presentation": {
         "echo": true,
         "reveal": "silent",
@@ -236,8 +264,11 @@
       "label": "Lint Code",
       "type": "shell",
       "command": "uv",
-      "args": ["run", "flake8"],
+      "args": ["run", "ruff", "check", "."],
       "group": "build",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
       "presentation": {
         "echo": true,
         "reveal": "always",
@@ -249,8 +280,11 @@
       "label": "Type Check",
       "type": "shell",
       "command": "uv",
-      "args": ["run", "mypy", "src/"],
+      "args": ["run", "ruff", "check", "--select", "TCH", "src/"],
       "group": "build",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
       "presentation": {
         "echo": true,
         "reveal": "always",
@@ -264,6 +298,9 @@
       "command": "uv",
       "args": ["run", "bandit", "-r", "src/"],
       "group": "build",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
       "presentation": {
         "echo": true,
         "reveal": "always",
@@ -278,7 +315,6 @@
         "Format Code",
         "Sort Imports",
         "Lint Code",
-        "Type Check",
         "Security Scan",
         "Run Tests"
       ],
@@ -299,6 +335,9 @@
         "8000"
       ],
       "group": "build",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
       "presentation": {
         "echo": true,
         "reveal": "always",
@@ -326,6 +365,9 @@
         "8000"
       ],
       "group": "build",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
       "presentation": {
         "echo": true,
         "reveal": "always",
@@ -354,7 +396,7 @@
       "command": "python3",
       "args": ["-m", "http.server", "8080"],
       "options": {
-        "cwd": "${workspaceFolder}/webapp"
+        "cwd": "${workspaceFolder}/frontend"
       },
       "group": "build",
       "presentation": {
