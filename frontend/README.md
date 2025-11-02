@@ -50,7 +50,7 @@ APIが起動すると以下が有効になります：
 ### 2) フロントエンドの配信（port 8080）
 
 - VS Code タスク:
-  - 「Start Webapp HTTP Server」
+  - 「Start Frontend HTTP Server」
 - もしくは手動:
 
 ```bash
@@ -62,7 +62,7 @@ python3 -m http.server 8080
 
 ### 3) フルスタック同時起動
 
-- VS Code タスク: 「Start Full Webapp Stack」
+- VS Code タスク: 「Start Full Stack」
   - backend(8000) + frontend(8080) を並行起動
 
 ## 🔌 API の主なエンドポイント

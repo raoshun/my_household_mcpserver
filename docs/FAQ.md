@@ -444,7 +444,7 @@ export CHART_CACHE_MAX_SIZE=25
 uv run python -m uvicorn household_mcp.web.http_server:create_http_app --factory --host 0.0.0.0 --port 8000
 
 # 2. Webアプリ（ターミナル2）
-cd webapp
+cd frontend
 python3 -m http.server 8080
 ```
 

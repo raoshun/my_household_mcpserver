@@ -353,7 +353,7 @@ MCP経由のCLI操作に加え、Webブラウザから直感的に家計簿を�
 2. Webアプリを起動（別ターミナル）:
 
    ```bash
-   cd webapp
+   cd frontend
    python3 -m http.server 8080
    ```
 

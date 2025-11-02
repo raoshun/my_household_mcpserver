@@ -22,8 +22,8 @@ VS Code のタスク（.vscode/tasks.json）がモノレポ構成に対応して
 
 - バックエンドの開発: 「Install Dependencies」「Run Tests」「Start HTTP API Server」
 - 追加依存の導入: 「Install Web/Streaming Extras」（FastAPI/uvicorn/SQLAlchemyなど）
-- フロントエンドの起動: 「Start Webapp HTTP Server」
-- まとめ実行: 「Start Full Webapp Stack」（API 8000 + Web 8080）
+- フロントエンドの起動: 「Start Frontend HTTP Server」
+- まとめ実行: 「Start Full Stack」（API 8000 + Web 8080）
 
 ## 主な機能
 
@@ -301,7 +301,7 @@ uv run python -m uvicorn household_mcp.web.http_server:create_http_app \
 
 # 代替: VS Code タスク
 # - Start HTTP API Server（backend/）
-# - Start Full Webapp Stack（API 8000 + Web 8080 を並列起動）
+# - Start Full Stack（API 8000 + Web 8080 を並列起動）
 ```
 
 ### 🌐 Webアプリケーションの使用
