@@ -576,12 +576,18 @@
   - 完了日: 2025-11-02
   - コミット: `feat(deploy): add Docker Compose deployment configuration`
 
-- [ ] **TASK-700-7**: フロントエンドの単体テスト追加
-  - [ ] Jest + Testing Library セットアップ
-  - [ ] APIクライアント（api.js）のテスト
-  - [ ] チャート管理（chart.js）のテスト
-  - [ ] トレンド管理（trend.js）のテスト
-  - 見積: 1.0d
+- [x] **TASK-700-7**: フロントエンドの単体テスト追加
+  - [x] Jest + Testing Library セットアップ（package.json、jest.config）
+  - [x] テスト環境設定（setup.js、Chart.jsモック）
+  - [x] APIクライアント（api.js）のテスト（全メソッド、エラーハンドリング）
+  - [x] チャート管理（chart.js）のテスト（pie/bar/line、データ集計、色生成）
+  - [x] トレンド管理（trend.js）のテスト（期間選択、データロード、統計計算）
+  - [x] ESLint + Prettier 設定（コード品質）
+  - [x] frontend/.gitignore 追加
+  - [x] テストREADME作成（実行手順、カバレッジ閾値）
+  - [x] GitHub Actions CI追加（frontend-ci.yml、Node.js 18/20マトリクス）
+  - 完了日: 2025-11-02
+  - カバレッジ閾値: 70%（branches/functions/lines/statements）
 
 ### 次のステップ（優先順位順）
 
@@ -589,8 +595,9 @@
 2. ✅ CI/CD更新（完了）
 3. ✅ GitHub Actions動作確認（完了）
 4. ✅ デプロイメント設定の整備（TASK-700-6、完了）
-5. ⏳ フロントエンドテストの追加（TASK-700-7）
-6. ⏳ デプロイメント動作検証（TASK-700-8、推奨）
+5. ✅ フロントエンドテストの追加（TASK-700-7、完了）
+6. ⏳ npm依存インストールとテスト実行確認（TASK-700-7-verify）
+7. ⏳ デプロイメント動作検証（TASK-700-8、推奨）
 
 ---
 

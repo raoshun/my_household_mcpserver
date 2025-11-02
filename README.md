@@ -1034,6 +1034,53 @@ docker compose restart
 - [`design.md`](design.md) - 技術設計
 - [`tasks.md`](tasks.md) - 実装タスク
 
+### バックエンド開発
+
+```bash
+# ディレクトリ移動
+cd backend
+
+# 依存関係のインストール
+uv install --dev
+
+# テストの実行
+uv run pytest
+
+# カバレッジ付きテスト
+uv run pytest --cov=src --cov-report=html
+
+# Lint/Format
+uv run black .
+uv run isort .
+uv run flake8
+uv run mypy src/
+```
+
+### フロントエンド開発
+
+```bash
+# ディレクトリ移動
+cd frontend
+
+# 依存関係のインストール
+npm install
+
+# テストの実行
+npm test
+
+# テストのwatch mode
+npm run test:watch
+
+# カバレッジ付きテスト
+npm run test:coverage
+
+# Lint/Format
+npm run lint
+npm run format
+```
+
+詳細なフロントエンドテストガイドは [frontend/tests/README.md](frontend/tests/README.md) を参照してください。
+
 ## ライセンス
 
 MIT License
