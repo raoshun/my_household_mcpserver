@@ -1,4 +1,8 @@
-"""Integration tests for duplicate detection with real data."""
+"""Integration tests for duplicate detection with real data.
+
+NOTE: These tests require the 'db' extra to be installed.
+They are skipped automatically in environments without SQLAlchemy.
+"""
 
 # flake8: noqa: F811
 
@@ -8,19 +12,36 @@ from pathlib import Path
 
 import pytest
 
-from household_mcp.database import (
-    DatabaseManager,
-    get_active_transactions,
-    get_duplicate_impact_report,
-    get_monthly_summary,
-)
-from household_mcp.database.csv_importer import CSVImporter
-from household_mcp.database.models import DuplicateCheck, Transaction
-from household_mcp.duplicate import DetectionOptions, DuplicateService
+# Check if database dependencies are available
+try:
+    from household_mcp.database import (
+        DatabaseManager,
+        get_active_transactions,
+        get_duplicate_impact_report,
+        get_monthly_summary,
+    )
+    from household_mcp.database.csv_importer import CSVImporter
+    from household_mcp.database.models import DuplicateCheck, Transaction
+    from household_mcp.duplicate import DetectionOptions, DuplicateService
+
+    HAS_DB = True
+except ImportError:
+    HAS_DB = False
+    DatabaseManager = None
+    CSVImporter = None
+    Transaction = None
+    DuplicateCheck = None
+    DetectionOptions = None
+    DuplicateService = None
+    get_active_transactions = None
+    get_duplicate_impact_report = None
+    get_monthly_summary = None
+
+pytestmark = pytest.mark.skipif(not HAS_DB, reason="requires db extras (sqlalchemy)")
 
 
 @pytest.fixture(scope="module")
-def test_db_path(tmp_path_factory):
+def test_db_path(tmp_path_factory):  # type: ignore[no-untyped-def]
     """Create a shared temporary database path for this module."""
     tmpdir = tmp_path_factory.mktemp("dupdb")
     db_path = tmpdir / "test_household.db"
@@ -28,7 +49,7 @@ def test_db_path(tmp_path_factory):
 
 
 @pytest.fixture(scope="module")
-def db_manager(test_db_path):
+def db_manager(test_db_path):  # type: ignore[no-untyped-def]
     """Create a shared database manager with test database for this module."""
     manager = DatabaseManager(test_db_path)
     manager.initialize_database()  # Create tables
@@ -42,7 +63,7 @@ def db_manager(test_db_path):
 
 
 @pytest.fixture
-def csv_data_dir():
+def csv_data_dir():  # type: ignore[no-untyped-def]
     """Get the path to CSV data directory."""
     # Try multiple possible paths
     possible_paths = [
@@ -61,7 +82,7 @@ def csv_data_dir():
 
 
 @pytest.fixture
-def imported_data(db_manager, csv_data_dir):
+def imported_data(db_manager, csv_data_dir):  # type: ignore[no-untyped-def]
     """Import real CSV data into test database (idempotent).
 
     既に取り込み済みの場合は再インポートをスキップし、レコード件数を返す。
@@ -76,7 +97,7 @@ def imported_data(db_manager, csv_data_dir):
         return result["total_imported"]
 
 
-def test_full_workflow_with_real_data(db_manager, imported_data):
+def test_full_workflow_with_real_data(db_manager, imported_data):  # type: ignore[no-untyped-def]
     """Test complete duplicate detection workflow with real data.
 
     This test:
@@ -144,7 +165,7 @@ def test_full_workflow_with_real_data(db_manager, imported_data):
         assert len(active) == expected_active
 
 
-def test_monthly_summary_excludes_duplicates(db_manager, imported_data):
+def test_monthly_summary_excludes_duplicates(db_manager, imported_data):  # type: ignore[no-untyped-def]
     """Test that monthly summary correctly excludes duplicates."""
     if imported_data == 0:
         pytest.skip("No data imported")
@@ -196,7 +217,7 @@ def test_monthly_summary_excludes_duplicates(db_manager, imported_data):
             assert summary_with["total_income"] > summary_without["total_income"]
 
 
-def test_duplicate_detection_performance(db_manager, imported_data):
+def test_duplicate_detection_performance(db_manager, imported_data):  # type: ignore[no-untyped-def]
     """Test that duplicate detection completes in reasonable time."""
     if imported_data == 0:
         pytest.skip("No data imported")
@@ -222,7 +243,7 @@ def test_duplicate_detection_performance(db_manager, imported_data):
         assert elapsed_time < 30.0
 
 
-def test_restore_duplicate_workflow(db_manager, imported_data):
+def test_restore_duplicate_workflow(db_manager, imported_data):  # type: ignore[no-untyped-def]
     """Test that restoring duplicates works correctly."""
     if imported_data == 0:
         pytest.skip("No data imported")
@@ -262,7 +283,7 @@ def test_restore_duplicate_workflow(db_manager, imported_data):
         assert restored.duplicate_of is None
 
 
-def test_get_stats_with_real_data(db_manager, imported_data):
+def test_get_stats_with_real_data(db_manager, imported_data):  # type: ignore[no-untyped-def]
     """Test getting statistics with real data."""
     if imported_data == 0:
         pytest.skip("No data imported")
@@ -286,7 +307,7 @@ def test_get_stats_with_real_data(db_manager, imported_data):
         assert stats["duplicate_transactions"] >= 0  # none confirmed yet in this test
 
 
-def test_duplicate_impact_report(db_manager, imported_data):
+def test_duplicate_impact_report(db_manager, imported_data):  # type: ignore[no-untyped-def]
     """Test duplicate impact report with real data."""
     if imported_data == 0:
         pytest.skip("No data imported")
@@ -333,7 +354,7 @@ def test_duplicate_impact_report(db_manager, imported_data):
         assert total_diff != 0
 
 
-def test_category_filtering_with_duplicates(db_manager, imported_data):
+def test_category_filtering_with_duplicates(db_manager, imported_data):  # type: ignore[no-untyped-def]
     """Test that category filtering works with duplicate exclusion."""
     if imported_data == 0:
         pytest.skip("No data imported")

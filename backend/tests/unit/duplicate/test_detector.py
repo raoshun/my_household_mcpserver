@@ -1,4 +1,8 @@
-"""Unit tests for DuplicateDetector."""
+"""Unit tests for DuplicateDetector.
+
+NOTE: These tests require the 'db' extra (sqlalchemy).
+They are skipped automatically when sqlalchemy is unavailable.
+"""
 
 import os
 import tempfile
@@ -7,12 +11,24 @@ from decimal import Decimal
 
 import pytest
 
-from household_mcp.database import DatabaseManager, Transaction
-from household_mcp.duplicate import DetectionOptions, DuplicateDetector
+# Optional db dependencies
+try:
+    from household_mcp.database import DatabaseManager, Transaction
+    from household_mcp.duplicate import DetectionOptions, DuplicateDetector
+
+    HAS_DB = True
+except Exception:
+    HAS_DB = False
+    DatabaseManager = None  # type: ignore[assignment]
+    Transaction = None  # type: ignore[assignment]
+    DetectionOptions = None  # type: ignore[assignment]
+    DuplicateDetector = None  # type: ignore[assignment]
+
+pytestmark = pytest.mark.skipif(not HAS_DB, reason="requires db extras (sqlalchemy)")
 
 
 @pytest.fixture
-def db_manager():
+def db_manager():  # type: ignore[no-untyped-def]
     """テスト用のデータベースマネージャを作成."""
     with tempfile.TemporaryDirectory() as tmpdir:
         db_path = os.path.join(tmpdir, "test.db")
@@ -23,7 +39,7 @@ def db_manager():
 
 
 @pytest.fixture
-def sample_transactions(db_manager):
+def sample_transactions(db_manager):  # type: ignore[no-untyped-def]
     """テスト用のサンプル取引データを作成."""
     with db_manager.session_scope() as session:
         # 完全重複（同じ日付・同じ金額）
@@ -93,7 +109,7 @@ def sample_transactions(db_manager):
         return [trans1.id, trans2.id, trans3.id, trans4.id, trans5.id, trans6.id]
 
 
-def test_detect_exact_duplicates(db_manager, sample_transactions):
+def test_detect_exact_duplicates(db_manager, sample_transactions):  # type: ignore[no-untyped-def]
     """完全一致の重複検出テスト."""
     with db_manager.session_scope() as session:
         # デフォルトオプション（完全一致のみ）
@@ -110,7 +126,7 @@ def test_detect_exact_duplicates(db_manager, sample_transactions):
         assert score >= 0.8
 
 
-def test_detect_with_date_tolerance(db_manager, sample_transactions):
+def test_detect_with_date_tolerance(db_manager, sample_transactions):  # type: ignore[no-untyped-def]
     """日付誤差許容ありの重複検出テスト."""
     with db_manager.session_scope() as session:
         # 日付誤差1日まで許容
@@ -132,7 +148,7 @@ def test_detect_with_date_tolerance(db_manager, sample_transactions):
         assert found_date_tolerance_pair
 
 
-def test_detect_with_amount_tolerance(db_manager):
+def test_detect_with_amount_tolerance(db_manager):  # type: ignore[no-untyped-def]
     """金額誤差許容ありの重複検出テスト."""
     with db_manager.session_scope() as session:
         # 近い金額のデータを作成
@@ -166,7 +182,7 @@ def test_detect_with_amount_tolerance(db_manager):
         assert abs(float(t1.amount) - float(t2.amount)) <= 100
 
 
-def test_no_detection_for_different_amounts(db_manager, sample_transactions):
+def test_no_detection_for_different_amounts(db_manager, sample_transactions):  # type: ignore[no-untyped-def]
     """金額が異なる場合は検出されないことを確認."""
     with db_manager.session_scope() as session:
         detector = DuplicateDetector(session)
@@ -179,7 +195,7 @@ def test_no_detection_for_different_amounts(db_manager, sample_transactions):
                 assert t1.amount == t2.amount
 
 
-def test_exclude_already_duplicate(db_manager):
+def test_exclude_already_duplicate(db_manager):  # type: ignore[no-untyped-def]
     """既に重複フラグが立っている取引は除外されることを確認."""
     with db_manager.session_scope() as session:
         trans1 = Transaction(
@@ -210,7 +226,7 @@ def test_exclude_already_duplicate(db_manager):
             assert t2.is_duplicate == 0
 
 
-def test_similarity_score_calculation(db_manager):
+def test_similarity_score_calculation(db_manager):  # type: ignore[no-untyped-def]
     """類似度スコア計算の妥当性テスト."""
     with db_manager.session_scope() as session:
         # 完全一致
@@ -242,7 +258,7 @@ def test_similarity_score_calculation(db_manager):
         assert score >= 0.95
 
 
-def test_detect_with_transaction_ids(db_manager, sample_transactions):
+def test_detect_with_transaction_ids(db_manager, sample_transactions):  # type: ignore[no-untyped-def]
     """特定の取引IDのみを対象とした検出テスト."""
     with db_manager.session_scope() as session:
         # 最初の2つのIDのみを指定

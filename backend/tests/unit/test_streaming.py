@@ -266,19 +266,19 @@ async def test_image_streamer_large_image():
 
 
 def test_global_cache_singleton():
-    """Test that global cache is properly initialized and accessible."""
-    try:
-        from household_mcp.streaming.global_cache import (
-            GLOBAL_CHART_CACHE,
-            ensure_global_cache,
-        )
+    """Test that global cache is properly initialized and accessible.
 
-        cache = ensure_global_cache()
+    Note: Import module, not symbol, to avoid stale binding of GLOBAL_CHART_CACHE.
+    """
+    try:
+        import household_mcp.streaming.global_cache as gc
+
+        cache = gc.ensure_global_cache()
         assert cache is not None
-        assert cache is GLOBAL_CHART_CACHE
+        assert cache is gc.GLOBAL_CHART_CACHE
 
         # Should return same instance on multiple calls
-        cache2 = ensure_global_cache()
+        cache2 = gc.ensure_global_cache()
         assert cache is cache2
     except ImportError:
         pytest.skip("cachetools not installed")

@@ -1,13 +1,30 @@
-"""Test DatabaseManager initialization."""
+"""Test DatabaseManager initialization.
+
+NOTE: These tests require the 'db' extra to be installed.
+They are skipped automatically in environments without SQLAlchemy.
+"""
 
 import os
 import tempfile
 from datetime import datetime
 
-from household_mcp.database import DatabaseManager, DuplicateCheck, Transaction
+# Check if database dependencies are available
+try:
+    from household_mcp.database import DatabaseManager, DuplicateCheck, Transaction
+
+    HAS_DB = True
+except ImportError:
+    HAS_DB = False
+    DatabaseManager = None  # type: ignore[assignment]
+    DuplicateCheck = None  # type: ignore[assignment]
+    Transaction = None  # type: ignore[assignment]
+
+import pytest
+
+pytestmark = pytest.mark.skipif(not HAS_DB, reason="requires db extras (sqlalchemy)")
 
 
-def test_database_manager_initialization():
+def test_database_manager_initialization():  # type: ignore[no-untyped-def]
     """データベース初期化のテスト."""
     with tempfile.TemporaryDirectory() as tmpdir:
         db_path = os.path.join(tmpdir, "test.db")
@@ -27,7 +44,7 @@ def test_database_manager_initialization():
         db_manager.close()
 
 
-def test_session_scope():
+def test_session_scope():  # type: ignore[no-untyped-def]
     """セッションスコープのテスト."""
     with tempfile.TemporaryDirectory() as tmpdir:
         db_path = os.path.join(tmpdir, "test.db")
@@ -58,7 +75,7 @@ def test_session_scope():
         db_manager.close()
 
 
-def test_duplicate_check_creation():
+def test_duplicate_check_creation():  # type: ignore[no-untyped-def]
     """重複チェックレコードの作成テスト."""
     with tempfile.TemporaryDirectory() as tmpdir:
         db_path = os.path.join(tmpdir, "test.db")

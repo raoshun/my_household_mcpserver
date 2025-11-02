@@ -1,4 +1,8 @@
-"""Unit tests for query_helpers."""
+"""Unit tests for query_helpers.
+
+NOTE: These tests require the 'db' extra (sqlalchemy).
+They are skipped automatically when sqlalchemy is unavailable.
+"""
 
 # flake8: noqa: F811
 
@@ -6,20 +10,29 @@ from datetime import date, datetime
 from decimal import Decimal
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
 
-from household_mcp.database.models import Base, Transaction
-from household_mcp.database.query_helpers import (
-    get_active_transactions,
-    get_category_breakdown,
-    get_duplicate_impact_report,
-    get_monthly_summary,
-)
+try:
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import Session, sessionmaker
+
+    from household_mcp.database.models import Base, Transaction
+    from household_mcp.database.query_helpers import (
+        get_active_transactions,
+        get_category_breakdown,
+        get_duplicate_impact_report,
+        get_monthly_summary,
+    )
+
+    HAS_DB = True
+except Exception:
+    HAS_DB = False
+    Session = object  # type: ignore[assignment]
+
+pytestmark = pytest.mark.skipif(not HAS_DB, reason="requires db extras (sqlalchemy)")
 
 
 @pytest.fixture
-def db_session():
+def db_session():  # type: ignore[no-untyped-def]
     """Create a test database session."""
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
@@ -30,7 +43,7 @@ def db_session():
 
 
 @pytest.fixture
-def sample_transactions(db_session: Session):
+def sample_transactions(db_session: Session):  # type: ignore[no-untyped-def]
     """Create sample transactions for testing."""
     transactions = [
         # January transactions
@@ -98,7 +111,7 @@ def sample_transactions(db_session: Session):
     return transactions
 
 
-def test_get_active_transactions_all(db_session: Session, sample_transactions):
+def test_get_active_transactions_all(db_session: Session, sample_transactions):  # type: ignore[no-untyped-def]
     """Test getting all active transactions."""
     transactions = get_active_transactions(db_session, exclude_duplicates=True)
 
@@ -106,7 +119,7 @@ def test_get_active_transactions_all(db_session: Session, sample_transactions):
     assert all(t.is_duplicate == 0 for t in transactions)
 
 
-def test_get_active_transactions_with_duplicates(
+def test_get_active_transactions_with_duplicates(  # type: ignore[no-untyped-def]
     db_session: Session, sample_transactions
 ):
     """Test getting transactions including duplicates."""
@@ -115,7 +128,7 @@ def test_get_active_transactions_with_duplicates(
     assert len(transactions) == 5  # All transactions
 
 
-def test_get_active_transactions_date_filter(db_session: Session, sample_transactions):
+def test_get_active_transactions_date_filter(db_session: Session, sample_transactions):  # type: ignore[no-untyped-def]
     """Test getting transactions with date filter."""
     transactions = get_active_transactions(
         db_session,
@@ -127,7 +140,7 @@ def test_get_active_transactions_date_filter(db_session: Session, sample_transac
     assert len(transactions) == 3  # 4 January transactions - 1 duplicate
 
 
-def test_get_active_transactions_category_filter(
+def test_get_active_transactions_category_filter(  # type: ignore[no-untyped-def]
     db_session: Session, sample_transactions
 ):
     """Test getting transactions with category filter."""
@@ -139,7 +152,7 @@ def test_get_active_transactions_category_filter(
     assert all(t.category_major == "食費" for t in transactions)
 
 
-def test_get_monthly_summary_exclude_duplicates(
+def test_get_monthly_summary_exclude_duplicates(  # type: ignore[no-untyped-def]
     db_session: Session, sample_transactions
 ):
     """Test monthly summary excluding duplicates."""
@@ -152,7 +165,7 @@ def test_get_monthly_summary_exclude_duplicates(
     assert summary["duplicate_count"] == 1
 
 
-def test_get_monthly_summary_include_duplicates(
+def test_get_monthly_summary_include_duplicates(  # type: ignore[no-untyped-def]
     db_session: Session, sample_transactions
 ):
     """Test monthly summary including duplicates."""
@@ -164,7 +177,7 @@ def test_get_monthly_summary_include_duplicates(
     assert summary["transaction_count"] == 4
 
 
-def test_get_category_breakdown(db_session: Session, sample_transactions):
+def test_get_category_breakdown(db_session: Session, sample_transactions):  # type: ignore[no-untyped-def]
     """Test category breakdown."""
     breakdown = get_category_breakdown(
         db_session,
@@ -182,7 +195,7 @@ def test_get_category_breakdown(db_session: Session, sample_transactions):
     assert food["transaction_count"] == 1
 
 
-def test_get_category_breakdown_with_duplicates(
+def test_get_category_breakdown_with_duplicates(  # type: ignore[no-untyped-def]
     db_session: Session, sample_transactions
 ):
     """Test category breakdown including duplicates."""
@@ -199,7 +212,7 @@ def test_get_category_breakdown_with_duplicates(
     assert food["transaction_count"] == 2
 
 
-def test_get_duplicate_impact_report(db_session: Session, sample_transactions):
+def test_get_duplicate_impact_report(db_session: Session, sample_transactions):  # type: ignore[no-untyped-def]
     """Test duplicate impact report."""
     report = get_duplicate_impact_report(db_session, 2024, 1)
 
@@ -214,7 +227,7 @@ def test_get_duplicate_impact_report(db_session: Session, sample_transactions):
     assert impact["duplicate_transaction_count"] == 1
 
 
-def test_get_active_transactions_empty_result(db_session: Session):
+def test_get_active_transactions_empty_result(db_session: Session):  # type: ignore[no-untyped-def]
     """Test getting transactions with no results."""
     transactions = get_active_transactions(
         db_session,
@@ -225,7 +238,7 @@ def test_get_active_transactions_empty_result(db_session: Session):
     assert len(transactions) == 0
 
 
-def test_get_monthly_summary_no_transactions(db_session: Session):
+def test_get_monthly_summary_no_transactions(db_session: Session):  # type: ignore[no-untyped-def]
     """Test monthly summary with no transactions."""
     summary = get_monthly_summary(db_session, 2025, 1)
 

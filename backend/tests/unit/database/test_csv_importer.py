@@ -1,4 +1,8 @@
-"""Unit tests for CSVImporter."""
+"""Unit tests for CSVImporter.
+
+NOTE: These tests require the 'db' extra to be installed.
+They are skipped automatically in environments without SQLAlchemy.
+"""
 
 import os
 import tempfile
@@ -7,11 +11,22 @@ from decimal import Decimal
 import pandas as pd
 import pytest
 
-from household_mcp.database import CSVImporter, DatabaseManager, Transaction
+# Check if database dependencies are available
+try:
+    from household_mcp.database import CSVImporter, DatabaseManager, Transaction
+
+    HAS_DB = True
+except ImportError:
+    HAS_DB = False
+    CSVImporter = None  # type: ignore[assignment]
+    DatabaseManager = None  # type: ignore[assignment]
+    Transaction = None  # type: ignore[assignment]
+
+pytestmark = pytest.mark.skipif(not HAS_DB, reason="requires db extras (sqlalchemy)")
 
 
 @pytest.fixture
-def db_manager():
+def db_manager():  # type: ignore[no-untyped-def]
     """テスト用のデータベースマネージャを作成."""
     with tempfile.TemporaryDirectory() as tmpdir:
         db_path = os.path.join(tmpdir, "test.db")
@@ -22,7 +37,7 @@ def db_manager():
 
 
 @pytest.fixture
-def sample_csv(tmp_path):
+def sample_csv(tmp_path):  # type: ignore[no-untyped-def]
     """サンプルCSVファイルを作成."""
     csv_path = tmp_path / "収入・支出詳細_2025-01-01_2025-01-31.csv"
 
@@ -43,7 +58,7 @@ def sample_csv(tmp_path):
     return csv_path
 
 
-def test_import_single_csv(db_manager, sample_csv):
+def test_import_single_csv(db_manager, sample_csv):  # type: ignore[no-untyped-def]
     """単一CSVファイルのインポートテスト."""
     with db_manager.session_scope() as session:
         importer = CSVImporter(session)
@@ -68,7 +83,7 @@ def test_import_single_csv(db_manager, sample_csv):
         assert first_trans.is_duplicate == 0
 
 
-def test_import_duplicate_prevention(db_manager, sample_csv):
+def test_import_duplicate_prevention(db_manager, sample_csv):  # type: ignore[no-untyped-def]
     """重複インポート防止テスト."""
     with db_manager.session_scope() as session:
         importer = CSVImporter(session)
@@ -93,7 +108,7 @@ def test_import_duplicate_prevention(db_manager, sample_csv):
         assert len(transactions) == 3
 
 
-def test_import_invalid_csv(db_manager, tmp_path):
+def test_import_invalid_csv(db_manager, tmp_path):  # type: ignore[no-untyped-def]
     """不正なCSVファイルのエラーハンドリングテスト."""
     invalid_csv = tmp_path / "invalid.csv"
     # 必須カラムが欠けているCSV
@@ -108,7 +123,7 @@ def test_import_invalid_csv(db_manager, tmp_path):
         assert len(result["errors"]) > 0
 
 
-def test_import_all_csvs(db_manager, tmp_path):
+def test_import_all_csvs(db_manager, tmp_path):  # type: ignore[no-untyped-def]
     """複数CSVファイルの一括インポートテスト."""
     # 複数のCSVファイルを作成
     for month in range(1, 4):
@@ -142,7 +157,7 @@ def test_import_all_csvs(db_manager, tmp_path):
         assert len(transactions) == 6
 
 
-def test_import_with_missing_columns(db_manager, tmp_path):
+def test_import_with_missing_columns(db_manager, tmp_path):  # type: ignore[no-untyped-def]
     """欠損カラムを含むCSVのインポートテスト."""
     csv_path = tmp_path / "収入・支出詳細_2025-01-01_2025-01-31.csv"
 

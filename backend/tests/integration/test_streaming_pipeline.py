@@ -94,9 +94,9 @@ class TestStreamingPipeline:
         elapsed = time.time() - start_time
 
         assert result.get("success") is True
-        assert (
-            elapsed < 3.0
-        ), f"画像生成に3秒以上かかりました: {elapsed:.2f}秒 (NFR-005違反)"
+        assert elapsed < 3.0, (
+            f"画像生成に3秒以上かかりました: {elapsed:.2f}秒 (NFR-005違反)"
+        )
 
     def test_cache_hit_performance(self) -> None:
         """キャッシュヒット時のパフォーマンスを検証"""
@@ -160,9 +160,9 @@ class TestStreamingPipeline:
         mem_after = process.memory_info().rss / (1024 * 1024)  # MB
         mem_increase = mem_after - mem_before
 
-        assert (
-            mem_increase < 50
-        ), f"メモリ使用量増加が50MBを超えました: {mem_increase:.2f}MB (NFR-006違反)"
+        assert mem_increase < 50, (
+            f"メモリ使用量増加が50MBを超えました: {mem_increase:.2f}MB (NFR-006違反)"
+        )
 
     def test_concurrent_image_generation(self) -> None:
         """複数の画像生成リクエストを並行処理できることを確認"""
@@ -277,9 +277,9 @@ class TestStreamingPipeline:
         assert image_bytes is not None
 
         # PNG形式であることを確認（マジックナンバー）
-        assert image_bytes.startswith(
-            b"\x89PNG\r\n\x1a\n"
-        ), "画像がPNG形式ではありません"
+        assert image_bytes.startswith(b"\x89PNG\r\n\x1a\n"), (
+            "画像がPNG形式ではありません"
+        )
 
 
 # Run a simple smoke test that doesn't require --run-integration flag
