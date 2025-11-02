@@ -32,15 +32,9 @@ def __getattr__(name: str) -> Any:  # pragma: no cover - import-time behavior
 
             return _DatabaseManager
         if name in {"Base", "DuplicateCheck", "Transaction"}:
-            from .models import (
-                Base as _Base,
-            )
-            from .models import (
-                DuplicateCheck as _Dup,
-            )
-            from .models import (
-                Transaction as _Txn,
-            )
+            from .models import Base as _Base
+            from .models import DuplicateCheck as _Dup
+            from .models import Transaction as _Txn
 
             mapping = {"Base": _Base, "DuplicateCheck": _Dup, "Transaction": _Txn}
             return mapping[name]

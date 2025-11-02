@@ -15,9 +15,9 @@ try:
     HAS_DB = True
 except ImportError:
     HAS_DB = False
-    DatabaseManager = None  # type: ignore[assignment]
-    DuplicateCheck = None  # type: ignore[assignment]
-    Transaction = None  # type: ignore[assignment]
+    DatabaseManager = None
+    DuplicateCheck = None
+    Transaction = None
 
 import pytest
 

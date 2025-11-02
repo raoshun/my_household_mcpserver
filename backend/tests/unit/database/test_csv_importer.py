@@ -18,9 +18,9 @@ try:
     HAS_DB = True
 except ImportError:
     HAS_DB = False
-    CSVImporter = None  # type: ignore[assignment]
-    DatabaseManager = None  # type: ignore[assignment]
-    Transaction = None  # type: ignore[assignment]
+    CSVImporter = None
+    DatabaseManager = None
+    Transaction = None
 
 pytestmark = pytest.mark.skipif(not HAS_DB, reason="requires db extras (sqlalchemy)")
 

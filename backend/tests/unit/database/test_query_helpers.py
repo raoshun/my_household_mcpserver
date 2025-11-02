@@ -26,7 +26,7 @@ try:
     HAS_DB = True
 except Exception:
     HAS_DB = False
-    Session = object  # type: ignore[assignment]
+    Session = object
 
 pytestmark = pytest.mark.skipif(not HAS_DB, reason="requires db extras (sqlalchemy)")
 
