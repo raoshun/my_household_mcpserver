@@ -16,6 +16,7 @@ def pytest_configure():
 
     # Debug: Print dependency availability
     import os
+
     data_dir = os.environ.get("HOUSEHOLD_DATA_DIR", "tests/fixtures/data")
     if not data_dir.startswith("/"):
         data_path = root / data_dir
