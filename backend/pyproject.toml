@@ -175,7 +175,12 @@ disable_error_code = ["import-untyped", "no-any-return"]
 
 [[tool.mypy.overrides]]
 module = "household_mcp.database.*"
-disable_error_code = ["type-arg", "no-any-return", "attr-defined", "unused-ignore"]
+disable_error_code = [
+    "type-arg",
+    "no-any-return",
+    "attr-defined",
+    "unused-ignore",
+]
 
 # pytest設定
 [tool.pytest.ini_options]
@@ -282,9 +287,9 @@ exclude = [
 
 [tool.ruff.lint]
 select = [
-    "E",   # pycodestyle
-    "F",   # pyflakes
-    "I"    # isort (import order)
+    "E", # pycodestyle
+    "F", # pyflakes
+    "I", # isort (import order)
 ]
 ignore = [
     "E203", # black 互換
