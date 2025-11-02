@@ -24,7 +24,7 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12", "3.13", "3.14"]
     env:
-      HOUSEHOLD_DATA_DIR: tests/fixtures/data
+      HOUSEHOLD_DATA_DIR: backend/tests/fixtures/data
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -50,9 +50,10 @@ jobs:
 
       - name: Prepare sample data directory
         run: |
-          mkdir -p tests/fixtures/data
+          mkdir -p backend/tests/fixtures/data
 
       - name: Create virtual environment and install dependencies
+        working-directory: backend
         run: |
           uv venv
           uv pip install -e .[web,visualization,logging]
@@ -64,6 +65,7 @@ jobs:
           extra_args: --all-files
 
       - name: Run tests with coverage
+        working-directory: backend
         run: |
           uv run pytest --cov=src/household_mcp --cov-report=term-missing --cov-report=xml --cov-report=html --cov-fail-under=80
 
@@ -71,7 +73,7 @@ jobs:
         if: matrix.python-version == '3.12'
         uses: codecov/codecov-action@v4
         with:
-          file: ./coverage.xml
+          file: ./backend/coverage.xml
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
@@ -81,7 +83,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: htmlcov/
+          path: backend/htmlcov/
 
   # ============================================================================
   # Lintジョブ: コード品質チェック（Python 3.12のみ）
@@ -103,28 +105,34 @@ jobs:
           pip install uv
 
       - name: Install dependencies
+        working-directory: backend
         run: |
           uv venv
           uv pip install -e .[web,visualization,logging]
           uv pip install black isort flake8 mypy bandit[toml]
 
       - name: Check code formatting (black)
+        working-directory: backend
         run: |
           uv run black --check src tests
 
       - name: Check import sorting (isort)
+        working-directory: backend
         run: |
           uv run isort --check src tests
 
       - name: Lint code (flake8)
+        working-directory: backend
         run: |
           uv run flake8 src tests
 
       - name: Type check (mypy)
+        working-directory: backend
         run: |
           uv run mypy src/
 
       - name: Security scan (bandit)
+        working-directory: backend
         run: |
           uv run bandit -r src/ -f json -o bandit-report.json || true
           uv run bandit -r src/
@@ -159,15 +167,17 @@ jobs:
 
       - name: Prepare sample data directory
         run: |
-          mkdir -p tests/fixtures/data
+          mkdir -p backend/tests/fixtures/data
 
       - name: Install dependencies with ${{ matrix.extras }} extra
+        working-directory: backend
         run: |
           uv venv
           uv pip install -e .[${{ matrix.extras }}]
           uv pip install pytest pytest-cov
 
       - name: Run smoke tests
+        working-directory: backend
         env:
           HOUSEHOLD_DATA_DIR: tests/fixtures/data
         run: |
@@ -199,15 +209,17 @@ jobs:
 
       - name: Prepare sample data directory
         run: |
-          mkdir -p tests/fixtures/data
+          mkdir -p backend/tests/fixtures/data
 
       - name: Install all dependencies (full extra)
+        working-directory: backend
         run: |
           uv venv
           uv pip install -e .[full]
           uv pip install pytest pytest-cov
 
       - name: Run all tests
+        working-directory: backend
         env:
           HOUSEHOLD_DATA_DIR: tests/fixtures/data
         run: |
