@@ -1,4 +1,5 @@
-"""Household MCP Server unified implementation.
+"""
+Household MCP Server unified implementation.
 
 This module provides a unified MCP server for household budget analysis
 with FastAPI integration. It includes tools for analyzing budget data from
@@ -10,7 +11,7 @@ import argparse
 import os
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import pandas as pd
 
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
     from fastapi import FastAPI
 
     # 型検査用にのみ DatabaseManager をインポート（実行時には遅延インポート）
-    from household_mcp.database import DatabaseManager  # noqa: F401
+    from household_mcp.database import DatabaseManager
 else:
     try:
         from fastapi import FastAPI
@@ -70,14 +71,15 @@ mcp = FastMCP("my_household_mcp")
 
 # Lazily initialize data loader to avoid import-time failures in environments
 # (e.g., CI) where the data directory isn't present.
-_data_loader: Optional[HouseholdDataLoader] = None
+_data_loader: HouseholdDataLoader | None = None
 # DatabaseManager はオプショナル依存（db/SQLAlchemy）に含まれるため、
 # ここでは型のみ参照し、実体のインポートは使用時に遅延させる。
 _db_manager: Optional["DatabaseManager"] = None
 
 
 def _data_dir() -> str:
-    """Return the data directory path from env or default.
+    """
+    Return the data directory path from env or default.
 
     HOUSEHOLD_DATA_DIR can be set in CI or runtime to point to fixtures.
     Defaults to "data" for local runs.
@@ -101,7 +103,7 @@ def _get_db_manager() -> "DatabaseManager":
         # 遅延インポート：db エクストラが未インストール環境では ImportError を投げる
         try:
             from household_mcp.database import DatabaseManager
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             raise ImportError(
                 "Database features are not available. Install with '.[db]' or '.[full]'"
             ) from e
@@ -127,6 +129,7 @@ def get_category_hierarchy() -> dict[str, list[str]]:
 
     Returns:
         dict[str, list[str]]: カテゴリの階層構造(大項目: [中項目1, 中項目2, ...])を表す辞書
+
     """
     try:
         result = _get_data_loader().category_hierarchy(year=2025, month=7)
@@ -149,7 +152,8 @@ def get_monthly_household(
     graph_type: str = "pie",
     image_size: str = "800x600",
 ) -> dict[str, Any] | list[dict[str, Any]]:
-    """指定した年月の家計簿から収支を取得する関数。
+    """
+    指定した年月の家計簿から収支を取得する関数。
 
     Args:
         year (int): 年
@@ -161,6 +165,7 @@ def get_monthly_household(
     Returns:
         text形式: list[dict] - 支出のリスト
         image形式: dict - 画像URL、キャッシュキー、メタデータを含む辞書
+
     """
     if output_format == "image":
         # 画像生成機能を使用
@@ -217,6 +222,7 @@ def get_household_categories() -> dict[str, list[str]]:
 
     Returns:
         dict[str, list[str]]: カテゴリの階層構造(大項目: [中項目1, 中項目2, ...])を表す辞書
+
     """
     try:
         result = _get_data_loader().category_hierarchy(year=2025, month=7)
@@ -241,14 +247,15 @@ def get_category_trend_summary() -> dict[str, Any]:
 
 @mcp.tool("get_category_trend")
 def run_get_category_trend(
-    category: Optional[str] = None,
-    start_month: Optional[str] = None,
-    end_month: Optional[str] = None,
+    category: str | None = None,
+    start_month: str | None = None,
+    end_month: str | None = None,
     output_format: str = "text",
     graph_type: str = "line",
     image_size: str = "1000x600",
 ) -> dict[str, Any]:
-    """カテゴリ別の支出トレンドを取得する MCP ツール。
+    """
+    カテゴリ別の支出トレンドを取得する MCP ツール。
 
     Args:
         category: カテゴリ名（未指定時は上位カテゴリを返す）
@@ -261,6 +268,7 @@ def run_get_category_trend(
     Returns:
         text形式: トレンド情報を含む辞書
         image形式: 画像URL、キャッシュキー、メタデータを含む辞書
+
     """
     if output_format == "image":
         # 画像生成機能を使用
@@ -339,7 +347,7 @@ class BudgetAnalyzer:
             print(f"データ読み込みエラー: {e}")
             self.df = pd.DataFrame(columns=list(COLUMNS_MAP.values()))
 
-    def get_monthly_summary(self, year: int, month: int) -> Dict[str, Any]:
+    def get_monthly_summary(self, year: int, month: int) -> dict[str, Any]:
         """Returns a summary of the monthly budget data for the specified year and month."""
         if self.df.empty:
             return {"message": "No data available."}
@@ -376,11 +384,11 @@ class BudgetAnalyzer:
 
 
 # グローバルインスタンス
-analyzer: Optional[BudgetAnalyzer] = None
+analyzer: BudgetAnalyzer | None = None
 
 
 @mcp.tool("monthly_summary")
-def monthly_summary(year: int, month: int) -> Dict[str, Any]:
+def monthly_summary(year: int, month: int) -> dict[str, Any]:
     """Get monthly budget summary for a specific year and month."""
     global analyzer
     if analyzer is None:
@@ -399,8 +407,9 @@ def monthly_summary(year: int, month: int) -> Dict[str, Any]:
 
 
 @mcp.tool("category_analysis")
-def category_analysis(category: str, months: int = 3) -> Dict[str, Any]:
-    """Analyze expenses by category for a specific period.
+def category_analysis(category: str, months: int = 3) -> dict[str, Any]:
+    """
+    Analyze expenses by category for a specific period.
 
     Args:
         category: Category name to analyze (e.g., "食費", "光熱費")
@@ -414,6 +423,7 @@ def category_analysis(category: str, months: int = 3) -> Dict[str, Any]:
         - average: Average monthly expense
         - trend: Month-over-month trend data
         - summary: Text summary in Japanese
+
     """
     try:
         from household_mcp.analysis.trends import CategoryTrendAnalyzer
@@ -445,7 +455,7 @@ def category_analysis(category: str, months: int = 3) -> Dict[str, Any]:
             return {
                 "category": category,
                 "months": months,
-                "error": f"カテゴリ '{category}' の分析中にエラーが発生しました: {str(e)}",
+                "error": f"カテゴリ '{category}' の分析中にエラーが発生しました: {e!s}",
             }
 
         if not metrics:
@@ -512,18 +522,18 @@ def category_analysis(category: str, months: int = 3) -> Dict[str, Any]:
         return {
             "category": category,
             "months": months,
-            "error": f"データソースエラー: {str(e)}",
+            "error": f"データソースエラー: {e!s}",
         }
     except Exception as e:
         return {
             "category": category,
             "months": months,
-            "error": f"予期しないエラーが発生しました: {str(e)}",
+            "error": f"予期しないエラーが発生しました: {e!s}",
         }
 
 
 @mcp.tool("find_categories")
-def find_categories() -> Dict[str, Any]:
+def find_categories() -> dict[str, Any]:
     """Find all unique expense categories."""
     try:
         categories = _get_data_loader().category_hierarchy()
@@ -541,8 +551,9 @@ def tool_enhanced_monthly_summary(
     graph_type: str = "pie",
     image_size: str = "800x600",
     image_format: str = "png",
-) -> Dict[str, Any]:
-    """画像出力に対応した月次サマリーツール。
+) -> dict[str, Any]:
+    """
+    画像出力に対応した月次サマリーツール。
 
     output_format="image" の場合、キャッシュに画像を格納しURLを返す。
     """
@@ -555,7 +566,7 @@ def tool_enhanced_monthly_summary(
             image_size=image_size,
             image_format=image_format,
         )
-        return cast(Dict[str, Any], result)
+        return cast(dict[str, Any], result)
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -567,8 +578,9 @@ def tool_detect_duplicates(
     amount_tolerance_abs: float = 0.0,
     amount_tolerance_pct: float = 0.0,
     min_similarity_score: float = 0.8,
-) -> Dict[str, Any]:
-    """重複している取引を検出します。
+) -> dict[str, Any]:
+    """
+    重複している取引を検出します。
 
     使用例:
     - 「重複している取引を見つけて」
@@ -582,6 +594,7 @@ def tool_detect_duplicates(
 
     Returns:
         検出された重複候補の件数とメッセージ
+
     """
     try:
         _get_db_manager()  # データベースを初期化
@@ -591,14 +604,15 @@ def tool_detect_duplicates(
             amount_tolerance_pct=amount_tolerance_pct,
             min_similarity_score=min_similarity_score,
         )
-        return cast(Dict[str, Any], result)
+        return cast(dict[str, Any], result)
     except Exception as e:
-        return {"success": False, "error": f"重複検出に失敗しました: {str(e)}"}
+        return {"success": False, "error": f"重複検出に失敗しました: {e!s}"}
 
 
 @mcp.tool("get_duplicate_candidates")
-def tool_get_duplicate_candidates(limit: int = 10) -> Dict[str, Any]:
-    """未判定の重複候補を取得します。
+def tool_get_duplicate_candidates(limit: int = 10) -> dict[str, Any]:
+    """
+    未判定の重複候補を取得します。
 
     使用例:
     - 「重複候補を見せて」
@@ -609,21 +623,23 @@ def tool_get_duplicate_candidates(limit: int = 10) -> Dict[str, Any]:
 
     Returns:
         重複候補のリスト（取引詳細を含む）
+
     """
     try:
         _get_db_manager()  # データベースを初期化
         result = duplicate_tools.get_duplicate_candidates(limit=limit)
-        return cast(Dict[str, Any], result)
+        return cast(dict[str, Any], result)
     except Exception as e:
-        return {"success": False, "error": f"重複候補の取得に失敗しました: {str(e)}"}
+        return {"success": False, "error": f"重複候補の取得に失敗しました: {e!s}"}
 
 
 @mcp.tool("confirm_duplicate")
 def tool_confirm_duplicate(
     check_id: int,
     decision: str,
-) -> Dict[str, Any]:
-    """重複判定結果を記録します。
+) -> dict[str, Any]:
+    """
+    重複判定結果を記録します。
 
     使用例:
     - 「これは重複です」→ decision="duplicate"
@@ -636,6 +652,7 @@ def tool_confirm_duplicate(
 
     Returns:
         判定結果の記録状況
+
     """
     try:
         _get_db_manager()  # データベースを初期化
@@ -648,14 +665,15 @@ def tool_confirm_duplicate(
             check_id=check_id,
             decision=decision,  # type: ignore
         )
-        return cast(Dict[str, Any], result)
+        return cast(dict[str, Any], result)
     except Exception as e:
-        return {"success": False, "error": f"判定の記録に失敗しました: {str(e)}"}
+        return {"success": False, "error": f"判定の記録に失敗しました: {e!s}"}
 
 
 @mcp.tool("restore_duplicate")
-def tool_restore_duplicate(transaction_id: int) -> Dict[str, Any]:
-    """誤って重複とマークした取引を復元します。
+def tool_restore_duplicate(transaction_id: int) -> dict[str, Any]:
+    """
+    誤って重複とマークした取引を復元します。
 
     使用例:
     - 「さっきの判定は間違えた。復元して」
@@ -666,18 +684,20 @@ def tool_restore_duplicate(transaction_id: int) -> Dict[str, Any]:
 
     Returns:
         復元結果
+
     """
     try:
         _get_db_manager()  # データベースを初期化
         result = duplicate_tools.restore_duplicate(transaction_id=transaction_id)
-        return cast(Dict[str, Any], result)
+        return cast(dict[str, Any], result)
     except Exception as e:
-        return {"success": False, "error": f"取引の復元に失敗しました: {str(e)}"}
+        return {"success": False, "error": f"取引の復元に失敗しました: {e!s}"}
 
 
 @mcp.tool("get_duplicate_stats")
-def tool_get_duplicate_stats() -> Dict[str, Any]:
-    """重複検出の統計情報を取得します。
+def tool_get_duplicate_stats() -> dict[str, Any]:
+    """
+    重複検出の統計情報を取得します。
 
     使用例:
     - 「重複はどれくらいある?」
@@ -685,19 +705,20 @@ def tool_get_duplicate_stats() -> Dict[str, Any]:
 
     Returns:
         重複検出の統計情報
+
     """
     try:
         _get_db_manager()  # データベースを初期化
         result = duplicate_tools.get_duplicate_stats()
-        return cast(Dict[str, Any], result)
+        return cast(dict[str, Any], result)
     except Exception as e:
-        return {"success": False, "error": f"統計情報の取得に失敗しました: {str(e)}"}
+        return {"success": False, "error": f"統計情報の取得に失敗しました: {e!s}"}
 
 
 # Expose an async helper to list tools for smoke tests
-from typing import (  # noqa: E402  (import after FastMCP for clarity)
+from collections.abc import Sequence
+from typing import (
     NamedTuple,
-    Sequence,
 )
 
 
@@ -706,11 +727,13 @@ class _SimpleTool(NamedTuple):
 
 
 async def list_tools() -> Sequence[Any]:
-    """Return a minimal list of tool-like objects for smoke testing.
+    """
+    Return a minimal list of tool-like objects for smoke testing.
 
     Notes:
     - Tests only assert the presence of specific tool names via `.name`.
     - We avoid relying on FastMCP internals and construct lightweight objects.
+
     """
     tool_names = [
         "monthly_summary",

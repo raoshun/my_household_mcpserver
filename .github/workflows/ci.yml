@@ -61,7 +61,7 @@ jobs:
         run: |
           uv venv
           uv pip install -e .[web,visualization,logging]
-          uv pip install pytest pytest-cov black isort flake8 mypy bandit[toml] pre-commit
+          uv pip install pytest pytest-cov bandit[toml] pre-commit
 
       - name: Run pre-commit (all files)
         uses: pre-commit/action@v3.0.1
@@ -90,10 +90,10 @@ jobs:
           path: backend/htmlcov/
 
   # ============================================================================
-  # Lintジョブ: コード品質チェック（Python 3.12のみ）
+  # Lintジョブ: コード品質チェック（Python 3.12のみ、Ruff で統一）
   # ============================================================================
   lint:
-    name: Lint (black, isort, flake8, mypy, bandit)
+    name: Lint (ruff, bandit)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -113,27 +113,17 @@ jobs:
         run: |
           uv venv
           uv pip install -e .[web,visualization,logging]
-          uv pip install black isort flake8 mypy bandit[toml]
+          uv pip install ruff bandit[toml]
 
-      - name: Check code formatting (black)
+      - name: Lint code (ruff check)
         working-directory: backend
         run: |
-          uv run black --check src tests
+          uv run ruff check src tests
 
-      - name: Check import sorting (isort)
+      - name: Check code formatting (ruff format)
         working-directory: backend
         run: |
-          uv run isort --check src tests
-
-      - name: Lint code (flake8)
-        working-directory: backend
-        run: |
-          uv run flake8 src tests
-
-      - name: Type check (mypy)
-        working-directory: backend
-        run: |
-          uv run mypy src/
+          uv run ruff format --check src tests
 
       - name: Security scan (bandit)
         working-directory: backend

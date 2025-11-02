@@ -277,6 +277,7 @@ dev = [
 ]
 
 # Ruff 設定（lint & format を Ruff に移行）
+# Replaces: black, isort, flake8, mypy
 [tool.ruff]
 target-version = "py311"
 line-length = 88
@@ -284,28 +285,74 @@ exclude = [
     ".git",
     ".mypy_cache",
     ".pytest_cache",
+    ".ruff_cache",
     ".venv",
     "venv",
     "dist",
     "build",
+    "*.egg-info",
+    "tests",
 ]
 
 [tool.ruff.lint]
 select = [
-    "E", # pycodestyle
-    "F", # pyflakes
-    "I", # isort (import order)
+    "E",     # pycodestyle (PEP 8)
+    "F",     # pyflakes
+    "I",     # isort (import order)
+    "W",     # pycodestyle warnings
+    "C90",   # mccabe (complexity)
+    "D",     # pydocstyle (docstrings)
+    "B",     # flake8-bugbear
+    "UP",    # pyupgrade
+    "RUF",   # Ruff-specific
 ]
 ignore = [
-    "E203", # black 互換
-    "E501", # 長行は許容（既存コード互換）
-    "E402", # モジュールインポート位置の柔軟性を許容
+    "E203",   # black 互換: slice notation whitespace
+    "E501",   # 長行は許容（既存コード互換）
+    "E402",   # モジュールインポート位置の柔軟性を許容
+    "C901",   # 複雑度: maxが既に 10 に設定
+    "D100",   # Missing docstring in public module
+    "D101",   # Missing docstring in public class
+    "D102",   # Missing docstring in public method
+    "D103",   # Missing docstring in public function
+    "D104",   # Missing docstring in public package
+    "D105",   # Missing docstring in magic method
+    "D107",   # Missing docstring in __init__
+    "D202",   # No blank lines allowed after function docstring
+    "D212",   # Multi-line docstring summary should start at first line
+    "D301",   # Expected 1 blank line after class docstring
+    "D400",   # First line should end with a period (docstring)
+    "D401",   # First line should be imperative mood
+    "D403",   # First word of the first line should be properly capitalized
+    "D415",   # First line should end with a period
+    "B904",   # Allow plain raise in except clauses (Python 3.11+ compatible)
+    "RUF001", # String contains ambiguous character (Japanese chars are normal)
+    "RUF002", # Docstring contains ambiguous character
+    "RUF003", # Comment contains ambiguous character
+    "RUF009", # Dataclass default with function call (acceptable pattern)
+    "RUF012", # Mutable class attributes (ClassVar annotation not required here)
+    "UP035",  # typing.List/Dict/etc deprecated (keep Python 3.11 compatibility)
+    "UP007",  # Union type annotation (X | Y requires Python 3.10+)
+    "UP028",  # Replace yield over for loop (existing style preference)
 ]
 
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
 [tool.ruff.lint.per-file-ignores]
+# Tests: allow unused imports, missing docstrings, unused arguments
+"tests/**/*" = ["F401", "F841", "D"]
+"tests/*" = ["F401", "F841", "D"]
+# Complex modules: allow higher complexity
 "src/household_mcp/web/http_server.py" = ["C901"]
-"tests/**/*" = ["F401"]
+"src/household_mcp/duplicate/detector.py" = ["C901"]
+
+[tool.ruff.lint.isort]
+# Import sorting (isort replacement)
+known-first-party = ["household_mcp"]
 
 [tool.ruff.format]
+# Format settings (black replacement)
 quote-style = "double"
 indent-style = "space"
+line-ending = "auto"

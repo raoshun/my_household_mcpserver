@@ -1,4 +1,5 @@
-"""家計簿データ管理ツール.
+"""
+家計簿データ管理ツール.
 
 取引、カテゴリー、アカウントのCRUD操作を提供
 """
@@ -6,7 +7,7 @@
 import logging
 import sqlite3
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..database.connection import DatabaseConnection
 from ..exceptions import ValidationError
@@ -33,8 +34,9 @@ class TransactionManager:
         category_name: str,
         account_name: str,
         transaction_type: str,
-    ) -> Dict[str, Any]:
-        """新しい取引を追加.
+    ) -> dict[str, Any]:
+        """
+        新しい取引を追加.
 
         Args:
             date: 日付
@@ -46,6 +48,7 @@ class TransactionManager:
 
         Returns:
             追加された取引の情報
+
         """
         try:
             # logger.info("Attempting to add transaction with data: %s", locals())
@@ -97,12 +100,12 @@ class TransactionManager:
         self,
         limit: int = 50,
         offset: int = 0,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None,
-        category_name: Optional[str] = None,
-        account_name: Optional[str] = None,
-        transaction_type: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        start_date: str | None = None,
+        end_date: str | None = None,
+        category_name: str | None = None,
+        account_name: str | None = None,
+        transaction_type: str | None = None,
+    ) -> dict[str, Any]:
         """取引一覧を取得."""
         try:
             conditions, params = self._build_query_conditions(
@@ -131,16 +134,16 @@ class TransactionManager:
             return {
                 "success": False,
                 "error": str(e),
-                "message": f"取引の取得に失敗しました: {str(e)}",
+                "message": f"取引の取得に失敗しました: {e!s}",
             }
 
     def _build_query_conditions(
         self,
-        start_date: Optional[str],
-        end_date: Optional[str],
-        category_name: Optional[str],
-        account_name: Optional[str],
-        transaction_type: Optional[str],
+        start_date: str | None,
+        end_date: str | None,
+        category_name: str | None,
+        account_name: str | None,
+        transaction_type: str | None,
     ) -> tuple[list[str], list[Any]]:
         conditions: list[str] = []
         params: list[Any] = []
@@ -178,7 +181,7 @@ class TransactionManager:
             "ORDER BY t.date DESC, t.id DESC\n"
             "LIMIT ? OFFSET ?\n"
         )  # nosec B608: where_clause is built from whitelisted fields; parameters are bound
-        query_params = tuple(params + [limit, offset])
+        query_params = tuple([*params, limit, offset])
         result = self.db_connection.execute_query(query, query_params, fetch_all=True)
 
         transactions = []
@@ -213,7 +216,7 @@ class TransactionManager:
         )
         return count_result[0] if count_result else 0
 
-    def update_transaction(self, transaction_id: int, **kwargs: Any) -> Dict[str, Any]:
+    def update_transaction(self, transaction_id: int, **kwargs: Any) -> dict[str, Any]:
         """取引を更新."""
         try:
             existing = self._get_transaction_by_id(transaction_id)
@@ -250,11 +253,11 @@ class TransactionManager:
             return {
                 "success": False,
                 "error": str(e),
-                "message": f"取引の更新に失敗しました: {str(e)}",
+                "message": f"取引の更新に失敗しました: {e!s}",
             }
 
     def _prepare_transaction_update(
-        self, existing_transaction: Dict[str, Any], **kwargs: Any
+        self, existing_transaction: dict[str, Any], **kwargs: Any
     ) -> tuple[list[str], list[Any]]:
         allowed_fields = [
             "date",
@@ -305,14 +308,16 @@ class TransactionManager:
             if cursor.rowcount == 0:
                 raise Exception("取引の更新に失敗しました")
 
-    def delete_transaction(self, transaction_id: int) -> Dict[str, Any]:
-        """取引を削除.
+    def delete_transaction(self, transaction_id: int) -> dict[str, Any]:
+        """
+        取引を削除.
 
         Args:
             transaction_id: 取引ID
 
         Returns:
             削除結果
+
         """
         try:
             # 既存の取引を取得
@@ -363,7 +368,7 @@ class TransactionManager:
             return {
                 "success": False,
                 "error": str(e),
-                "message": f"取引の削除に失敗しました: {str(e)}",
+                "message": f"取引の削除に失敗しました: {e!s}",
             }
 
     def _validate_transaction_data(
@@ -402,7 +407,8 @@ class TransactionManager:
             raise ValidationError("アカウント名は必須です")
 
     def _get_category_id(self, category_name: str, transaction_type: str) -> int:
-        """カテゴリーIDを取得、存在しない場合は作成.
+        """
+        カテゴリーIDを取得、存在しない場合は作成.
 
         Args:
             category_name: カテゴリー名
@@ -410,6 +416,7 @@ class TransactionManager:
 
         Returns:
             カテゴリーID
+
         """
         query = "SELECT id FROM categories WHERE name = ? AND type = ?"
         result = self.db_connection.execute_query(
@@ -447,13 +454,15 @@ class TransactionManager:
         amount: float,
         transaction_type: str,
     ) -> None:
-        """アカウント残高を更新.
+        """
+        アカウント残高を更新.
 
         Args:
             conn: データベース接続
             account_id: アカウントID
             amount: 金額
             transaction_type: 取引タイプ
+
         """
         if transaction_type == "income":
             update_query = (
@@ -467,7 +476,7 @@ class TransactionManager:
         cursor = conn.cursor()
         cursor.execute(update_query, (float(amount), account_id))
 
-    def _get_transaction_by_id(self, transaction_id: int) -> Optional[Dict[str, Any]]:
+    def _get_transaction_by_id(self, transaction_id: int) -> dict[str, Any] | None:
         """IDで取引を取得."""
         query = """
             SELECT t.*, c.name as category_name, a.name as account_name
@@ -499,7 +508,7 @@ class TransactionManager:
 
 
 # グローバルなTransactionManagerインスタンス
-_transaction_manager: Optional[TransactionManager] = None
+_transaction_manager: TransactionManager | None = None
 
 
 def get_transaction_manager() -> TransactionManager:
@@ -519,14 +528,16 @@ class CategoryManager:
         """初期化."""
         self.db_connection = DatabaseConnection()
 
-    def get_categories(self, category_type: Optional[str] = None) -> Dict[str, Any]:
-        """カテゴリー一覧を取得.
+    def get_categories(self, category_type: str | None = None) -> dict[str, Any]:
+        """
+        カテゴリー一覧を取得.
 
         Args:
             category_type: カテゴリータイプ ('income' または 'expense')
 
         Returns:
             カテゴリー一覧
+
         """
         try:
             query = "SELECT id, name, type, parent_id, color, icon FROM categories"
@@ -570,11 +581,12 @@ class CategoryManager:
         self,
         name: str,
         category_type: str,
-        parent_id: Optional[int] = None,
-        color: Optional[str] = None,
-        icon: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """新しいカテゴリーを追加.
+        parent_id: int | None = None,
+        color: str | None = None,
+        icon: str | None = None,
+    ) -> dict[str, Any]:
+        """
+        新しいカテゴリーを追加.
 
         Args:
             name: カテゴリー名
@@ -585,6 +597,7 @@ class CategoryManager:
 
         Returns:
             追加結果
+
         """
         try:
             # 入力検証
@@ -637,8 +650,9 @@ class CategoryManager:
                 "message": "カテゴリーの追加に失敗しました",
             }
 
-    def update_category(self, category_id: int, **kwargs: Any) -> Dict[str, Any]:
-        """カテゴリーを更新.
+    def update_category(self, category_id: int, **kwargs: Any) -> dict[str, Any]:
+        """
+        カテゴリーを更新.
 
         Args:
             category_id: カテゴリーID
@@ -646,6 +660,7 @@ class CategoryManager:
 
         Returns:
             更新結果
+
         """
         try:
             # カテゴリーの存在確認
@@ -689,7 +704,7 @@ class CategoryManager:
                 set_clause = ", ".join(
                     [f"{field} = ?" for field in update_fields.keys()]
                 )
-                values = list(update_fields.values()) + [category_id]
+                values = [*list(update_fields.values()), category_id]
 
                 # Bandit: set_clause is derived from allowed field names; parameters remain bound
                 cursor.execute(
@@ -713,14 +728,16 @@ class CategoryManager:
                 "message": "カテゴリーの更新に失敗しました",
             }
 
-    def delete_category(self, category_id: int) -> Dict[str, Any]:
-        """カテゴリーを削除.
+    def delete_category(self, category_id: int) -> dict[str, Any]:
+        """
+        カテゴリーを削除.
 
         Args:
             category_id: カテゴリーID
 
         Returns:
             削除結果
+
         """
         try:
             # カテゴリーの存在確認
@@ -785,7 +802,7 @@ class CategoryManager:
 
 
 # グローバルなCategoryManagerインスタンス
-_category_manager: Optional[CategoryManager] = None
+_category_manager: CategoryManager | None = None
 
 
 def get_category_manager() -> CategoryManager:
@@ -801,11 +818,13 @@ def get_category_manager() -> CategoryManager:
 class AccountManager:
     """アカウント管理クラス."""
 
-    def __init__(self, db_connection: Optional[DatabaseConnection] = None):
-        """AccountManager初期化.
+    def __init__(self, db_connection: DatabaseConnection | None = None):
+        """
+        AccountManager初期化.
 
         Args:
             db_connection: データベース接続オブジェクト。Noneの場合はデフォルトを使用
+
         """
         self.db_connection = db_connection or DatabaseConnection()
 
@@ -815,8 +834,9 @@ class AccountManager:
         account_type: str,
         initial_balance: float = 0.0,
         is_active: bool = True,
-    ) -> Dict[str, Any]:
-        """新しいアカウントを追加.
+    ) -> dict[str, Any]:
+        """
+        新しいアカウントを追加.
 
         Args:
             name: アカウント名（例：普通預金、給与口座、現金）
@@ -826,6 +846,7 @@ class AccountManager:
 
         Returns:
             追加結果
+
         """
         try:
             # バリデーション
@@ -889,9 +910,10 @@ class AccountManager:
             }
 
     def get_accounts(
-        self, account_type: Optional[str] = None, is_active: Optional[bool] = None
-    ) -> List[Dict[str, Any]]:
-        """アカウント一覧を取得.
+        self, account_type: str | None = None, is_active: bool | None = None
+    ) -> list[dict[str, Any]]:
+        """
+        アカウント一覧を取得.
 
         Args:
             account_type: アカウント種別でフィルタ
@@ -899,6 +921,7 @@ class AccountManager:
 
         Returns:
             アカウント一覧
+
         """
         try:
             query = "SELECT * FROM accounts WHERE 1=1"
@@ -950,14 +973,16 @@ class AccountManager:
             logger.error("Failed to get accounts: %s", e)
             return []
 
-    def get_account(self, account_id: int) -> Optional[Dict[str, Any]]:
-        """指定IDのアカウントを取得.
+    def get_account(self, account_id: int) -> dict[str, Any] | None:
+        """
+        指定IDのアカウントを取得.
 
         Args:
             account_id: アカウントID
 
         Returns:
             アカウント情報（見つからない場合はNone）
+
         """
         try:
             result = self.db_connection.execute_query(
@@ -991,11 +1016,12 @@ class AccountManager:
     def update_account(
         self,
         account_id: int,
-        name: Optional[str] = None,
-        account_type: Optional[str] = None,
-        is_active: Optional[bool] = None,
-    ) -> Dict[str, Any]:
-        """アカウント情報を更新.
+        name: str | None = None,
+        account_type: str | None = None,
+        is_active: bool | None = None,
+    ) -> dict[str, Any]:
+        """
+        アカウント情報を更新.
 
         Args:
             account_id: アカウントID
@@ -1005,6 +1031,7 @@ class AccountManager:
 
         Returns:
             更新結果
+
         """
         try:
             # アカウントの存在確認
@@ -1060,11 +1087,11 @@ class AccountManager:
     def _prepare_account_update_fields(
         self,
         account_id: int,
-        name: Optional[str],
-        account_type: Optional[str],
-        is_active: Optional[bool],
-    ) -> Dict[str, Any]:
-        update_fields: Dict[str, Any] = {}
+        name: str | None,
+        account_type: str | None,
+        is_active: bool | None,
+    ) -> dict[str, Any]:
+        update_fields: dict[str, Any] = {}
         if name is not None:
             if not name.strip():
                 raise ValidationError("アカウント名は必須です")
@@ -1090,11 +1117,11 @@ class AccountManager:
         return update_fields
 
     def _execute_account_update(
-        self, account_id: int, update_fields: Dict[str, Any]
+        self, account_id: int, update_fields: dict[str, Any]
     ) -> None:
         update_fields["updated_at"] = datetime.now()
         set_clause = ", ".join([f"{field} = ?" for field in update_fields.keys()])
-        values = list(update_fields.values()) + [account_id]
+        values = [*list(update_fields.values()), account_id]
 
         with self.db_connection.transaction() as connection:
             cursor = connection.cursor()
@@ -1104,14 +1131,16 @@ class AccountManager:
                 values,  # nosec B608
             )
 
-    def delete_account(self, account_id: int) -> Dict[str, Any]:
-        """アカウントを削除.
+    def delete_account(self, account_id: int) -> dict[str, Any]:
+        """
+        アカウントを削除.
 
         Args:
             account_id: アカウントID
 
         Returns:
             削除結果
+
         """
         try:
             # アカウントの存在確認
@@ -1160,8 +1189,9 @@ class AccountManager:
                 "message": "アカウントの削除に失敗しました",
             }
 
-    def update_balance(self, account_id: int, new_balance: float) -> Dict[str, Any]:
-        """アカウント残高を更新.
+    def update_balance(self, account_id: int, new_balance: float) -> dict[str, Any]:
+        """
+        アカウント残高を更新.
 
         Args:
             account_id: アカウントID
@@ -1169,6 +1199,7 @@ class AccountManager:
 
         Returns:
             更新結果
+
         """
         try:
             # アカウントの存在確認
@@ -1216,7 +1247,7 @@ class AccountManager:
 
 
 # グローバルなAccountManagerインスタンス
-_account_manager: Optional[AccountManager] = None
+_account_manager: AccountManager | None = None
 
 
 def get_account_manager() -> AccountManager:

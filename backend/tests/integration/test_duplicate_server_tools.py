@@ -21,7 +21,7 @@ except ImportError:
     HAS_DB = False
     DatabaseManager = None
 
-from household_mcp.tools import duplicate_tools  # noqa: E402
+from household_mcp.tools import duplicate_tools
 
 pytestmark = pytest.mark.skipif(not HAS_DB, reason="requires db extras (sqlalchemy)")
 

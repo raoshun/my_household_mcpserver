@@ -14,12 +14,12 @@ from .query_parser import (
 )
 
 __all__ = [
+    "TrendQuery",
+    "format_category_trend_response",
     "format_currency",
     "format_percentage",
-    "format_category_trend_response",
-    "trend_metrics_to_dict",
-    "TrendQuery",
     "resolve_trend_query",
     "sorted_available_months",
     "to_month_key",
+    "trend_metrics_to_dict",
 ]

@@ -1,4 +1,5 @@
-"""Streaming package for household MCP server.
+"""
+Streaming package for household MCP server.
 
 This package provides HTTP streaming functionality for chart images.
 """

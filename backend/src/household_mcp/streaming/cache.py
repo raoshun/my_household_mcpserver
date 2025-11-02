@@ -1,4 +1,5 @@
-"""Image caching system for chart generation.
+"""
+Image caching system for chart generation.
 
 This module provides TTL-based caching for generated chart images.
 """
@@ -7,7 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import Any, Dict, Optional
+from typing import Any
 
 try:
     from cachetools import TTLCache
@@ -18,14 +19,16 @@ except ImportError:
 
 
 class ChartCache:
-    """TTL-based cache for chart images.
+    """
+    TTL-based cache for chart images.
 
     Stores generated chart images in memory with automatic expiration.
     Uses parameter hashing for cache keys to ensure uniqueness.
     """
 
     def __init__(self, max_size: int = 50, ttl: int = 3600):
-        """Initialize chart cache.
+        """
+        Initialize chart cache.
 
         Args:
             max_size: Maximum number of images to cache (default: 50)
@@ -33,6 +36,7 @@ class ChartCache:
 
         Raises:
             ImportError: If cachetools is not installed
+
         """
         if not HAS_CACHETOOLS:
             raise ImportError(
@@ -44,36 +48,42 @@ class ChartCache:
         self._max_size = max_size
         self._ttl = ttl
 
-    def get_key(self, params: Dict[str, Any]) -> str:
-        """Generate cache key from parameters.
+    def get_key(self, params: dict[str, Any]) -> str:
+        """
+        Generate cache key from parameters.
 
         Args:
             params: Dictionary of chart generation parameters
 
         Returns:
             MD5 hash of sorted JSON parameters
+
         """
         # Sort keys for consistent hashing
         key_str = json.dumps(params, sort_keys=True, ensure_ascii=False)
         return hashlib.md5(key_str.encode("utf-8")).hexdigest()
 
-    def get(self, key: str) -> Optional[bytes]:
-        """Retrieve image from cache.
+    def get(self, key: str) -> bytes | None:
+        """
+        Retrieve image from cache.
 
         Args:
             key: Cache key (typically from get_key())
 
         Returns:
             Image bytes if found, None otherwise
+
         """
         return self.cache.get(key)
 
     def set(self, key: str, image_data: bytes) -> None:
-        """Store image in cache.
+        """
+        Store image in cache.
 
         Args:
             key: Cache key
             image_data: PNG/SVG image bytes
+
         """
         self.cache[key] = image_data
 
@@ -95,11 +105,13 @@ class ChartCache:
         """Time-to-live in seconds."""
         return self._ttl
 
-    def stats(self) -> Dict[str, Any]:
-        """Get cache statistics.
+    def stats(self) -> dict[str, Any]:
+        """
+        Get cache statistics.
 
         Returns:
             Dictionary with current_size, max_size, and ttl
+
         """
         return {
             "current_size": len(self.cache),

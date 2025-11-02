@@ -10,8 +10,9 @@ import io
 import os
 import sys
 import warnings
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, List, Optional, Sequence, Tuple
+from typing import Any
 
 import pandas as pd
 
@@ -32,18 +33,21 @@ from ..exceptions import ChartGenerationError
 
 
 class ChartGenerator:
-    """Chart generator for household budget data visualization.
+    """
+    Chart generator for household budget data visualization.
 
     This class handles creation of various chart types (pie, bar, line, area)
     with proper Japanese font support and consistent styling.
     """
 
-    def __init__(self, font_path: Optional[str] = None):
-        """Initialize chart generator.
+    def __init__(self, font_path: str | None = None):
+        """
+        Initialize chart generator.
 
         Args:
             font_path: Optional path to Japanese font file.
                       If None, attempts to auto-detect system fonts.
+
         """
         if not HAS_VISUALIZATION_DEPS:
             raise ChartGenerationError(
@@ -56,6 +60,7 @@ class ChartGenerator:
             warnings.warn(
                 f"Font path '{font_path}' does not exist. Will attempt auto-detection.",
                 UserWarning,
+                stacklevel=2,
             )
             font_path = None
 
@@ -115,7 +120,8 @@ class ChartGenerator:
     def create_monthly_pie_chart(
         self, data: pd.DataFrame, title: str = "月次支出構成", **options: Any
     ) -> io.BytesIO:
-        """Create pie chart for monthly expense breakdown.
+        """
+        Create pie chart for monthly expense breakdown.
 
         Args:
             data: DataFrame with category and amount columns
@@ -124,6 +130,7 @@ class ChartGenerator:
 
         Returns:
             BytesIO buffer containing the chart image
+
         """
         try:
             with warnings.catch_warnings():
@@ -174,16 +181,17 @@ class ChartGenerator:
                 return self._save_figure_to_buffer(fig)
         except Exception as e:
             plt.close("all")
-            raise ChartGenerationError(f"Failed to create pie chart: {str(e)}") from e
+            raise ChartGenerationError(f"Failed to create pie chart: {e!s}") from e
 
     def create_category_trend_line(
         self,
         data: pd.DataFrame,
-        category: Optional[str] = None,
-        title: Optional[str] = None,
+        category: str | None = None,
+        title: str | None = None,
         **options: Any,
     ) -> io.BytesIO:
-        """Create line chart for category trend over time.
+        """
+        Create line chart for category trend over time.
 
         Args:
             data: DataFrame with date/month and amount columns
@@ -193,6 +201,7 @@ class ChartGenerator:
 
         Returns:
             BytesIO buffer containing the chart image
+
         """
         try:
             with warnings.catch_warnings():
@@ -236,13 +245,15 @@ class ChartGenerator:
 
         except Exception as e:
             plt.close("all")
-            raise ChartGenerationError(f"Failed to create line chart: {str(e)}") from e
+            raise ChartGenerationError(f"Failed to create line chart: {e!s}") from e
 
-    def _detect_japanese_font(self) -> Optional[str]:
-        """Auto-detect Japanese font available on the system.
+    def _detect_japanese_font(self) -> str | None:
+        """
+        Auto-detect Japanese font available on the system.
 
         Returns:
             Path to detected Japanese font, or None if not found.
+
         """
         # First try local fonts directory
         local_font = self._check_local_fonts_dir()
@@ -257,11 +268,13 @@ class ChartGenerator:
         # Then try matplotlib font manager
         return self._find_font_via_matplotlib()
 
-    def _check_local_fonts_dir(self) -> Optional[str]:
-        """Check for fonts in local fonts/ directory.
+    def _check_local_fonts_dir(self) -> str | None:
+        """
+        Check for fonts in local fonts/ directory.
 
         Returns:
             Path to font file in fonts/ directory, or None if not found.
+
         """
         # Get project root (assuming we're in src/household_mcp/visualization/)
         current_file = Path(__file__)
@@ -287,7 +300,7 @@ class ChartGenerator:
 
         return None
 
-    def _get_platform_font_candidates(self) -> Optional[str]:
+    def _get_platform_font_candidates(self) -> str | None:
         """Get platform-specific font candidates and check existence."""
         font_candidates = []
 
@@ -320,7 +333,7 @@ class ChartGenerator:
 
         return None
 
-    def _find_font_via_matplotlib(self) -> Optional[str]:
+    def _find_font_via_matplotlib(self) -> str | None:
         """Find Japanese font using matplotlib font manager."""
         try:
             japanese_font_names = [
@@ -344,7 +357,9 @@ class ChartGenerator:
                     continue
         except Exception as e:
             # Unexpected environment error occurred while probing fonts
-            warnings.warn(f"Font detection via matplotlib failed: {e}", UserWarning)
+            warnings.warn(
+                f"Font detection via matplotlib failed: {e}", UserWarning, stacklevel=2
+            )
 
         return None
 
@@ -416,16 +431,18 @@ class ChartGenerator:
 
         except Exception as e:
             plt.close("all")
-            raise ChartGenerationError(f"Failed to create bar chart: {str(e)}") from e
+            raise ChartGenerationError(f"Failed to create bar chart: {e!s}") from e
 
-    def _parse_image_size(self, size_str: str) -> Tuple[int, int]:
-        """Parse image size string to width, height tuple.
+    def _parse_image_size(self, size_str: str) -> tuple[int, int]:
+        """
+        Parse image size string to width, height tuple.
 
         Args:
             size_str: Size string like "800x600"
 
         Returns:
             Tuple of (width, height)
+
         """
         try:
             width_str, height_str = size_str.split("x")
@@ -441,14 +458,16 @@ class ChartGenerator:
             # Return default size
             return 800, 600
 
-    def _get_colors(self, n_colors: int) -> List[str]:
-        """Get a list of colors for charts.
+    def _get_colors(self, n_colors: int) -> list[str]:
+        """
+        Get a list of colors for charts.
 
         Args:
             n_colors: Number of colors needed
 
         Returns:
             List of color strings
+
         """
         # Default color palette optimized for visibility
         default_colors = [
@@ -495,14 +514,14 @@ class ChartGenerator:
 
         return chart_data
 
-    def _infer_column(self, columns: List[str], keywords: List[str]) -> Optional[str]:
+    def _infer_column(self, columns: list[str], keywords: list[str]) -> str | None:
         for col in columns:
             lower_col = str(col).lower()
             if any(keyword in lower_col for keyword in keywords):
                 return col
         return None
 
-    def _infer_category_amount_columns(self, df: pd.DataFrame) -> Tuple[str, str]:
+    def _infer_category_amount_columns(self, df: pd.DataFrame) -> tuple[str, str]:
         """Infer (category_col, amount_col) from DataFrame columns."""
         category_col = self._infer_column(
             list(df.columns), ["カテゴリ", "category", "項目", "大項目"]
@@ -513,7 +532,7 @@ class ChartGenerator:
         return category_col, amount_col
 
     def _render_bar_value_labels(
-        self, ax: Axes, bars: Sequence[Any], font_prop: Optional[fm.FontProperties]
+        self, ax: Axes, bars: Sequence[Any], font_prop: fm.FontProperties | None
     ) -> None:
         """Render value labels at the end of horizontal bars."""
         for b in bars:
@@ -532,7 +551,7 @@ class ChartGenerator:
         """Apply thousands separator + 円 unit to X axis."""
         ax.xaxis.set_major_formatter(FuncFormatter(lambda x, p: f"{int(x):,}円"))
 
-    def _get_font_properties(self) -> Optional[fm.FontProperties]:
+    def _get_font_properties(self) -> fm.FontProperties | None:
         """Create FontProperties from configured font_path if available."""
         if not self.font_path:
             return None
@@ -543,9 +562,9 @@ class ChartGenerator:
 
     def _style_pie_labels(
         self,
-        texts: List[Text],
-        autotexts: List[Text],
-        font_prop: Optional[fm.FontProperties],
+        texts: list[Text],
+        autotexts: list[Text],
+        font_prop: fm.FontProperties | None,
     ) -> None:
         """Apply styling to pie chart labels and autopct texts."""
         for autotext in autotexts:
@@ -565,7 +584,7 @@ class ChartGenerator:
         plt.close(fig)
         return buffer
 
-    def _create_figure(self, size_str: str) -> Tuple[Figure, Axes]:
+    def _create_figure(self, size_str: str) -> tuple[Figure, Axes]:
         """Create a matplotlib figure/axes with the given pixel size string."""
         width, height = self._parse_image_size(size_str)
         fig, ax = plt.subplots(figsize=(width / 100, height / 100))
@@ -573,8 +592,9 @@ class ChartGenerator:
 
     def _prepare_trend_line_data(
         self, data: pd.DataFrame
-    ) -> Tuple[pd.DataFrame, str, str]:
-        """Prepare data for trend line plotting.
+    ) -> tuple[pd.DataFrame, str, str]:
+        """
+        Prepare data for trend line plotting.
 
         Returns a tuple of (trend_data, time_col, amount_col).
         """
@@ -622,7 +642,7 @@ class ChartGenerator:
         ax: Axes,
         trend_data: pd.DataFrame,
         time_col: str,
-        font_prop: Optional[fm.FontProperties],
+        font_prop: fm.FontProperties | None,
     ) -> None:
         """Configure axes for trend line chart with readable labels."""
         # X ticks and labels

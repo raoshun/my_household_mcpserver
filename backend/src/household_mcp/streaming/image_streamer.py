@@ -1,4 +1,5 @@
-"""Image streaming utilities for HTTP delivery.
+"""
+Image streaming utilities for HTTP delivery.
 
 This module provides utilities for streaming chart images over HTTP.
 """
@@ -7,7 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import io
-from typing import AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
 
 try:
     from fastapi.responses import StreamingResponse
@@ -18,24 +19,28 @@ except ImportError:
 
 
 class ImageStreamer:
-    """Utility for streaming images over HTTP.
+    """
+    Utility for streaming images over HTTP.
 
     Provides chunked streaming to reduce memory pressure and
     improve response times for large images.
     """
 
     def __init__(self, chunk_size: int = 8192):
-        """Initialize image streamer.
+        """
+        Initialize image streamer.
 
         Args:
             chunk_size: Size of chunks in bytes (default: 8192 = 8KB)
+
         """
         self.chunk_size = chunk_size
 
     async def stream_bytes(
         self, image_data: bytes, delay_ms: float = 0.01
     ) -> AsyncGenerator[bytes, None]:
-        """Stream image data in chunks.
+        """
+        Stream image data in chunks.
 
         Args:
             image_data: Complete image data as bytes
@@ -44,6 +49,7 @@ class ImageStreamer:
 
         Yields:
             Chunks of image_data
+
         """
         for i in range(0, len(image_data), self.chunk_size):
             chunk = image_data[i : i + self.chunk_size]
@@ -54,7 +60,8 @@ class ImageStreamer:
     async def stream_from_buffer(
         self, buffer: io.BytesIO, delay_ms: float = 0.01
     ) -> AsyncGenerator[bytes, None]:
-        """Stream image data from BytesIO buffer.
+        """
+        Stream image data from BytesIO buffer.
 
         Args:
             buffer: BytesIO buffer containing image data
@@ -62,6 +69,7 @@ class ImageStreamer:
 
         Yields:
             Chunks of image data
+
         """
         buffer.seek(0)
         while True:
@@ -76,9 +84,10 @@ class ImageStreamer:
         self,
         image_data: bytes,
         media_type: str = "image/png",
-        filename: Optional[str] = None,
+        filename: str | None = None,
     ) -> StreamingResponse:
-        """Create FastAPI StreamingResponse for image.
+        """
+        Create FastAPI StreamingResponse for image.
 
         Args:
             image_data: Complete image data
@@ -90,6 +99,7 @@ class ImageStreamer:
 
         Raises:
             ImportError: If FastAPI is not installed
+
         """
         if not HAS_FASTAPI:
             raise ImportError(
@@ -109,13 +119,15 @@ class ImageStreamer:
 
     @staticmethod
     def bytes_to_buffer(image_bytes: bytes) -> io.BytesIO:
-        """Convert bytes to BytesIO buffer.
+        """
+        Convert bytes to BytesIO buffer.
 
         Args:
             image_bytes: Image data as bytes
 
         Returns:
             BytesIO buffer positioned at start
+
         """
         buffer = io.BytesIO(image_bytes)
         buffer.seek(0)
@@ -123,13 +135,15 @@ class ImageStreamer:
 
     @staticmethod
     def buffer_to_bytes(buffer: io.BytesIO) -> bytes:
-        """Extract bytes from BytesIO buffer.
+        """
+        Extract bytes from BytesIO buffer.
 
         Args:
             buffer: BytesIO buffer
 
         Returns:
             Complete buffer content as bytes
+
         """
         position = buffer.tell()
         buffer.seek(0)

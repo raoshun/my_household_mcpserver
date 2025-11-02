@@ -2,7 +2,7 @@
  * Tests for TrendManager
  */
 
-import { describe, test, expect, beforeEach, jest } from '@jest/globals';
+import { beforeEach, describe, expect, jest, test } from '@jest/globals';
 
 describe('TrendManager', () => {
     let trendManager;

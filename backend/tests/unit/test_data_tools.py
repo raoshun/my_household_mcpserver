@@ -86,7 +86,7 @@ def managers(temp_db: TempDB):
 
 
 def test_account_crud(managers):
-    acc, cat, tm = managers
+    acc, _cat, _tm = managers
 
     # Explicitly create required account for test isolation
     res = acc.add_account("財布", "cash", initial_balance=1000.0, is_active=True)

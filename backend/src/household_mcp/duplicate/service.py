@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -14,23 +14,27 @@ class DuplicateService:
     """重複検出・解決サービス."""
 
     def __init__(self, db_session: Session):
-        """初期化.
+        """
+        初期化.
 
         Args:
             db_session: SQLAlchemy セッション
+
         """
         self.db = db_session
 
     def detect_and_save_candidates(
-        self, options: Optional[DetectionOptions] = None
+        self, options: DetectionOptions | None = None
     ) -> int:
-        """重複候補を検出してDBに保存.
+        """
+        重複候補を検出してDBに保存.
 
         Args:
             options: 検出オプション
 
         Returns:
             保存された候補数
+
         """
         detector = DuplicateDetector(self.db, options)
         candidates = detector.detect_duplicates()
@@ -73,14 +77,16 @@ class DuplicateService:
         self.db.commit()
         return saved_count
 
-    def get_pending_candidates(self, limit: int = 10) -> List[Dict[str, Any]]:
-        """未判定の重複候補を取得.
+    def get_pending_candidates(self, limit: int = 10) -> list[dict[str, Any]]:
+        """
+        未判定の重複候補を取得.
 
         Args:
             limit: 最大取得件数
 
         Returns:
             候補リスト
+
         """
         checks = (
             self.db.query(DuplicateCheck)
@@ -123,14 +129,16 @@ class DuplicateService:
 
         return results
 
-    def get_candidate_detail(self, check_id: int) -> Optional[Dict[str, Any]]:
-        """重複候補の詳細を取得.
+    def get_candidate_detail(self, check_id: int) -> dict[str, Any] | None:
+        """
+        重複候補の詳細を取得.
 
         Args:
             check_id: チェックID
 
         Returns:
             詳細情報 (存在しない場合はNone)
+
         """
         check = (
             self.db.query(DuplicateCheck).filter(DuplicateCheck.id == check_id).first()
@@ -181,8 +189,9 @@ class DuplicateService:
             ),
         }
 
-    def confirm_duplicate(self, check_id: int, decision: str) -> Dict[str, Any]:
-        """重複判定を記録.
+    def confirm_duplicate(self, check_id: int, decision: str) -> dict[str, Any]:
+        """
+        重複判定を記録.
 
         Args:
             check_id: チェックID
@@ -190,6 +199,7 @@ class DuplicateService:
 
         Returns:
             結果情報
+
         """
         if decision not in ["duplicate", "not_duplicate", "skip"]:
             return {
@@ -255,14 +265,16 @@ class DuplicateService:
             "marked_transaction_id": marked_transaction_id,
         }
 
-    def restore_duplicate(self, transaction_id: int) -> Dict[str, Any]:
-        """誤って重複とマークした取引を復元.
+    def restore_duplicate(self, transaction_id: int) -> dict[str, Any]:
+        """
+        誤って重複とマークした取引を復元.
 
         Args:
             transaction_id: 取引ID
 
         Returns:
             結果情報
+
         """
         trans = (
             self.db.query(Transaction).filter(Transaction.id == transaction_id).first()
@@ -307,11 +319,13 @@ class DuplicateService:
             "message": f"取引ID {transaction_id} を復元しました。",
         }
 
-    def get_stats(self) -> Dict[str, Any]:
-        """重複検出の統計情報を取得.
+    def get_stats(self) -> dict[str, Any]:
+        """
+        重複検出の統計情報を取得.
 
         Returns:
             統計情報
+
         """
         total_transactions = self.db.query(Transaction).count()
         duplicate_transactions = (

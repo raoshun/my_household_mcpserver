@@ -1,4 +1,5 @@
-"""FastMCP server entry point for household budget analysis.
+"""
+FastMCP server entry point for household budget analysis.
 
 This module serves as the main entry point for the FastMCP server implementation,
 providing household budget analysis capabilities through MCP protocol.
@@ -8,7 +9,7 @@ transport configurations.
 
 import argparse
 import warnings
-from typing import Any, Optional
+from typing import Any
 
 from fastmcp import FastMCP
 
@@ -56,6 +57,7 @@ def get_category_hierarchy() -> dict[str, list[str]]:
 
     Returns:
         dict[str, list[str]]: カテゴリの階層構造(大項目: [中項目1, 中項目2, ...])を表す辞書
+
     """
     result = data_loader.category_hierarchy(year=2025, month=7)
     return dict(result)  # 明示的キャスト
@@ -77,6 +79,7 @@ def get_monthly_household(year: int, month: int) -> list[dict[str, Any]]:
 
     Returns:
         list[dict]: 支出のリスト
+
     """
     df = data_loader.load_month(year, month)
     return [dict(record) for record in df.to_dict(orient="records")]
@@ -102,6 +105,7 @@ def get_household_categories() -> dict[str, list[str]]:
 
     Returns:
         dict[str, list[str]]: カテゴリの階層構造(大項目: [中項目1, 中項目2, ...])を表す辞書
+
     """
     result = data_loader.category_hierarchy(year=2025, month=7)
     return dict(result)  # 明示的キャスト
@@ -120,9 +124,9 @@ def get_category_trend_summary() -> dict[str, Any]:
 
 @mcp.tool("get_category_trend")
 def run_get_category_trend(
-    category: Optional[str] = None,
-    start_month: Optional[str] = None,
-    end_month: Optional[str] = None,
+    category: str | None = None,
+    start_month: str | None = None,
+    end_month: str | None = None,
 ) -> dict[str, Any]:
     """カテゴリ別の支出トレンドを取得する MCP ツール。"""
 

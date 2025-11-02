@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import calendar
 import re
+from collections.abc import Generator, Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Generator, Iterable, Optional, Sequence, Tuple
 
 import pandas as pd
 
@@ -18,7 +18,7 @@ COLUMN_ALIASES = {
 }
 REQUIRED_COLUMNS = {"計算対象", "金額（円）", "日付"}
 
-MonthTuple = Tuple[int, int]
+MonthTuple = tuple[int, int]
 
 
 @dataclass(frozen=True)
@@ -46,9 +46,7 @@ class HouseholdDataLoader:
         """Public accessor for source directory (read-only)."""
         return self._config.src_dir
 
-    def load(
-        self, year: Optional[int] = None, month: Optional[int] = None
-    ) -> pd.DataFrame:
+    def load(self, year: int | None = None, month: int | None = None) -> pd.DataFrame:
         base_dir = self._config.src_dir
         if year is None:
             files = sorted(base_dir.glob("*.csv"))
@@ -93,8 +91,7 @@ class HouseholdDataLoader:
             match = pattern.match(path.name)
             if match:
                 detected.add((int(match.group(1)), int(match.group(2))))
-        for year, month in sorted(detected):
-            yield year, month
+        yield from sorted(detected)
 
     def category_hierarchy(
         self, *, year: int | None = None, month: int | None = None
@@ -198,7 +195,7 @@ def month_csv_path(year: int, month: int, src_dir: str = "data") -> Path:
 
 
 def load_csv_from_month(
-    year: Optional[int], month: Optional[int], src_dir: str = "data"
+    year: int | None, month: int | None, src_dir: str = "data"
 ) -> pd.DataFrame:  # pragma: no cover
     return HouseholdDataLoader(src_dir).load(year=year, month=month)
 
@@ -218,8 +215,8 @@ def iter_available_months(
 __all__ = [
     "HouseholdDataLoader",
     "LoaderConfig",
-    "month_csv_path",
-    "load_csv_from_month",
-    "load_csv_for_months",
     "iter_available_months",
+    "load_csv_for_months",
+    "load_csv_from_month",
+    "month_csv_path",
 ]

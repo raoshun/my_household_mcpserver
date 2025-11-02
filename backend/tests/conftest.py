@@ -37,14 +37,14 @@ def anyio_backend():
 # ========================= Optional Extras Auto-Skip =========================
 # Detect optional dependencies availability
 try:  # DB extras (sqlalchemy)
-    import sqlalchemy  # noqa: F401
+    import sqlalchemy
 
     HAS_DB = True
 except Exception:
     HAS_DB = False
 
 try:  # Web/streaming extras (fastapi)
-    import fastapi  # noqa: F401
+    import fastapi
 
     HAS_WEB = True
 except Exception:

@@ -4,8 +4,6 @@ NOTE: These tests require the 'db' extra (sqlalchemy).
 They are skipped automatically when sqlalchemy is unavailable.
 """
 
-# flake8: noqa: F811
-
 from datetime import date, datetime
 from decimal import Decimal
 

@@ -178,7 +178,7 @@ def test_detect_with_amount_tolerance(db_manager):  # type: ignore[no-untyped-de
 
         # 検出されるべき
         assert len(candidates) >= 1
-        t1, t2, score = candidates[0]
+        t1, t2, _score = candidates[0]
         assert abs(float(t1.amount) - float(t2.amount)) <= 100
 
 
@@ -254,7 +254,7 @@ def test_similarity_score_calculation(db_manager):  # type: ignore[no-untyped-de
 
         # 完全一致のスコアは1.0に近いべき
         assert len(candidates) == 1
-        t1, t2, score = candidates[0]
+        _t1, _t2, score = candidates[0]
         assert score >= 0.95
 
 

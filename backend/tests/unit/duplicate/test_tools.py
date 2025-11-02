@@ -1,7 +1,5 @@
 """Unit tests for duplicate detection MCP tools."""
 
-# flake8: noqa: F811
-
 from datetime import datetime
 from decimal import Decimal
 from unittest.mock import MagicMock, Mock, patch

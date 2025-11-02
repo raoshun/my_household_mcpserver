@@ -40,6 +40,7 @@ analyzer: Optional[BudgetAnalyzer] = None
 ```
 
 **問題点**:
+
 - グローバル状態による副作用
 - テストでのモック困難
 - スレッドセーフでない
@@ -51,6 +52,7 @@ analyzer: Optional[BudgetAnalyzer] = None
 **場所**: `src/household_mcp/server.py:207-269`
 
 **問題点**:
+
 - `HouseholdDataLoader` と機能重複
 - 独自の CSV 読み込みロジック
 - `monthly_summary` ツールのみで使用
@@ -62,6 +64,7 @@ analyzer: Optional[BudgetAnalyzer] = None
 **場所**: server.py 6箇所
 
 **問題点**:
+
 - flake8 警告
 - 可読性の低下
 
@@ -72,6 +75,7 @@ analyzer: Optional[BudgetAnalyzer] = None
 **場所**: `src/household_mcp/server.py:294-416`
 
 **問題点**:
+
 - 123行の長い関数
 - 複数の責務（データ取得・集計・フォーマット）
 - ネストが深い
@@ -83,6 +87,7 @@ analyzer: Optional[BudgetAnalyzer] = None
 **場所**: `src/household_mcp/visualization/chart_generator.py:233-341`
 
 **問題点**:
+
 - 3つのメソッドに分割（良い設計）
 - プラットフォーム固有パスのハードコード
 
@@ -101,6 +106,7 @@ analyzer: Optional[BudgetAnalyzer] = None
 **アプローチ**:
 
 **Option A: HouseholdDataLoader への統合**
+
 ```python
 # dataloader.py に追加
 class HouseholdDataLoader:
@@ -112,12 +118,13 @@ class HouseholdDataLoader:
 ```
 
 **Option B: 独立したサービスクラスとして再設計**
+
 ```python
 # services/summary_service.py
 class MonthlySummaryService:
     def __init__(self, data_loader: HouseholdDataLoader):
         self.data_loader = data_loader
-    
+
     def get_summary(self, year: int, month: int) -> dict:
         # DI を活用したテスタブルな設計
         ...
@@ -141,27 +148,28 @@ class CategoryAnalysisTool:
     def __init__(self, data_loader: HouseholdDataLoader):
         self.data_loader = data_loader
         self.analyzer = CategoryTrendAnalyzer(loader=data_loader)
-    
+
     def analyze(self, category: str, months: int) -> dict:
         """主要ロジック"""
         available_months = self._get_available_months(months)
         metrics = self._calculate_metrics(category, available_months)
         return self._format_response(category, metrics)
-    
+
     def _get_available_months(self, months: int) -> list:
         """利用可能月の取得"""
         ...
-    
+
     def _calculate_metrics(self, category: str, months: list) -> list:
         """メトリクス計算"""
         ...
-    
+
     def _format_response(self, category: str, metrics: list) -> dict:
         """レスポンス整形"""
         ...
 ```
 
 **メリット**:
+
 - 各メソッドが30行以内
 - 単体テスト可能
 - 責務が明確
@@ -219,7 +227,7 @@ class MCPErrorHandler:
             "context": context,
             "timestamp": datetime.now().isoformat()
         }
-    
+
     @staticmethod
     def handle_validation_error(e: ValidationError, context: dict) -> dict:
         """ValidationError の標準処理"""
@@ -260,6 +268,7 @@ Provides natural language interface and trend analysis capabilities.
 **目標**: 全モジュール 90% 以上
 
 **アプローチ**:
+
 - エッジケースのテスト追加
 - 統合テストの拡充
 
@@ -346,13 +355,16 @@ Provides natural language interface and trend analysis capabilities.
 現在の実装品質は**良好**です。クリティカルな問題はありませんが、以下を推奨します：
 
 **短期（今週）**:
+
 - ✅ 長い行の修正（0.1d）
 
 **中期（来週）**:
+
 - 設定値外部化（0.3d）
 - エラーハンドリング統一（0.3d）
 
 **長期（余裕があれば）**:
+
 - BudgetAnalyzer 統合（0.5d）
 - category_analysis 分割（0.5d）
 - テストカバレッジ向上（1.0d）

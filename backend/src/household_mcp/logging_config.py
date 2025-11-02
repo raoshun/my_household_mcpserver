@@ -1,4 +1,5 @@
-"""Logging configuration module for household MCP server.
+"""
+Logging configuration module for household MCP server.
 
 This module provides utilities to configure logging, including
 structured logging with structlog when the 'logging' extra is installed.
@@ -8,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import sys
-from typing import Any, Optional
+from typing import Any
 
 # Check if structlog is available
 try:
@@ -24,7 +25,8 @@ def setup_logging(
     use_structlog: bool = False,
     json_format: bool = False,
 ) -> None:
-    """Configure logging for the application.
+    """
+    Configure logging for the application.
 
     Args:
         level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
@@ -37,6 +39,7 @@ def setup_logging(
 
         >>> # Structured logging with JSON output
         >>> setup_logging(level="DEBUG", use_structlog=True, json_format=True)
+
     """
     log_level = getattr(logging, level.upper(), logging.INFO)
 
@@ -105,8 +108,9 @@ def _setup_structlog(level: int, json_format: bool) -> None:
     )
 
 
-def get_logger(name: Optional[str] = None) -> Any:
-    """Get a logger instance.
+def get_logger(name: str | None = None) -> Any:
+    """
+    Get a logger instance.
 
     Args:
         name: Logger name (default: calling module name)
@@ -117,6 +121,7 @@ def get_logger(name: Optional[str] = None) -> Any:
     Example:
         >>> logger = get_logger(__name__)
         >>> logger.info("Application started", version="0.1.0")
+
     """
     if HAS_STRUCTLOG:
         return structlog.get_logger(name)

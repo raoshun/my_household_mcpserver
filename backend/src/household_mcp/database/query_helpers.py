@@ -3,7 +3,7 @@
 # mypy: disable-error-code="no-any-return,arg-type,misc"
 
 from datetime import date
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -13,12 +13,13 @@ from household_mcp.database.models import Transaction
 
 def get_active_transactions(
     db: Session,
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
-    category: Optional[str] = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+    category: str | None = None,
     exclude_duplicates: bool = True,
-) -> List[Transaction]:
-    """集計対象の取引を取得（重複除外オプション付き）.
+) -> list[Transaction]:
+    """
+    集計対象の取引を取得（重複除外オプション付き）.
 
     Args:
         db: データベースセッション
@@ -29,6 +30,7 @@ def get_active_transactions(
 
     Returns:
         取引のリスト
+
     """
     query = db.query(Transaction)
 
@@ -49,8 +51,9 @@ def get_active_transactions(
 
 def get_monthly_summary(
     db: Session, year: int, month: int, exclude_duplicates: bool = True
-) -> Dict[str, Any]:
-    """月次サマリーを取得.
+) -> dict[str, Any]:
+    """
+    月次サマリーを取得.
 
     Args:
         db: データベースセッション
@@ -66,6 +69,7 @@ def get_monthly_summary(
             "transaction_count": 50,
             "duplicate_count": 2
         }
+
     """
     # 月の開始日と終了日を計算
     start_date = date(year, month, 1)
@@ -108,8 +112,9 @@ def get_category_breakdown(
     start_date: date,
     end_date: date,
     exclude_duplicates: bool = True,
-) -> List[Dict[str, Any]]:
-    """カテゴリ別集計を取得.
+) -> list[dict[str, Any]]:
+    """
+    カテゴリ別集計を取得.
 
     Args:
         db: データベースセッション
@@ -126,6 +131,7 @@ def get_category_breakdown(
             },
             ...
         ]
+
     """
     query = db.query(
         Transaction.category_major,
@@ -152,8 +158,9 @@ def get_category_breakdown(
     ]
 
 
-def get_duplicate_impact_report(db: Session, year: int, month: int) -> Dict[str, Any]:
-    """重複が集計に与える影響のレポートを生成.
+def get_duplicate_impact_report(db: Session, year: int, month: int) -> dict[str, Any]:
+    """
+    重複が集計に与える影響のレポートを生成.
 
     Args:
         db: データベースセッション
@@ -169,6 +176,7 @@ def get_duplicate_impact_report(db: Session, year: int, month: int) -> Dict[str,
                 "duplicate_transaction_count": 2
             }
         }
+
     """
     with_dup = get_monthly_summary(db, year, month, exclude_duplicates=False)
     without_dup = get_monthly_summary(db, year, month, exclude_duplicates=True)

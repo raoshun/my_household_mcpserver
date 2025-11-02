@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """トレンド分析機能の統合テスト (FR-019)
 
 NOTE: These tests require the 'web' (and 'streaming') extras.

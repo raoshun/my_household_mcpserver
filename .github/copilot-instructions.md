@@ -14,6 +14,7 @@
 ### 例外（ユーザーが明示的に要求した場合のみ）
 
 以下の場合に限り、追加のMarkdownファイルを作成できます：
+
 - ユーザーが「レポートを作成して」と明示的に依頼した場合
 - ユーザーが「チェックリストを作成して」と明示的に依頼した場合
 - 特定のファイル名を指定された場合
@@ -212,6 +213,7 @@ When a user requests new functionality:
 **WRONG Response**: ❌ Immediately writing code
 
 **CORRECT Response**: ✅
+
 ```
 私は、機能Xの実装を始める前に、仕様を明文化します。
 
@@ -258,6 +260,7 @@ Refs: FR-XXX (requirements.md)
 **Examples:**
 
 ✅ **GOOD Commits** (Task-level):
+
 ```
 [TASK-701-1] Add REST API endpoints to http_server.py
 
@@ -280,6 +283,7 @@ Refs: FR-018-2
 ```
 
 ❌ **BAD Commits** (Too granular or too broad):
+
 ```
 Fixed typo                          # Too small, no task reference
 Updated multiple files              # Too vague
@@ -305,6 +309,7 @@ Implemented entire webapp           # Too large, multiple tasks
 ### Atomic Commits
 
 Each commit should be:
+
 - **Atomic**: Contains one complete, logical change
 - **Self-contained**: Can be reverted without breaking other features
 - **Testable**: Code compiles and tests pass
@@ -321,6 +326,7 @@ Each commit should be:
 ### Multi-Task Commits (Exceptional)
 
 Only combine tasks in one commit if:
+
 - Tasks are tightly coupled and cannot be separated
 - All tasks are trivial (e.g., typo fixes across multiple files)
 - Explicitly document in commit message: `[TASK-701, TASK-702] ...`
@@ -328,6 +334,7 @@ Only combine tasks in one commit if:
 ### Documentation Commits
 
 Documentation updates can be committed separately if:
+
 - No code changes (docs-only update)
 - Use format: `[DOCS] Update requirements.md with FR-XXX`
 

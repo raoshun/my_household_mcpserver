@@ -53,6 +53,7 @@ uv run run_task "Start Dev Server" /home/shun-h/my_household_mcpserver
 ```
 
 サーバーが起動すると、以下のエンドポイントが利用可能になります：
+
 - `http://localhost:8000` - APIサーバー
 - `http://localhost:8000/docs` - API仕様（Swagger UI）
 
@@ -94,9 +95,11 @@ CORS設定が有効な場合、`webapp/index.html` をブラウザで直接開�
 ### エンドポイント
 
 #### `GET /api/available-months`
+
 利用可能な年月の一覧を取得
 
 **レスポンス:**
+
 ```json
 {
   "success": true,
@@ -108,9 +111,11 @@ CORS設定が有効な場合、`webapp/index.html` をブラウザで直接開�
 ```
 
 #### `GET /api/monthly`
+
 月次データを取得
 
 **パラメータ:**
+
 - `year` (int): 年
 - `month` (int): 月（1-12）
 - `output_format` (str): 出力形式（"json" または "image"）
@@ -118,6 +123,7 @@ CORS設定が有効な場合、`webapp/index.html` をブラウザで直接開�
 - `image_size` (str): 画像サイズ（例: "800x600"）
 
 **レスポンス:**
+
 ```json
 {
   "success": true,
@@ -136,13 +142,16 @@ CORS設定が有効な場合、`webapp/index.html` をブラウザで直接開�
 ```
 
 #### `GET /api/category-hierarchy`
+
 カテゴリ階層を取得
 
 **パラメータ:**
+
 - `year` (int): 年（デフォルト: 2025）
 - `month` (int): 月（デフォルト: 1）
 
 #### `GET /health`
+
 ヘルスチェック
 
 ## 🎨 カスタマイズ

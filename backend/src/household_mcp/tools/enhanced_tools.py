@@ -1,4 +1,5 @@
-"""Enhanced MCP tools for image-capable responses.
+"""
+Enhanced MCP tools for image-capable responses.
 
 Provides wrappers that can return either text or image outputs.
 Connects ChartGenerator → Global ChartCache → HTTP endpoint URL.
@@ -8,7 +9,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 import pandas as pd
 
@@ -46,7 +47,7 @@ def _parse_image_size(size_str: str) -> str:
     return size_str if "x" in size_str else "800x600"
 
 
-def _build_cache_key_params(**kwargs: Any) -> Dict[str, Any]:
+def _build_cache_key_params(**kwargs: Any) -> dict[str, Any]:
     # Keep stable ordering by relying on ChartCache.sort_keys=True
     return kwargs
 
@@ -59,8 +60,9 @@ def enhanced_monthly_summary(
     graph_type: str = "pie",
     image_size: str = "800x600",
     image_format: str = "png",
-) -> Dict[str, Any]:
-    """Enhanced monthly summary that can return an image URL.
+) -> dict[str, Any]:
+    """
+    Enhanced monthly summary that can return an image URL.
 
     Returns dict with either text data or image metadata.
     """
@@ -176,8 +178,9 @@ def enhanced_category_trend(
     graph_type: str = "line",
     image_size: str = "1000x600",
     image_format: str = "png",
-) -> Dict[str, Any]:
-    """Enhanced category trend that can return an image URL.
+) -> dict[str, Any]:
+    """
+    Enhanced category trend that can return an image URL.
 
     Returns dict with either text data or image metadata.
     """

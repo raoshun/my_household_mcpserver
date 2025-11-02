@@ -91,7 +91,7 @@ class TestCategoryAnalysisTool:
     )
     def test_category_analysis_no_data(self, mock_data_loader):
         """Test category_analysis when no CSV files are available."""
-        pass  # noqa: F401
+        pass
 
     @pytest.mark.slow
     @patch("household_mcp.server._get_data_loader")

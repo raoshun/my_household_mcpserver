@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
-from typing import Iterable, Mapping, Optional, Sequence
 
 from ..exceptions import ValidationError
 
@@ -16,7 +16,7 @@ _MONTH_PATTERN = re.compile(r"^(?P<year>\d{4})[\-/年]?(?P<month>\d{1,2})")
 class TrendQuery:
     """Resolved query parameters for trend analysis."""
 
-    category: Optional[str]
+    category: str | None
     start: date
     end: date
 
@@ -70,8 +70,8 @@ def sorted_available_months(
 
 
 def _resolve_category(
-    category: Optional[str], available_categories: Optional[Iterable[str]]
-) -> Optional[str]:
+    category: str | None, available_categories: Iterable[str] | None
+) -> str | None:
     if category is None:
         return None
 
@@ -88,14 +88,15 @@ def _resolve_category(
 
 def resolve_trend_query(
     *,
-    category: Optional[str],
-    start_month: Optional[str],
-    end_month: Optional[str],
+    category: str | None,
+    start_month: str | None,
+    end_month: str | None,
     available_months: Sequence[Mapping[str, int]],
-    available_categories: Optional[Iterable[str]] = None,
+    available_categories: Iterable[str] | None = None,
     default_window: int = 12,
 ) -> TrendQuery:
-    """Resolve raw query parameters to canonical form.
+    """
+    Resolve raw query parameters to canonical form.
 
     Args:
         category: Optional category name.
@@ -107,6 +108,7 @@ def resolve_trend_query(
 
     Returns:
         TrendQuery with normalized values.
+
     """
 
     months = sorted_available_months(available_months)

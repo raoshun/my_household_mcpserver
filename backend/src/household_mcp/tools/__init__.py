@@ -1,6 +1,6 @@
 """MCP tool helpers for the household server."""
 
-from .duplicate_tools import (  # noqa: F401
+from .duplicate_tools import (
     confirm_duplicate,
     detect_duplicates,
     get_duplicate_candidate_detail,
@@ -9,7 +9,7 @@ from .duplicate_tools import (  # noqa: F401
     restore_duplicate,
     set_database_manager,
 )
-from .trend_tool import category_trend_summary, get_category_trend  # noqa: F401
+from .trend_tool import category_trend_summary, get_category_trend
 
 __all__ = [
     "category_trend_summary",

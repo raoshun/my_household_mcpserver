@@ -6,7 +6,8 @@ from pydantic import BaseModel
 
 
 class Transaction(BaseModel):
-    """Represents a financial transaction.
+    """
+    Represents a financial transaction.
 
     Attributes:
         id: Unique identifier for the transaction.
@@ -15,6 +16,7 @@ class Transaction(BaseModel):
         category_id: ID of the category this transaction belongs to.
         account_id: ID of the account this transaction is associated with.
         memo: Optional memo or description for the transaction.
+
     """
 
     id: int

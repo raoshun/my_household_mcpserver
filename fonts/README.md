@@ -9,15 +9,17 @@
 Google が提供するオープンソースの日本語フォントです。
 
 1. **ダウンロード**:
+
    ```bash
    # Debian/Ubuntu の場合
    sudo apt-get install fonts-noto-cjk
-   
+
    # または、直接ダウンロード
    wget https://github.com/googlefonts/noto-cjk/raw/main/Sans/OTF/Japanese/NotoSansCJK-Regular.ttc
    ```
 
 2. **配置**:
+
    ```bash
    cp /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc ./fonts/
    # または
@@ -35,7 +37,7 @@ Google が提供するオープンソースの日本語フォントです。
 ## ライセンス
 
 - **Noto Sans CJK**: SIL Open Font License 1.1
-  - https://github.com/googlefonts/noto-cjk
+  - <https://github.com/googlefonts/noto-cjk>
 
 ## 使用方法
 

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
-from typing import List, Optional, Sequence, Tuple
 
 import pandas as pd
 
@@ -12,7 +12,7 @@ from ..dataloader import HouseholdDataLoader
 from ..exceptions import AnalysisError, DataSourceError
 from ..utils.query_parser import TrendQuery
 
-MonthTuple = Tuple[int, int]
+MonthTuple = tuple[int, int]
 
 
 @dataclass(frozen=True)
@@ -22,13 +22,14 @@ class TrendMetrics:
     category: str
     month: date
     amount: int
-    month_over_month: Optional[float]
-    year_over_year: Optional[float]
-    moving_average: Optional[float]
+    month_over_month: float | None
+    year_over_year: float | None
+    moving_average: float | None
 
 
 class CategoryTrendAnalyzer:
-    """Aggregate household CSV data into monthly trend metrics.
+    """
+    Aggregate household CSV data into monthly trend metrics.
 
     DI 対応: 既存の `src_dir` だけでなく、任意の ``HouseholdDataLoader`` を
     直接注入できるようにしテスト容易性・柔軟性を高める。
@@ -40,9 +41,9 @@ class CategoryTrendAnalyzer:
     ) -> None:
         # 優先: 明示的に渡された loader / フォールバック: src_dir から新規作成
         self._loader: HouseholdDataLoader = loader or HouseholdDataLoader(src_dir)
-        self._cache: dict[Tuple[MonthTuple, ...], pd.DataFrame] = {}
+        self._cache: dict[tuple[MonthTuple, ...], pd.DataFrame] = {}
         self._cache_signature: dict[
-            Tuple[MonthTuple, ...], Tuple[Tuple[str, float], ...]
+            tuple[MonthTuple, ...], tuple[tuple[str, float], ...]
         ] = {}
 
     # 互換用プロパティ
@@ -51,7 +52,7 @@ class CategoryTrendAnalyzer:
         # 互換用公開アクセサ
         return str(self._loader.src_dir)
 
-    def metrics_for_query(self, query: TrendQuery) -> List[TrendMetrics]:
+    def metrics_for_query(self, query: TrendQuery) -> list[TrendMetrics]:
         """Return metrics for the given query parameters."""
 
         month_pairs = self._expand_months(query.start, query.end)
@@ -69,8 +70,8 @@ class CategoryTrendAnalyzer:
     def metrics_for_category(
         self,
         months: Sequence[MonthTuple],
-        category: Optional[str] = None,
-    ) -> List[TrendMetrics]:
+        category: str | None = None,
+    ) -> list[TrendMetrics]:
         """Return metrics for the given month list and optional category."""
 
         month_pairs = self._normalize_months(months)
@@ -87,7 +88,7 @@ class CategoryTrendAnalyzer:
         self,
         months: Sequence[MonthTuple],
         top_n: int = 3,
-    ) -> List[str]:
+    ) -> list[str]:
         """Return the top-N categories by total spending for specified months."""
 
         month_pairs = self._normalize_months(months)
@@ -103,7 +104,7 @@ class CategoryTrendAnalyzer:
         top = totals.sort_values("abs_amount", ascending=False).head(top_n)
         return [str(cat) for cat in top["category"].tolist()]
 
-    def _get_aggregated(self, months: Tuple[MonthTuple, ...]) -> pd.DataFrame:
+    def _get_aggregated(self, months: tuple[MonthTuple, ...]) -> pd.DataFrame:
         signature = self._compute_signature(months)
 
         cached = self._cache.get(months)
@@ -144,8 +145,8 @@ class CategoryTrendAnalyzer:
         return grouped
 
     @staticmethod
-    def _to_metrics(df: pd.DataFrame) -> List[TrendMetrics]:
-        metrics: List[TrendMetrics] = []
+    def _to_metrics(df: pd.DataFrame) -> list[TrendMetrics]:
+        metrics: list[TrendMetrics] = []
         for _, row in df.iterrows():
             month_ts = row["年月"]
             if pd.isna(month_ts):  # pragma: no cover - defensive guard
@@ -176,18 +177,18 @@ class CategoryTrendAnalyzer:
         return metrics
 
     @staticmethod
-    def _normalize_months(months: Sequence[MonthTuple]) -> Tuple[MonthTuple, ...]:
+    def _normalize_months(months: Sequence[MonthTuple]) -> tuple[MonthTuple, ...]:
         if not months:
             raise AnalysisError("月の一覧が指定されていません")
         normalized = tuple(sorted((int(year), int(month)) for year, month in months))
         return normalized
 
     @staticmethod
-    def _expand_months(start: date, end: date) -> Tuple[MonthTuple, ...]:
+    def _expand_months(start: date, end: date) -> tuple[MonthTuple, ...]:
         if start > end:
             raise AnalysisError("開始月は終了月より前である必要があります")
 
-        months: List[MonthTuple] = []
+        months: list[MonthTuple] = []
         year, month = start.year, start.month
         while True:
             months.append((year, month))
@@ -211,7 +212,8 @@ class CategoryTrendAnalyzer:
         return len(self._cache)
 
     def cache_stats(self) -> dict[str, int | list[str]]:
-        """Return detailed cache statistics.
+        """
+        Return detailed cache statistics.
 
         Returns:
             Dictionary containing:
@@ -225,6 +227,7 @@ class CategoryTrendAnalyzer:
             >>> stats = analyzer.cache_stats()
             >>> print(stats)
             {'size': 1, 'entries': ['2022-01~2022-02'], 'total_months': 2}
+
         """
         entries: list[str] = []
         unique_months: set[MonthTuple] = set()
@@ -246,11 +249,11 @@ class CategoryTrendAnalyzer:
         }
 
     def _compute_signature(
-        self, months: Tuple[MonthTuple, ...]
-    ) -> Tuple[Tuple[str, float], ...]:
+        self, months: tuple[MonthTuple, ...]
+    ) -> tuple[tuple[str, float], ...]:
         """Return a signature based on CSV paths and their modification times."""
 
-        signature: list[Tuple[str, float]] = []
+        signature: list[tuple[str, float]] = []
         for year, month in months:
             try:
                 path = self._loader.month_csv_path(year, month)

@@ -1,4 +1,5 @@
-"""Compatibility shim for household_mcp.server package.
+"""
+Compatibility shim for household_mcp.server package.
 
 This package path conflicted with the existing module `household_mcp/server.py`.
 To maintain backward compatibility (tests import `household_mcp.server` expecting
@@ -15,17 +16,19 @@ from pathlib import Path
 
 # Re-export the HTTP app factory from the non-conflicting web package
 try:
-    from household_mcp.web import create_http_app  # noqa: F401
+    from household_mcp.web import create_http_app
 except Exception:  # pragma: no cover - streaming extras may be absent
     # Keep import-time safe when FastAPI extras are not installed
     create_http_app = None  # type: ignore
 
 
 def _load_legacy_server_module():
-    """Load the original module file household_mcp/server.py by path.
+    """
+    Load the original module file household_mcp/server.py by path.
 
     Returns:
         The loaded module object.
+
     """
     # This __init__.py is at .../household_mcp/server/__init__.py
     # The legacy module is at .../household_mcp/server.py (one level up)
@@ -57,8 +60,8 @@ _get_data_loader = getattr(_server, "_get_data_loader", None)
 # CRITICAL: Replace _server module's internal functions with our re-exported ones
 # so that when category_analysis() calls _get_data_loader(), it uses the one from
 # this module (which tests can mock), not the original _server module's version
-setattr(_server, "_data_dir", _data_dir)
-setattr(_server, "_get_data_loader", _get_data_loader)
+_server._data_dir = _data_dir
+_server._get_data_loader = _get_data_loader
 
 # Re-export commonly used analysis tools (unwrap if decorated)
 _monthly_summary = getattr(_server, "monthly_summary", None)
@@ -142,21 +145,21 @@ tool_get_duplicate_stats = (
 )
 
 __all__ = [
+    "_data_dir",
+    "_data_loader",
+    "_db_manager",
+    "_get_data_loader",
+    "app",
+    "category_analysis",
+    "create_http_app",
+    "find_categories",
     "list_tools",
     "list_tools_for_test",
     "mcp",
-    "app",
-    "create_http_app",
-    "_db_manager",
-    "_data_loader",
-    "_data_dir",
-    "_get_data_loader",
     "monthly_summary",
-    "category_analysis",
-    "find_categories",
+    "tool_confirm_duplicate",
     "tool_detect_duplicates",
     "tool_get_duplicate_candidates",
-    "tool_confirm_duplicate",
-    "tool_restore_duplicate",
     "tool_get_duplicate_stats",
+    "tool_restore_duplicate",
 ]
