@@ -16,6 +16,9 @@ import pandas as pd
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
+
+    # 型検査用にのみ DatabaseManager をインポート（実行時には遅延インポート）
+    from household_mcp.database import DatabaseManager  # noqa: F401
 else:
     try:
         from fastapi import FastAPI
@@ -24,7 +27,6 @@ else:
 
 from fastmcp import FastMCP
 
-from household_mcp.database import DatabaseManager
 from household_mcp.dataloader import HouseholdDataLoader
 from household_mcp.exceptions import DataSourceError
 from household_mcp.tools import duplicate_tools
@@ -38,6 +40,7 @@ try:
     HAS_HTTP_SERVER = True
 except ImportError:
     HAS_HTTP_SERVER = False
+    create_http_app = None
 
 # Suppress third-party deprecation warnings at runtime
 warnings.filterwarnings(
@@ -68,7 +71,9 @@ mcp = FastMCP("my_household_mcp")
 # Lazily initialize data loader to avoid import-time failures in environments
 # (e.g., CI) where the data directory isn't present.
 _data_loader: Optional[HouseholdDataLoader] = None
-_db_manager: Optional[DatabaseManager] = None
+# DatabaseManager はオプショナル依存（db/SQLAlchemy）に含まれるため、
+# ここでは型のみ参照し、実体のインポートは使用時に遅延させる。
+_db_manager: Optional["DatabaseManager"] = None
 
 
 def _data_dir() -> str:
@@ -88,11 +93,19 @@ def _get_data_loader() -> HouseholdDataLoader:
     return _data_loader
 
 
-def _get_db_manager() -> DatabaseManager:
+def _get_db_manager() -> "DatabaseManager":
     """データベースマネージャーを取得（遅延初期化）."""
     global _db_manager
     if _db_manager is None:
         db_path = os.path.join(_data_dir(), "household.db")
+        # 遅延インポート：db エクストラが未インストール環境では ImportError を投げる
+        try:
+            from household_mcp.database import DatabaseManager
+        except Exception as e:  # noqa: BLE001
+            raise ImportError(
+                "Database features are not available. Install with '.[db]' or '.[full]'"
+            ) from e
+
         _db_manager = DatabaseManager(db_path)
         _db_manager.initialize_database()
         # duplicate_toolsにデータベースマネージャーを設定
@@ -542,7 +555,7 @@ def tool_enhanced_monthly_summary(
             image_size=image_size,
             image_format=image_format,
         )
-        return result  # type: ignore[return-value]
+        return cast(Dict[str, Any], result)
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -572,12 +585,13 @@ def tool_detect_duplicates(
     """
     try:
         _get_db_manager()  # データベースを初期化
-        return duplicate_tools.detect_duplicates(
+        result = duplicate_tools.detect_duplicates(
             date_tolerance_days=date_tolerance_days,
             amount_tolerance_abs=amount_tolerance_abs,
             amount_tolerance_pct=amount_tolerance_pct,
             min_similarity_score=min_similarity_score,
         )
+        return cast(Dict[str, Any], result)
     except Exception as e:
         return {"success": False, "error": f"重複検出に失敗しました: {str(e)}"}
 
@@ -598,7 +612,8 @@ def tool_get_duplicate_candidates(limit: int = 10) -> Dict[str, Any]:
     """
     try:
         _get_db_manager()  # データベースを初期化
-        return duplicate_tools.get_duplicate_candidates(limit=limit)
+        result = duplicate_tools.get_duplicate_candidates(limit=limit)
+        return cast(Dict[str, Any], result)
     except Exception as e:
         return {"success": False, "error": f"重複候補の取得に失敗しました: {str(e)}"}
 
@@ -629,10 +644,11 @@ def tool_confirm_duplicate(
                 "success": False,
                 "error": f"無効な判定: {decision}。'duplicate', 'not_duplicate', 'skip'のいずれかを指定してください。",
             }
-        return duplicate_tools.confirm_duplicate(
+        result = duplicate_tools.confirm_duplicate(
             check_id=check_id,
-            decision=decision,  # type: ignore[arg-type]
+            decision=decision,  # type: ignore
         )
+        return cast(Dict[str, Any], result)
     except Exception as e:
         return {"success": False, "error": f"判定の記録に失敗しました: {str(e)}"}
 
@@ -653,7 +669,8 @@ def tool_restore_duplicate(transaction_id: int) -> Dict[str, Any]:
     """
     try:
         _get_db_manager()  # データベースを初期化
-        return duplicate_tools.restore_duplicate(transaction_id=transaction_id)
+        result = duplicate_tools.restore_duplicate(transaction_id=transaction_id)
+        return cast(Dict[str, Any], result)
     except Exception as e:
         return {"success": False, "error": f"取引の復元に失敗しました: {str(e)}"}
 
@@ -671,7 +688,8 @@ def tool_get_duplicate_stats() -> Dict[str, Any]:
     """
     try:
         _get_db_manager()  # データベースを初期化
-        return duplicate_tools.get_duplicate_stats()
+        result = duplicate_tools.get_duplicate_stats()
+        return cast(Dict[str, Any], result)
     except Exception as e:
         return {"success": False, "error": f"統計情報の取得に失敗しました: {str(e)}"}
 
@@ -715,7 +733,7 @@ async def list_tools() -> Sequence[Any]:
 # FastAPI/uvicorn用のASGIアプリエクスポート
 # HTTP streaming機能が有効な場合は create_http_app を使用
 try:
-    if HAS_HTTP_SERVER and FastAPI is not None:
+    if HAS_HTTP_SERVER and FastAPI is not None and create_http_app is not None:
         app = create_http_app(
             enable_cors=True,
             allowed_origins=["*"],
