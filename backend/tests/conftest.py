@@ -27,7 +27,7 @@ def pytest_configure():
         csv_files = list(data_path.glob("*.csv"))
         print(f"   CSV files: {len(csv_files)}")
 
-    # noqa: E501 - matplotlib glyph warnings (already filtered in code)
+    # Suppress matplotlib glyph warnings (already filtered in code)
     warnings.filterwarnings(
         "ignore",
         message=r"Glyph .* missing from current font",
