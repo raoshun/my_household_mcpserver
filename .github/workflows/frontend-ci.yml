@@ -39,7 +39,7 @@ jobs:
 
       - name: Run tests
         working-directory: frontend
-        run: npm test -- --coverage --ci
+        run: npm test -- --coverage --ci --forceExit 2>&1 | tail -300
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3

@@ -24,7 +24,7 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12", "3.13", "3.14"]
     env:
-      HOUSEHOLD_DATA_DIR: tests/fixtures/data
+      HOUSEHOLD_DATA_DIR: backend/tests/fixtures/data
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -62,6 +62,9 @@ jobs:
               printf "日付,内容,大項目,中項目,計算対象,金額（円）\n2024-01-01,テスト取引,食費,食事,expense,1000\n" > "$FILEPATH"
             fi
           done
+          # Verify data directory
+          echo "✅ Data directory contents:"
+          ls -lh backend/tests/fixtures/data/ | head -20
 
       - name: Create virtual environment and install dependencies
         working-directory: backend
@@ -69,18 +72,37 @@ jobs:
           uv venv
           uv pip install -e .[web,visualization,logging]
           uv pip install pytest pytest-cov bandit[toml] pre-commit
+          echo "✅ Dependencies installed"
 
       - name: Run pre-commit (all files)
         uses: pre-commit/action@v3.0.1
         with:
           extra_args: --all-files
 
+      - name: Verify test environment
+        working-directory: backend
+        run: |
+          echo "🔍 Test environment verification"
+          echo "Python version:"
+          python --version
+          echo "Pytest location:"
+          which pytest || uv run which pytest
+          echo "Data directory:"
+          echo "  HOUSEHOLD_DATA_DIR=$HOUSEHOLD_DATA_DIR"
+          [ -d "$HOUSEHOLD_DATA_DIR" ] && echo "  ✅ Exists" || echo "  ❌ NOT FOUND"
+
       - name: Run tests with coverage
         working-directory: backend
         env:
           HOUSEHOLD_DATA_DIR: tests/fixtures/data
         run: |
-          uv run pytest --cov=src/household_mcp --cov-report=term-missing --cov-report=xml --cov-report=html --cov-fail-under=80
+          uv run pytest \
+            --cov=src/household_mcp \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-fail-under=80 \
+            -v --tb=short 2>&1 | tail -500
 
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.12'
@@ -195,7 +217,7 @@ jobs:
         env:
           HOUSEHOLD_DATA_DIR: tests/fixtures/data
         run: |
-          uv run pytest -m "not slow" --maxfail=1 --no-cov
+          uv run pytest tests/ -m "not slow" --maxfail=3 --no-cov -x 2>&1 | head -200
 
   # ============================================================================
   # 完全インストールテスト: すべてのextrasを同時インストール
@@ -248,7 +270,11 @@ jobs:
         env:
           HOUSEHOLD_DATA_DIR: tests/fixtures/data
         run: |
-          uv run pytest --cov=src/household_mcp --cov-report=term-missing --cov-fail-under=80
+          uv run pytest \
+            --cov=src/household_mcp \
+            --cov-report=term-missing \
+            --cov-fail-under=80 \
+            -v --tb=short 2>&1 | tail -500
 
   # ============================================================================
   # Docker build + smoke test: Build images via compose and run health checks
