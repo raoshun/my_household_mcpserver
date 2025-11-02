@@ -3,7 +3,6 @@
  * Global configuration for all tests
  */
 
-/* global global */
 
 import '@testing-library/jest-dom';
 import { jest, beforeEach } from '@jest/globals';
