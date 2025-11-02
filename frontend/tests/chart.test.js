@@ -2,7 +2,11 @@
  * Tests for ChartManager
  */
 
+/* global global */
 import { describe, test, expect, beforeEach, jest } from '@jest/globals';
+
+// Use global Chart from setup.js
+const Chart = global.Chart;
 
 describe('ChartManager', () => {
     let chartManager;
