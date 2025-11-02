@@ -93,6 +93,7 @@ class TestCategoryAnalysisTool:
         """Test category_analysis when no CSV files are available."""
         pass  # noqa: F401
 
+    @pytest.mark.slow
     @patch("household_mcp.server._get_data_loader")
     @patch("household_mcp.server._data_dir")
     @patch("household_mcp.analysis.trends.CategoryTrendAnalyzer")
@@ -118,6 +119,7 @@ class TestCategoryAnalysisTool:
         assert "存在しないカテゴリ" in result["error"]
         assert "データが見つかりませんでした" in result["error"]
 
+    @pytest.mark.slow
     @patch("household_mcp.server._get_data_loader")
     @patch("household_mcp.server._data_dir")
     @patch("household_mcp.analysis.trends.CategoryTrendAnalyzer")
@@ -145,6 +147,7 @@ class TestCategoryAnalysisTool:
         assert "エラーが発生しました" in result["error"]
         assert "食費" in result["error"]
 
+    @pytest.mark.slow
     @patch("household_mcp.server._get_data_loader")
     @patch("household_mcp.server._data_dir")
     @patch("household_mcp.analysis.trends.CategoryTrendAnalyzer")
@@ -191,6 +194,7 @@ class TestCategoryAnalysisTool:
         assert result["months"] == 2  # Adjusted to available months
         assert len(result["monthly_breakdown"]) == 2
 
+    @pytest.mark.slow
     @patch("household_mcp.server._get_data_loader")
     @patch("household_mcp.server._data_dir")
     @patch("household_mcp.analysis.trends.CategoryTrendAnalyzer")
