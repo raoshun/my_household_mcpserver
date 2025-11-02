@@ -26,8 +26,8 @@ COPY README.md ./
 # Copy application code before editable install (required for -e . when using src layout)
 COPY src/ ./src/
 
-# Install dependencies (production + web extras) including editable package
-RUN uv pip install --system -e ".[web,visualization,streaming]"
+# Install dependencies (production + web/db/visualization/streaming extras) including editable package
+RUN uv pip install --system -e ".[web,visualization,streaming,db]"
 
 # Create data directory
 RUN mkdir -p /app/data

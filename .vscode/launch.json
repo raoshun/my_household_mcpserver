@@ -46,6 +46,21 @@
         "PYTHONPATH": "${workspaceFolder}/src"
       },
       "justMyCode": false
+    },
+    {
+      "name": "Docker: Start Full Stack (Foreground)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/.bin/docker-compose",
+      "args": ["up"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated"
+      }
     }
   ]
 }

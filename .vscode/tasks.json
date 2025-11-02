@@ -436,6 +436,122 @@
         "panel": "dedicated"
       },
       "problemMatcher": []
+    },
+    {
+      "label": "Docker: Build Images",
+      "type": "shell",
+      "command": "docker",
+      "args": ["compose", "build"],
+      "group": "build",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Docker: Start Full Stack (docker-compose up)",
+      "type": "shell",
+      "command": "docker",
+      "args": ["compose", "up"],
+      "group": "build",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^.*$",
+          "file": 1,
+          "location": 2,
+          "message": 3
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*Creating.*household.*$",
+          "endsPattern": "^.*(Container.*is healthy|ready to accept connections).*$"
+        }
+      }
+    },
+    {
+      "label": "Docker: Start Full Stack (docker-compose up -d)",
+      "type": "shell",
+      "command": "docker",
+      "args": ["compose", "up", "-d"],
+      "group": "build",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Docker: Stop Full Stack (docker-compose down)",
+      "type": "shell",
+      "command": "docker",
+      "args": ["compose", "down"],
+      "group": "build",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Docker: View Logs",
+      "type": "shell",
+      "command": "docker",
+      "args": ["compose", "logs", "-f"],
+      "group": "build",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated"
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Stop Full Webapp Stack",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "echo '=== ポート8080（フロントエンド）を停止 ===' && lsof -i :8080 | grep -v COMMAND | awk '{print $2}' | xargs -r kill -15 && sleep 2 && echo '=== ポート8000（バックエンド）を停止 ===' && lsof -i :8000 | grep -v COMMAND | awk '{print $2}' | xargs -r kill -15 && sleep 2 && echo '=== 停止確認 ===' && (lsof -i :8000 2>/dev/null && echo '⚠️  ポート8000: まだ起動中' || echo '✅ ポート8000: 停止完了') && (lsof -i :8080 2>/dev/null && echo '⚠️  ポート8080: まだ起動中' || echo '✅ ポート8080: 停止完了')"
+      ],
+      "group": "build",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
     }
   ],
   "inputs": [
