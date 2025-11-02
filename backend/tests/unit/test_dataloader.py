@@ -46,7 +46,10 @@ def test_load_csv_from_month_missing_dir() -> None:
 def test_load_csv_from_month_missing_file() -> None:
     """Test loading CSV for a month that doesn't exist."""
     # Use a year far in the future to ensure file doesn't exist
-    with pytest.raises(DataSourceError, match="CSV ファイルが見つかりません"):
+    # CI environment may not have data/ dir, so match either error message
+    with pytest.raises(
+        DataSourceError, match=r"(CSV ファイルが見つかりません|データディレクトリが見つかりません)"
+    ):
         load_csv_from_month(2099, 12, src_dir="data")
 
 
