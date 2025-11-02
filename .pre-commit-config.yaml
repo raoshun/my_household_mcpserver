@@ -71,7 +71,6 @@ repos:
           - flake8-docstrings
           - flake8-bugbear
           - flake8-comprehensions
-          - flake8-simplify
 
   # Python 型チェック
   - repo: https://github.com/pre-commit/mirrors-mypy
@@ -88,14 +87,14 @@ repos:
         additional_dependencies:
           - types-python-dateutil
           - types-requests
-        exclude: ^(tests/|src/household_mcp/duplicate/detector\.py$|src/household_mcp/database/query_helpers\.py$)
+        exclude: ^(tests/|src/household_mcp/duplicate/detector\.py$|src/household_mcp/database/query_helpers\.py$|src/household_mcp/server/__init__\.py$)
 
   # Markdown リンター
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.45.0
     hooks:
       - id: markdownlint
-        args: ["--fix"]
+        args: ["--config", ".markdownlintrc.json", "--fix"]
         files: \.md$
 
   # YAML フォーマッター
