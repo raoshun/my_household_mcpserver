@@ -17,17 +17,17 @@ WORKDIR /app
 
 # Install uv for faster dependency management
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.cargo/bin:$PATH"
+# Ensure uv is on PATH (installer may place it in ~/.local/bin or ~/.cargo/bin)
+ENV PATH="/root/.local/bin:/root/.cargo/bin:$PATH"
 
 # Copy dependency files
 COPY pyproject.toml ./
 COPY README.md ./
-
-# Install dependencies (production + web extras)
-RUN uv pip install --system -e ".[web,visualization,streaming]"
-
-# Copy application code
+# Copy application code before editable install (required for -e . when using src layout)
 COPY src/ ./src/
+
+# Install dependencies (production + web extras) including editable package
+RUN uv pip install --system -e ".[web,visualization,streaming]"
 
 # Create data directory
 RUN mkdir -p /app/data

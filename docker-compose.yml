@@ -6,6 +6,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      # Use host networking during build to avoid DNS issues in WSL/Corp networks
+      network: host
     container_name: household-backend
     restart: unless-stopped
     ports:
@@ -27,12 +29,18 @@ services:
       start_period: 10s
     networks:
       - household-network
+    # Ensure reliable DNS at runtime as well
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
 
   # Frontend Web UI
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      # Use host networking during build to avoid DNS issues in WSL/Corp networks
+      network: host
     container_name: household-frontend
     restart: unless-stopped
     ports:
@@ -55,6 +63,10 @@ services:
       start_period: 5s
     networks:
       - household-network
+    # Ensure reliable DNS at runtime as well
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
 
   # Nginx Reverse Proxy (Optional - for production)
   nginx:
