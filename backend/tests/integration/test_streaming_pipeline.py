@@ -1,6 +1,7 @@
 """Integration tests for streaming pipeline (TASK-606)."""
 
 import time
+from typing import Any, Dict, List
 
 import pytest
 
@@ -10,7 +11,7 @@ pytestmark = [pytest.mark.asyncio, pytest.mark.integration]
 class TestStreamingPipeline:
     """E2E tests for image generation -> cache -> HTTP delivery pipeline."""
 
-    def test_end_to_end_monthly_summary_image(self):
+    def test_end_to_end_monthly_summary_image(self) -> None:
         """E2E: データ取得 → 月次グラフ生成 → キャッシュ → URL生成"""
         try:
             from household_mcp.tools.enhanced_tools import enhanced_monthly_summary
@@ -46,7 +47,7 @@ class TestStreamingPipeline:
         assert metadata["graph_type"] == "pie"
         assert metadata["image_size"] == "800x600"
 
-    def test_end_to_end_category_trend_image(self):
+    def test_end_to_end_category_trend_image(self) -> None:
         """E2E: カテゴリトレンドデータ取得 → グラフ生成 → キャッシュ → URL生成"""
         try:
             from household_mcp.tools.enhanced_tools import enhanced_category_trend
@@ -77,7 +78,7 @@ class TestStreamingPipeline:
         assert metadata["start_month"] == "2024-01"
         assert metadata["end_month"] == "2024-06"
 
-    def test_performance_image_generation_within_3_seconds(self):
+    def test_performance_image_generation_within_3_seconds(self) -> None:
         """NFR-005: 画像生成が3秒以内に完了すること"""
         try:
             from household_mcp.tools.enhanced_tools import enhanced_monthly_summary
@@ -97,7 +98,7 @@ class TestStreamingPipeline:
             elapsed < 3.0
         ), f"画像生成に3秒以上かかりました: {elapsed:.2f}秒 (NFR-005違反)"
 
-    def test_cache_hit_performance(self):
+    def test_cache_hit_performance(self) -> None:
         """キャッシュヒット時のパフォーマンスを検証"""
         try:
             from household_mcp.streaming.global_cache import ensure_global_cache
@@ -133,7 +134,7 @@ class TestStreamingPipeline:
         # 追加検証: 初回生成は3秒以内に完了すべき
         assert elapsed1 < 3.0, f"初回生成に時間がかかりすぎ: {elapsed1:.3f}秒"
 
-    def test_memory_usage_within_50mb(self):
+    def test_memory_usage_within_50mb(self) -> None:
         """NFR-006: メモリ使用量が50MB以内に収まること"""
         try:
             import psutil
@@ -163,7 +164,7 @@ class TestStreamingPipeline:
             mem_increase < 50
         ), f"メモリ使用量増加が50MBを超えました: {mem_increase:.2f}MB (NFR-006違反)"
 
-    def test_concurrent_image_generation(self):
+    def test_concurrent_image_generation(self) -> None:
         """複数の画像生成リクエストを並行処理できることを確認"""
         try:
             import asyncio
@@ -172,13 +173,18 @@ class TestStreamingPipeline:
         except ImportError:
             pytest.skip("必要な依存関係がインストールされていません")
 
-        async def generate_image(year: int, month: int):
+        async def generate_image(year: int, month: int) -> Dict[str, Any]:
             # Wrap synchronous function for async context
-            return enhanced_monthly_summary(
-                year=year, month=month, output_format="image", graph_type="pie"
+            from typing import cast
+
+            return cast(
+                Dict[str, Any],
+                enhanced_monthly_summary(
+                    year=year, month=month, output_format="image", graph_type="pie"
+                ),
             )
 
-        async def run_concurrent():
+        async def run_concurrent() -> List[Dict[str, Any]]:
             tasks = [generate_image(2024, month) for month in range(1, 4)]
             results = await asyncio.gather(*tasks)
             return results
@@ -191,7 +197,7 @@ class TestStreamingPipeline:
             assert result.get("success") is True
             assert "url" in result
 
-    def test_cache_stats_tracking(self):
+    def test_cache_stats_tracking(self) -> None:
         """キャッシュ統計が正しく追跡されることを確認"""
         try:
             from household_mcp.streaming.global_cache import ensure_global_cache
@@ -213,7 +219,7 @@ class TestStreamingPipeline:
         after_stats = cache.stats()
         assert after_stats["current_size"] >= 1
 
-    def test_error_handling_invalid_data(self):
+    def test_error_handling_invalid_data(self) -> None:
         """不正なデータでも適切なエラーレスポンスが返ることを確認"""
         try:
             from household_mcp.tools.enhanced_tools import enhanced_monthly_summary
@@ -230,7 +236,7 @@ class TestStreamingPipeline:
         assert result.get("success") is False
         assert "error" in result
 
-    def test_error_handling_missing_visualization_deps(self, monkeypatch):
+    def test_error_handling_missing_visualization_deps(self, monkeypatch: Any) -> None:
         """visualization依存関係がない場合の適切なエラーハンドリング"""
         try:
             from household_mcp.tools import enhanced_tools
@@ -249,7 +255,7 @@ class TestStreamingPipeline:
         assert result.get("success") is False
         assert "visualization" in result.get("error", "").lower()
 
-    def test_image_format_validation(self):
+    def test_image_format_validation(self) -> None:
         """画像フォーマット（PNG）が正しく生成されることを確認"""
         try:
             from household_mcp.streaming.global_cache import ensure_global_cache
@@ -277,7 +283,7 @@ class TestStreamingPipeline:
 
 
 # Run a simple smoke test that doesn't require --run-integration flag
-def test_streaming_imports():
+def test_streaming_imports() -> None:
     """Verify all streaming modules can be imported."""
     try:
         from household_mcp.streaming.cache import ChartCache

@@ -13,7 +13,7 @@ from household_mcp import server  # noqa: E402
 class TestCategoryAnalysisIntegration:
     """Integration tests for category_analysis using real CSV data."""
 
-    def test_category_analysis_with_real_data(self):
+    def test_category_analysis_with_real_data(self) -> None:
         """Test category_analysis with actual CSV files."""
         if not os.path.exists("data"):
             pytest.skip("data directory not available")
@@ -62,7 +62,7 @@ class TestCategoryAnalysisIntegration:
             assert "食費" in result["summary"]
             assert "円" in result["summary"]
 
-    def test_category_analysis_nonexistent_category(self):
+    def test_category_analysis_nonexistent_category(self) -> None:
         """Test category_analysis with a category that doesn't exist."""
         if not os.path.exists("data"):
             pytest.skip("data directory not available")
@@ -84,7 +84,7 @@ class TestCategoryAnalysisIntegration:
                 or "データが利用できません" in error_msg
             )
 
-    def test_category_analysis_default_months(self):
+    def test_category_analysis_default_months(self) -> None:
         """Test category_analysis with default months parameter."""
         if not os.path.exists("data"):
             pytest.skip("data directory not available")
@@ -100,7 +100,7 @@ class TestCategoryAnalysisIntegration:
             assert "months" in result
             assert result["months"] <= 3  # May be less if fewer months available
 
-    def test_category_analysis_large_month_range(self):
+    def test_category_analysis_large_month_range(self) -> None:
         """Test category_analysis with a large month range."""
         if not os.path.exists("data"):
             pytest.skip("data directory not available")
@@ -116,7 +116,7 @@ class TestCategoryAnalysisIntegration:
             assert result["months"] <= 12  # Should not exceed available data
             assert result["months"] > 0
 
-    def test_category_analysis_japanese_error_messages(self):
+    def test_category_analysis_japanese_error_messages(self) -> None:
         """Verify all error messages are in Japanese."""
         if not os.path.exists("data"):
             pytest.skip("data directory not available")
@@ -152,7 +152,7 @@ class TestCategoryAnalysisIntegration:
                     keyword in error_msg for keyword in japanese_keywords
                 ), f"Error message not in Japanese: {error_msg}"
 
-    def test_category_analysis_response_format(self):
+    def test_category_analysis_response_format(self) -> None:
         """Test that the response follows the expected format."""
         if not os.path.exists("data"):
             pytest.skip("data directory not available")
