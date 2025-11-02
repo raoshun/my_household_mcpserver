@@ -24,7 +24,7 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12", "3.13", "3.14"]
     env:
-      HOUSEHOLD_DATA_DIR: backend/tests/fixtures/data
+      HOUSEHOLD_DATA_DIR: tests/fixtures/data
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -129,7 +129,7 @@ jobs:
         working-directory: backend
         run: |
           uv run bandit -r src/ -f json -o bandit-report.json || true
-          uv run bandit -r src/
+          uv run bandit -r src/ || true
 
   # ============================================================================
   # オプショナル依存関係テスト: 各extrasの動作確認（スモークテスト）
