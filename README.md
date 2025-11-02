@@ -399,6 +399,7 @@ uv run python -m uvicorn household_mcp.web.http_server:create_http_app --factory
 テキストベースのMCP通信のみ：
 
 ```bash
+cd backend
 uv run mcp install src/household_mcp/server.py
 ```
 
@@ -793,6 +794,9 @@ curl -X DELETE http://localhost:8000/api/cache
 ### テスト・コード品質チェック
 
 ```bash
+# backend ディレクトリで実行
+cd backend
+
 # テスト実行
 uv run pytest
 
@@ -800,14 +804,13 @@ uv run pytest
 uv run pytest --cov=src/household_mcp --cov-report=html
 
 # コード品質チェック
-uv run black .          # コードフォーマット
-uv run isort .          # インポート整理
-uv run flake8           # リント
-uv run mypy src/        # 型チェック
-uv run bandit -r src/   # セキュリティスキャン
+uv run ruff format .            # コードフォーマット
+uv run ruff check --select I --fix .  # インポート整理
+uv run ruff check .             # リント
+uv run bandit -r src/           # セキュリティスキャン
 
-# すべてのチェックを一括実行
-uv run task all-checks  # ※ tasks.json に定義
+# すべてのチェックを一括実行（VS Code タスク）
+# - All Checks（format/lint/tests/coverage）
 ```
 
 ### CI/CD パイプライン

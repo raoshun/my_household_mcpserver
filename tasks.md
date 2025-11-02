@@ -1134,13 +1134,20 @@
   - [x] Start HTTP API Server: `-C backend` で実行
   - [x] Start Dev Server: `cwd=backend` で実行
   - [x] Start Full Webapp Stack: API(backend) + Web(frontend) 同時起動
-- [ ] **TASK-907**: CI ワークフロー（あれば）を `backend/` パスに更新
-  - [ ] Lint/Type/Tests/Codecov の作業ディレクトリ更新
+- [x] **TASK-907**: CI ワークフロー（あれば）を `backend/` パスに更新
+  - [x] `.github/workflows/ci.yml`: すべてのジョブで `working-directory: backend` を確認・整備済み
+  - [x] `.github/workflows/frontend-ci.yml`: `working-directory: frontend` で正しく設定済み
+  - [x] 実装日: 2025-11-02
 
 ### 9.6 ドキュメント/リンク更新
 
-- [ ] **TASK-908**: README.md / docs/*.md のリンク修正
-  - [ ] `webapp/` → `frontend/`、`src/`/`tests/` → `backend/src`/`backend/tests`
+- [x] **TASK-908**: README.md / docs/*.md のリンク修正
+  - [x] `webapp/` → `frontend/`、`src/`/`tests/` → `backend/src`/`backend/tests` 変換完了
+  - [x] README.md: テスト/品質チェック、MCP インストール、パスの更新
+  - [x] docs/duplicate_detection.md: ファイルパス参照を `backend/src` に統一
+  - [x] docs/FAQ.md: グラフ設定、ツール追加、Webアプリカスタマイズのパス更新
+  - [x] docs/examples.md: Webアプリ参照リンクを `frontend/` に更新
+  - [x] 実装日: 2025-11-02
   - [ ] ルート README に新構成の図と操作手順を追記
 
 ### 9.7 動作確認（受け入れ条件 TS-017〜TS-020）
@@ -1284,31 +1291,43 @@
 
 ## 次アクション（優先順位順）
 
-### 高優先度（即座に着手可能）
+### 🎯 フェーズ9 完了（リポジトリ分割）
 
-1. **TASK-601**: 日本語フォント配置（0.5d）
-2. **TASK-401/402**: 単体・統合テスト追加（品質保証）
-3. **TASK-501/502**: ドキュメント・FAQ整備
+✅ **TASK-901 ～ TASK-912**: すべて完了！
 
-### 中優先度（依存関係あり）
+- **TASK-909/910/911/912**: 受け入れテスト通過（TS-017〜TS-020）
+- **TASK-907**: CI ワークフロー確認・整備完了（working-directory 正しく設定済み）
+- **TASK-908**: ドキュメント内パス修正完了（webapp/ → frontend/, src/ → backend/src/, tests/ → backend/tests/）
 
-1. **TASK-602**: HTTPストリーミング基盤（1.0d）
-2. **TASK-603**: FastAPI HTTPサーバー（1.0d）
-3. **TASK-604**: MCPツール拡張（1.0d）
-4. **TASK-608**: 依存関係整理（0.5d）
+### 🔴 即座に着手できる項目（未完了）
 
-### 低優先度（機能完成後）
+| タスク | 内容 | 見積 | 優先度 |
+|--------|------|------|--------|
+| **TASK-607** | パフォーマンス最適化とNFR検証（NFR-005, NFR-006） | 1.0d | 中 |
+| **TASK-806-1** | README更新（重複検出機能の説明、Webアプリ使用方法） | 0.5d | 高 |
+| **TASK-806-2** | FAQ追加（重複検出Q&A、トラブルシューティング） | 0.5d | 高 |
 
-1. **TASK-606**: 統合テスト（1.5d）
-2. **TASK-607**: パフォーマンス最適化（1.0d）
-3. **TASK-610**: ユーザードキュメント更新（0.5d）
+### 📊 フェーズ別実装状況
 
-### フェーズ4/5 残タスク
+**フェーズ 0～6:** ✅ ほぼ完了
 
-1. **TASK-401**: 単体テスト追加
-2. **TASK-402**: 統合テスト整備
-3. **TASK-501**: README更新
-4. **TASK-502**: サンプル会話・FAQ整備
+- トレンド分析機能
+- 重複検出機能
+- Webアプリ基本機能
+- 画像生成機能（基盤）
+- HTTPストリーミング基盤
+
+**フェーズ 9:** ✅ 完了
+
+- リポジトリ分割（backend/ + frontend/ + shared/）
+- CI/CD ワークフロー更新
+- ドキュメント・リンク修正
+
+**次の課題:**
+
+1. ドキュメント完成度向上（TASK-806）
+2. パフォーマンス最適化検証（TASK-607）
+3. 統合テストの拡充
 
 ---
 

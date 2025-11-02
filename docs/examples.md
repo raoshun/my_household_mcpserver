@@ -374,7 +374,7 @@ MCP経由のCLI操作に加え、Webブラウザから直感的に家計簿を�
 - 非エンジニアのユーザー（家族など）が簡単に確認したい
 - 月次レポートをブラウザで素早く確認したい
 
-詳細は [`webapp/README.md`](../webapp/README.md) を参照してください。
+詳細は [`frontend/README.md`](../frontend/README.md) を参照してください。
 
 ### 例14: MCP + Webアプリの併用
 
@@ -420,5 +420,5 @@ MCP経由のCLI操作に加え、Webブラウザから直感的に家計簿を�
 - [API リファレンス](./api.md) - 全ツールの詳細仕様
 - [利用ガイド](./usage.md) - 技術的な使用方法
 - [FAQ](./FAQ.md) - よくある質問とトラブルシューティング
-- [Webアプリガイド](../webapp/README.md) - ブラウザUI詳細
+- [Webアプリガイド](../frontend/README.md) - ブラウザUI詳細
 - [README.md](../README.md) - インストールとセットアップ

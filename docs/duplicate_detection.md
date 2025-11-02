@@ -279,10 +279,10 @@ confirm_duplicate(check_id=1, decision="skip")
 ## 実装詳細
 
 - **ファイル構成:**
-  - `src/household_mcp/duplicate/detector.py` - 検出エンジン
-  - `src/household_mcp/duplicate/service.py` - ビジネスロジック
-  - `src/household_mcp/tools/duplicate_tools.py` - MCPツール関数
-  - `src/household_mcp/server.py` - MCPツール登録
+  - `backend/src/household_mcp/duplicate/detector.py` - 検出エンジン
+  - `backend/src/household_mcp/duplicate/service.py` - ビジネスロジック
+  - `backend/src/household_mcp/tools/duplicate_tools.py` - MCPツール関数
+  - `backend/src/household_mcp/server.py` - MCPツール登録
 
 - **データベーススキーマ:**
   - `transactions.is_duplicate` - 重複フラグ
@@ -295,4 +295,4 @@ confirm_duplicate(check_id=1, decision="skip")
 
 - [要件定義書](../requirements.md) - FR-009
 - [設計仕様書](../design.md)
-- [テストコード](../tests/test_duplicate_tools.py)
+- [テストコード](../backend/tests/test_duplicate_tools.py)

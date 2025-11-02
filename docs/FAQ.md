@@ -277,7 +277,7 @@ uv pip install -e ".[dev,full]"
 uv run pytest -v
 
 # 特定のテストのみ実行
-uv run pytest tests/unit/test_data_tools.py -v
+uv run pytest backend/tests/unit/test_data_tools.py -v
 ```
 
 ## MCP 統合
@@ -291,8 +291,8 @@ uv run pytest tests/unit/test_data_tools.py -v
   "mcpServers": {
     "household": {
       "command": "python",
-      "args": ["-m", "src.server"],
-      "cwd": "/path/to/my_household_mcpserver"
+      "args": ["-m", "household_mcp.server"],
+      "cwd": "/path/to/my_household_mcpserver/backend"
     }
   }
 }
@@ -323,15 +323,15 @@ uv run pytest tests/unit/test_data_tools.py -v
 
 ### Q29: グラフの色を変更したい
 
-**A**: `src/household_mcp/visualization/chart_generator.py` の `_get_colors()` メソッドをカスタマイズしてください。
+**A**: `backend/src/household_mcp/visualization/chart_generator.py` の `_get_colors()` メソッドをカスタマイズしてください.
 
 ### Q30: 独自の分析ツールを追加したい
 
 **A**: 以下の手順で追加できます：
 
-1. `src/household_mcp/tools/` に新しいツールモジュールを作成
-2. `src/household_mcp/server.py` にツール定義を追加
-3. テストを `tests/unit/` に追加
+1. `backend/src/household_mcp/tools/` に新しいツールモジュールを作成
+2. `backend/src/household_mcp/server.py` にツール定義を追加
+3. テストを `backend/tests/unit/` に追加
 
 詳細は `design.md` を参照してください。
 
@@ -503,13 +503,13 @@ Webアプリ自体のUIは常にUTF-8で表示されるため、文字化けは�
 
 ### Q47: Webアプリをカスタマイズできますか?
 
-**A**: はい。`webapp/` ディレクトリ内のHTM L/CSS/JSファイルを編集してください。
+**A**: はい。`frontend/` ディレクトリ内のHTML/CSS/JSファイルを編集してください。
 
-- `webapp/index.html` - レイアウト・構造
-- `webapp/css/style.css` - デザイン・スタイル
-- `webapp/js/*.js` - 機能・ロジック
+- `frontend/index.html` - レイアウト・構造
+- `frontend/css/style.css` - デザイン・スタイル
+- `frontend/js/*.js` - 機能・ロジック
 
-詳細は [`webapp/README.md`](../webapp/README.md) を参照してください。
+詳細は [`frontend/README.md`](../frontend/README.md) を参照してください.
 
 ### Q48: Webアプリを外部公開できますか?
 
@@ -528,5 +528,5 @@ Webアプリ自体のUIは常にUTF-8で表示されるため、文字化けは�
 - [usage.md](./usage.md) - 詳細な使用方法
 - [examples.md](./examples.md) - サンプル会話例とWebアプリ連携
 - [api.md](./api.md) - APIリファレンス
-- [webapp/README.md](../webapp/README.md) - Webアプリ詳細ガイド
+- [frontend/README.md](../frontend/README.md) - Webアプリ詳細ガイド
 - [design.md](../design.md) - 技術設計
