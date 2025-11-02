@@ -224,7 +224,12 @@ omit = [
     "src/household_mcp/database/*",
     "src/household_mcp/server.py",
     "src/household_mcp/visualization/*",
-    # Temporarily omit heavy utility/tool modules until dedicated tests are added
+    # Omit optional extras modules from coverage in minimal installs
+    "src/household_mcp/web/*",
+    "src/household_mcp/duplicate/*",
+    # Heavy tools relying on optional backends — covered in full matrix jobs
+    "src/household_mcp/tools/duplicate_tools.py",
+    "src/household_mcp/tools/enhanced_tools.py",
 ]
 
 [tool.coverage.report]
