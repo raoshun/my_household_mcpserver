@@ -1,7 +1,6 @@
 """Duplicate detection engine for household MCP server."""
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy.orm import Session
 
@@ -21,28 +20,32 @@ class DetectionOptions:
 class DuplicateDetector:
     """重複検出エンジン."""
 
-    def __init__(self, db_session: Session, options: Optional[DetectionOptions] = None):
-        """初期化.
+    def __init__(self, db_session: Session, options: DetectionOptions | None = None):
+        """
+        初期化.
 
         Args:
             db_session: SQLAlchemy セッション
             options: 検出オプション
+
         """
         self.db = db_session
         self.options = options or DetectionOptions()
 
     def detect_duplicates(
-        self, transaction_ids: Optional[List[int]] = None
-    ) -> List[Tuple[Transaction, Transaction, float]]:
-        """重複候補を検出.
+        self, transaction_ids: list[int] | None = None
+    ) -> list[tuple[Transaction, Transaction, float]]:
+        """
+        重複候補を検出.
 
         Args:
             transaction_ids: 検出対象の取引IDリスト。Noneの場合は全件検索
 
         Returns:
             (取引1, 取引2, 類似度スコア) のリスト（スコア降順）
+
         """
-        candidates: List[Tuple[Transaction, Transaction, float]] = []
+        candidates: list[tuple[Transaction, Transaction, float]] = []
 
         # 検出対象の取得（is_duplicate=0 のみ）
         query = self.db.query(Transaction).filter(Transaction.is_duplicate == 0)
@@ -99,9 +102,10 @@ class DuplicateDetector:
         return candidates
 
     def _group_transactions(
-        self, transactions: List[Transaction]
-    ) -> Dict[Tuple[int, int, int], Optional[Dict[int, List[Transaction]]]]:
-        """日付と金額のバケットでトランザクションをグルーピング.
+        self, transactions: list[Transaction]
+    ) -> dict[tuple[int, int, int], dict[int, list[Transaction]] | None]:
+        """
+        日付と金額のバケットでトランザクションをグルーピング.
 
         - 日付トレランスが0なら日単位、そうでなければ月単位。
         - 金額許容が0なら金額の完全一致でまとめる。
@@ -110,30 +114,31 @@ class DuplicateDetector:
 
         Returns:
             {(y, m, d_or_0): {amount_bucket: [transactions]} | None}
+
         """
         use_day = self.options.date_tolerance_days == 0
         abs_tol = self.options.amount_tolerance_abs
         pct_tol = self.options.amount_tolerance_pct
 
-        grouped: Dict[Tuple[int, int, int], Optional[Dict[int, List[Transaction]]]] = {}
+        grouped: dict[tuple[int, int, int], dict[int, list[Transaction]] | None] = {}
 
-        def date_key_of(t: Transaction) -> Tuple[int, int, int]:
+        def date_key_of(t: Transaction) -> tuple[int, int, int]:
             if use_day:
                 return (t.date.year, t.date.month, t.date.day)
             return (t.date.year, t.date.month, 0)
 
-        def amount_bucket_of(t: Transaction) -> Optional[int]:
+        def amount_bucket_of(t: Transaction) -> int | None:
             amount = abs(float(t.amount))
             if abs_tol == 0 and pct_tol == 0:
                 # 0.01円単位で正規化して固定バケットへ（完全一致用）
-                return int(round(amount * 100))
+                return round(amount * 100)
             if abs_tol > 0:
                 return int(amount // abs_tol)
             # 割合許容のみ → バケット化せず従来方式
             return None
 
         # 第1段階: 日付キーで分割
-        by_date: Dict[Tuple[int, int, int], List[Transaction]] = {}
+        by_date: dict[tuple[int, int, int], list[Transaction]] = {}
         for t in transactions:
             dk = date_key_of(t)
             by_date.setdefault(dk, []).append(t)
@@ -151,7 +156,7 @@ class DuplicateDetector:
                 grouped[dk] = None
                 continue
 
-            buckets: Dict[int, List[Transaction]] = {}
+            buckets: dict[int, list[Transaction]] = {}
             for t in items:
                 b = amount_bucket_of(t)
                 if b is None:
@@ -166,8 +171,8 @@ class DuplicateDetector:
         return grouped
 
     def _legacy_date_group(
-        self, all_transactions: List[Transaction], date_key: Tuple[int, int, int]
-    ) -> List[Transaction]:
+        self, all_transactions: list[Transaction], date_key: tuple[int, int, int]
+    ) -> list[Transaction]:
         """従来の月単位グルーピングの簡易版（フォールバック用）."""
         y, m, d = date_key
         if d == 0:
@@ -181,7 +186,8 @@ class DuplicateDetector:
         ]
 
     def _is_potential_duplicate(self, trans1: Transaction, trans2: Transaction) -> bool:
-        """基本条件チェック（高速フィルタリング）.
+        """
+        基本条件チェック（高速フィルタリング）.
 
         Args:
             trans1: 取引1
@@ -189,6 +195,7 @@ class DuplicateDetector:
 
         Returns:
             重複候補かどうか
+
         """
         # 日付チェック
         date_diff = abs((trans1.date - trans2.date).days)
@@ -226,7 +233,8 @@ class DuplicateDetector:
         return True
 
     def _calculate_similarity(self, trans1: Transaction, trans2: Transaction) -> float:
-        """類似度スコア計算 (0.0-1.0).
+        """
+        類似度スコア計算 (0.0-1.0).
 
         Args:
             trans1: 取引1
@@ -234,6 +242,7 @@ class DuplicateDetector:
 
         Returns:
             類似度スコア（0.0-1.0）
+
         """
         score = 0.0
 

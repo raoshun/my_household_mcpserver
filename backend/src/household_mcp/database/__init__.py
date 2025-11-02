@@ -1,4 +1,5 @@
-"""Database package for household MCP server.
+"""
+Database package for household MCP server.
 
 This package supports optional installation. To avoid importing heavy
 dependencies (like SQLAlchemy) when the "db" extra is not installed,
@@ -13,11 +14,11 @@ from __future__ import annotations
 from typing import Any
 
 __all__ = [
-    "DatabaseManager",
     "Base",
-    "Transaction",
-    "DuplicateCheck",
     "CSVImporter",
+    "DatabaseManager",
+    "DuplicateCheck",
+    "Transaction",
     "get_active_transactions",
     "get_category_breakdown",
     "get_duplicate_impact_report",
@@ -51,7 +52,7 @@ def __getattr__(name: str) -> Any:  # pragma: no cover - import-time behavior
             from . import query_helpers as _qh
 
             return getattr(_qh, name)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         raise ImportError(
             "Database features are not available. Install with '.[db]' or '.[full]'"
         ) from e

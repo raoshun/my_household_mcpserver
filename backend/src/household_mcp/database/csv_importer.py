@@ -3,7 +3,7 @@
 import glob
 import os
 from decimal import Decimal
-from typing import Any, Dict, List
+from typing import Any
 
 import pandas as pd
 from sqlalchemy.orm import Session
@@ -15,15 +15,18 @@ class CSVImporter:
     """CSV → DB インポーター."""
 
     def __init__(self, db_session: Session):
-        """初期化.
+        """
+        初期化.
 
         Args:
             db_session: SQLAlchemy セッション
+
         """
         self.db = db_session
 
-    def import_csv(self, csv_path: str, encoding: str = "cp932") -> Dict[str, Any]:
-        """CSVファイルをDBにインポート.
+    def import_csv(self, csv_path: str, encoding: str = "cp932") -> dict[str, Any]:
+        """
+        CSVファイルをDBにインポート.
 
         Args:
             csv_path: CSVファイルパス
@@ -35,6 +38,7 @@ class CSVImporter:
                 "skipped": スキップ件数,
                 "errors": エラー情報リスト
             }
+
         """
         try:
             df = pd.read_csv(csv_path, encoding=encoding)
@@ -42,12 +46,12 @@ class CSVImporter:
             return {
                 "imported": 0,
                 "skipped": 0,
-                "errors": [{"row": -1, "error": f"CSV読み込みエラー: {str(e)}"}],
+                "errors": [{"row": -1, "error": f"CSV読み込みエラー: {e!s}"}],
             }
 
         imported = 0
         skipped = 0
-        errors: List[Dict[str, Any]] = []
+        errors: list[dict[str, Any]] = []
 
         source_file = os.path.basename(csv_path)
 
@@ -59,7 +63,7 @@ class CSVImporter:
             .all()
         }
 
-        to_insert: List[Transaction] = []
+        to_insert: list[Transaction] = []
 
         for idx, row in df.iterrows():
             try:
@@ -107,14 +111,15 @@ class CSVImporter:
             self.db.commit()
         except Exception as e:
             self.db.rollback()
-            errors.append({"row": -1, "error": f"コミットエラー: {str(e)}"})
+            errors.append({"row": -1, "error": f"コミットエラー: {e!s}"})
             # コミット失敗時はインポート数を0扱いに戻す
             imported = 0
 
         return {"imported": imported, "skipped": skipped, "errors": errors}
 
-    def import_all_csvs(self, data_dir: str = "data") -> Dict[str, Any]:
-        """dataディレクトリ内の全CSVをインポート.
+    def import_all_csvs(self, data_dir: str = "data") -> dict[str, Any]:
+        """
+        dataディレクトリ内の全CSVをインポート.
 
         Args:
             data_dir: データディレクトリパス (デフォルト: "data")
@@ -126,6 +131,7 @@ class CSVImporter:
                 "total_skipped": 合計スキップ件数,
                 "errors": 全エラー情報リスト
             }
+
         """
         csv_pattern = os.path.join(data_dir, "収入・支出詳細_*.csv")
         csv_files = glob.glob(csv_pattern)
@@ -140,7 +146,7 @@ class CSVImporter:
 
         total_imported = 0
         total_skipped = 0
-        all_errors: List[Dict[str, Any]] = []
+        all_errors: list[dict[str, Any]] = []
 
         for csv_file in sorted(csv_files):
             result = self.import_csv(csv_file)

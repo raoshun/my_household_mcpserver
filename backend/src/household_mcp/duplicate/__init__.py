@@ -4,7 +4,7 @@ from .detector import DetectionOptions, DuplicateDetector
 from .service import DuplicateService
 
 __all__ = [
-    "DuplicateDetector",
     "DetectionOptions",
+    "DuplicateDetector",
     "DuplicateService",
 ]

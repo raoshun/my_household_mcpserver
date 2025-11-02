@@ -1,7 +1,5 @@
 """Unit tests for DuplicateService."""
 
-# flake8: noqa: F811
-
 from datetime import datetime
 from decimal import Decimal
 

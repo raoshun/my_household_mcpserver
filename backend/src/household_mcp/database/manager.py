@@ -1,9 +1,10 @@
 """Database manager for household MCP server."""
 
 import os
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Generator, Optional
+from typing import Any
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
@@ -37,14 +38,16 @@ class DatabaseManager:
     """データベース管理クラス."""
 
     def __init__(self, db_path: str = "data/household.db"):
-        """初期化.
+        """
+        初期化.
 
         Args:
             db_path: データベースファイルのパス
+
         """
         self.db_path = db_path
-        self._engine: Optional[Engine] = None
-        self._session_factory: Optional[sessionmaker] = None
+        self._engine: Engine | None = None
+        self._session_factory: sessionmaker | None = None
 
     @property
     def engine(self) -> Engine:
@@ -86,7 +89,8 @@ class DatabaseManager:
 
     @contextmanager
     def session_scope(self) -> Generator[Session, None, None]:
-        """トランザクション付きセッションのコンテキストマネージャ.
+        """
+        トランザクション付きセッションのコンテキストマネージャ.
 
         Yields:
             Session: データベースセッション
@@ -96,6 +100,7 @@ class DatabaseManager:
                 transaction = Transaction(...)
                 session.add(transaction)
                 # コミットは自動的に行われる
+
         """
         session = self.session_factory()
         try:
@@ -108,7 +113,8 @@ class DatabaseManager:
             session.close()
 
     def get_session(self) -> Session:
-        """新しいセッションを取得（手動管理用）.
+        """
+        新しいセッションを取得（手動管理用）.
 
         Returns:
             Session: データベースセッション
@@ -117,11 +123,13 @@ class DatabaseManager:
             このメソッドで取得したセッションは、
             呼び出し側で明示的にclose()する必要があります。
             通常はsession_scope()の使用を推奨します。
+
         """
         return self.session_factory()
 
     def close(self) -> None:
-        """エンジンとすべての接続をクローズ.
+        """
+        エンジンとすべての接続をクローズ.
 
         テスト終了時やアプリケーション終了時に明示的に呼び出すことで、
         ResourceWarning を回避できます。

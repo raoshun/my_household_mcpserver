@@ -1,4 +1,5 @@
-"""データバリデーション機能.
+"""
+データバリデーション機能.
 
 家計簿データの妥当性検証とエラーチェック機能を提供
 """
@@ -7,7 +8,7 @@ import re
 from datetime import date as date_type
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 # NOTE: ValidationError is now unified and provided by household_mcp.exceptions.
 # This module previously defined its own version; we import the canonical one
@@ -31,10 +32,11 @@ class DataValidator:
     MAX_AMOUNT = Decimal("999999999.99")
 
     @classmethod
-    def validate_date(  # noqa: C901 - intentionally verbose for clarity and explicit error messages
-        cls, date_str: Union[str, datetime, date_type], field_name: str = "date"
+    def validate_date(
+        cls, date_str: str | datetime | date_type, field_name: str = "date"
     ) -> date_type:
-        """日付の妥当性を検証.
+        """
+        日付の妥当性を検証.
 
         Args:
             date_str: 日付文字列またはdatetimeオブジェクト
@@ -45,6 +47,7 @@ class DataValidator:
 
         Raises:
             ValidationError: 日付が無効な場合
+
         """
         if date_str is None:
             raise ValidationError(f"{field_name}は必須です", field_name)
@@ -119,10 +122,11 @@ class DataValidator:
             ) from e
 
     @classmethod
-    def validate_amount(  # noqa: C901 - keep explicit branches for robust validation
-        cls, amount: Union[str, int, float, Decimal], field_name: str = "amount"
+    def validate_amount(
+        cls, amount: str | int | float | Decimal, field_name: str = "amount"
     ) -> Decimal:
-        """金額の妥当性を検証.
+        """
+        金額の妥当性を検証.
 
         Args:
             amount: 金額
@@ -133,6 +137,7 @@ class DataValidator:
 
         Raises:
             ValidationError: 金額が無効な場合
+
         """
         if amount is None:
             raise ValidationError(f"{field_name}は必須です", field_name)
@@ -198,9 +203,10 @@ class DataValidator:
         required: bool = True,
         min_length: int = 0,
         max_length: int = 255,
-        pattern: Optional[str] = None,
-    ) -> Optional[str]:
-        """文字列の妥当性を検証.
+        pattern: str | None = None,
+    ) -> str | None:
+        """
+        文字列の妥当性を検証.
 
         Args:
             value: 検証する値
@@ -215,6 +221,7 @@ class DataValidator:
 
         Raises:
             ValidationError: 文字列が無効な場合
+
         """
         if value is None:
             if required:
@@ -249,10 +256,11 @@ class DataValidator:
         cls,
         value: Any,
         field_name: str,
-        allowed_values: List[str],
+        allowed_values: list[str],
         required: bool = True,
-    ) -> Optional[str]:
-        """列挙値の妥当性を検証.
+    ) -> str | None:
+        """
+        列挙値の妥当性を検証.
 
         Args:
             value: 検証する値
@@ -265,6 +273,7 @@ class DataValidator:
 
         Raises:
             ValidationError: 値が無効な場合
+
         """
         if value is None:
             if required:
@@ -289,8 +298,9 @@ class DataValidator:
         return allowed_values[allowed_lower.index(value)]
 
     @classmethod
-    def validate_transaction_data(cls, data: Dict[str, Any]) -> Dict[str, Any]:
-        """取引データ全体の妥当性を検証.
+    def validate_transaction_data(cls, data: dict[str, Any]) -> dict[str, Any]:
+        """
+        取引データ全体の妥当性を検証.
 
         Args:
             data: 取引データ
@@ -300,8 +310,9 @@ class DataValidator:
 
         Raises:
             ValidationError: データが無効な場合
+
         """
-        validated: Dict[str, Any] = {}
+        validated: dict[str, Any] = {}
 
         # 日付の検証
         date_value = data.get("date")
@@ -347,8 +358,9 @@ class DataValidator:
         return validated
 
     @classmethod
-    def validate_category_data(cls, data: Dict[str, Any]) -> Dict[str, Any]:
-        """カテゴリーデータの妥当性を検証.
+    def validate_category_data(cls, data: dict[str, Any]) -> dict[str, Any]:
+        """
+        カテゴリーデータの妥当性を検証.
 
         Args:
             data: カテゴリーデータ
@@ -358,8 +370,9 @@ class DataValidator:
 
         Raises:
             ValidationError: データが無効な場合
+
         """
-        validated: Dict[str, Any] = {}
+        validated: dict[str, Any] = {}
 
         # 名前の検証
         validated["name"] = cls.validate_string(
@@ -386,8 +399,9 @@ class DataValidator:
         return validated
 
     @classmethod
-    def validate_account_data(cls, data: Dict[str, Any]) -> Dict[str, Any]:
-        """アカウントデータの妥当性を検証.
+    def validate_account_data(cls, data: dict[str, Any]) -> dict[str, Any]:
+        """
+        アカウントデータの妥当性を検証.
 
         Args:
             data: アカウントデータ
@@ -397,8 +411,9 @@ class DataValidator:
 
         Raises:
             ValidationError: データが無効な場合
+
         """
-        validated: Dict[str, Any] = {}
+        validated: dict[str, Any] = {}
 
         # 名前の検証
         validated["name"] = cls.validate_string(
@@ -423,9 +438,10 @@ class DataValidator:
 
 
 def validate_bulk_data(
-    data_list: List[Dict[str, Any]], data_type: str
-) -> Dict[str, Any]:
-    """一括データの妥当性を検証.
+    data_list: list[dict[str, Any]], data_type: str
+) -> dict[str, Any]:
+    """
+    一括データの妥当性を検証.
 
     Args:
         data_list: データのリスト
@@ -433,8 +449,9 @@ def validate_bulk_data(
 
     Returns:
         検証結果
+
     """
-    results: Dict[str, Any] = {
+    results: dict[str, Any] = {
         "valid_count": 0,
         "error_count": 0,
         "errors": [],

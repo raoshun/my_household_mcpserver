@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from ..analysis import CategoryTrendAnalyzer
 from ..dataloader import iter_available_months, load_csv_from_month
@@ -14,8 +14,8 @@ from ..utils import (
     trend_metrics_to_dict,
 )
 
-MonthTuple = Tuple[int, int]
-AnalyzerCache = Dict[str, CategoryTrendAnalyzer]
+MonthTuple = tuple[int, int]
+AnalyzerCache = dict[str, CategoryTrendAnalyzer]
 
 _DEFAULT_SRC_DIR = "data"
 _ANALYZERS: AnalyzerCache = {}
@@ -29,14 +29,14 @@ def _get_analyzer(src_dir: str = _DEFAULT_SRC_DIR) -> CategoryTrendAnalyzer:
     return analyzer
 
 
-def _list_available_months(src_dir: str = _DEFAULT_SRC_DIR) -> List[MonthTuple]:
+def _list_available_months(src_dir: str = _DEFAULT_SRC_DIR) -> list[MonthTuple]:
     months = list(iter_available_months(src_dir=src_dir))
     if not months:
         raise DataSourceError("利用可能な月が見つかりません")
     return months
 
 
-def _available_categories(src_dir: str = _DEFAULT_SRC_DIR) -> List[str]:
+def _available_categories(src_dir: str = _DEFAULT_SRC_DIR) -> list[str]:
     months = _list_available_months(src_dir)
     latest_year, latest_month = months[-1]
     df = load_csv_from_month(latest_year, latest_month, src_dir=src_dir)
@@ -45,8 +45,8 @@ def _available_categories(src_dir: str = _DEFAULT_SRC_DIR) -> List[str]:
     return sorted({str(cat) for cat in df["大項目"].astype(str).unique()})
 
 
-def _month_pairs(start: date, end: date) -> Tuple[MonthTuple, ...]:
-    months: List[MonthTuple] = []
+def _month_pairs(start: date, end: date) -> tuple[MonthTuple, ...]:
+    months: list[MonthTuple] = []
     year, month = start.year, start.month
     while True:
         months.append((year, month))
@@ -88,9 +88,9 @@ def category_trend_summary(
 
 def get_category_trend(
     *,
-    category: Optional[str] = None,
-    start_month: Optional[str] = None,
-    end_month: Optional[str] = None,
+    category: str | None = None,
+    start_month: str | None = None,
+    end_month: str | None = None,
     src_dir: str = _DEFAULT_SRC_DIR,
     top_n: int = 3,
     default_window: int = 12,

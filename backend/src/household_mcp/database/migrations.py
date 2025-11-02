@@ -1,4 +1,5 @@
-"""家計簿分析MCPサーバー用データベースマイグレーション機能.
+"""
+家計簿分析MCPサーバー用データベースマイグレーション機能.
 
 データベースの初期化、アップグレード、ダウングレード機能を提供
 """
@@ -6,7 +7,7 @@
 import logging
 import sqlite3
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .connection import DatabaseConnection
 from .models import DatabaseSchema
@@ -21,16 +22,18 @@ class Migration:
         self,
         version: str,
         description: str,
-        up_sql: List[str],
-        down_sql: Optional[List[str]] = None,
+        up_sql: list[str],
+        down_sql: list[str] | None = None,
     ):
-        """初期化.
+        """
+        初期化.
 
         Args:
             version: マイグレーションバージョン
             description: マイグレーションの説明
             up_sql: アップグレード用SQL文のリスト
             down_sql: ダウングレード用SQL文のリスト
+
         """
         self.version = version
         self.description = description
@@ -39,13 +42,15 @@ class Migration:
         self.created_at = datetime.now()
 
     def apply_up(self, connection: sqlite3.Connection) -> None:
-        """アップグレードマイグレーションを適用.
+        """
+        アップグレードマイグレーションを適用.
 
         Args:
             connection: データベース接続
 
         Raises:
             sqlite3.Error: マイグレーション実行エラー
+
         """
         try:
             cursor = connection.cursor()
@@ -61,13 +66,15 @@ class Migration:
             raise
 
     def apply_down(self, connection: sqlite3.Connection) -> None:
-        """ダウングレードマイグレーションを適用.
+        """
+        ダウングレードマイグレーションを適用.
 
         Args:
             connection: データベース接続
 
         Raises:
             sqlite3.Error: マイグレーション実行エラー
+
         """
         if not self.down_sql:
             raise ValueError(f"No down migration defined for {self.version}")
@@ -90,13 +97,15 @@ class MigrationManager:
     """マイグレーション管理クラス."""
 
     def __init__(self, db_connection: DatabaseConnection):
-        """初期化.
+        """
+        初期化.
 
         Args:
             db_connection: データベース接続管理インスタンス
+
         """
         self.db_connection = db_connection
-        self.migrations: List[Migration] = []
+        self.migrations: list[Migration] = []
         self._init_migration_table()
         self._register_migrations()
 
@@ -182,11 +191,13 @@ class MigrationManager:
         )
         self.migrations.append(balance_history)
 
-    def get_applied_migrations(self) -> List[str]:
-        """適用済みマイグレーションのバージョンリストを取得.
+    def get_applied_migrations(self) -> list[str]:
+        """
+        適用済みマイグレーションのバージョンリストを取得.
 
         Returns:
             適用済みマイグレーションバージョンのリスト
+
         """
         query = "SELECT version FROM schema_migrations ORDER BY version"
         try:
@@ -197,11 +208,13 @@ class MigrationManager:
             logger.error("Failed to get applied migrations: %s", e)
             return []
 
-    def get_pending_migrations(self) -> List[Migration]:
-        """未適用マイグレーションのリストを取得.
+    def get_pending_migrations(self) -> list[Migration]:
+        """
+        未適用マイグレーションのリストを取得.
 
         Returns:
             未適用マイグレーションのリスト
+
         """
         applied_versions = set(self.get_applied_migrations())
         return [
@@ -211,13 +224,15 @@ class MigrationManager:
         ]
 
     def apply_migration(self, migration: Migration) -> bool:
-        """単一マイグレーションを適用.
+        """
+        単一マイグレーションを適用.
 
         Args:
             migration: 適用するマイグレーション
 
         Returns:
             適用成功フラグ
+
         """
         try:
             with self.db_connection.transaction() as connection:
@@ -240,13 +255,15 @@ class MigrationManager:
             return False
 
     def revert_migration(self, migration: Migration) -> bool:
-        """単一マイグレーションを取り消し.
+        """
+        単一マイグレーションを取り消し.
 
         Args:
             migration: 取り消すマイグレーション
 
         Returns:
             取り消し成功フラグ
+
         """
         try:
             with self.db_connection.transaction() as connection:
@@ -267,14 +284,16 @@ class MigrationManager:
             logger.error("Failed to revert migration %s: %s", migration.version, e)
             return False
 
-    def migrate_up(self, target_version: Optional[str] = None) -> bool:
-        """マイグレーションを最新または指定バージョンまで適用.
+    def migrate_up(self, target_version: str | None = None) -> bool:
+        """
+        マイグレーションを最新または指定バージョンまで適用.
 
         Args:
             target_version: 目標バージョン（Noneの場合は最新まで）
 
         Returns:
             マイグレーション成功フラグ
+
         """
         pending_migrations = self.get_pending_migrations()
 
@@ -305,13 +324,15 @@ class MigrationManager:
         return success_count == len(pending_migrations)
 
     def migrate_down(self, target_version: str) -> bool:
-        """指定バージョンまでマイグレーションを取り消し.
+        """
+        指定バージョンまでマイグレーションを取り消し.
 
         Args:
             target_version: 目標バージョン
 
         Returns:
             マイグレーション取り消し成功フラグ
+
         """
         applied_versions = self.get_applied_migrations()
         migrations_to_revert = [
@@ -343,11 +364,13 @@ class MigrationManager:
         )
         return success_count == len(migrations_to_revert)
 
-    def get_migration_status(self) -> Dict[str, Any]:
-        """マイグレーション状態の取得.
+    def get_migration_status(self) -> dict[str, Any]:
+        """
+        マイグレーション状態の取得.
 
         Returns:
             マイグレーション状態情報
+
         """
         applied_migrations = self.get_applied_migrations()
         pending_migrations = self.get_pending_migrations()
@@ -366,10 +389,12 @@ class MigrationManager:
         }
 
     def reset_database(self) -> bool:
-        """データベースを完全にリセット.
+        """
+        データベースを完全にリセット.
 
         Returns:
             リセット成功フラグ
+
         """
         try:
             # 全てのテーブルを削除
@@ -401,13 +426,15 @@ class MigrationManager:
 
 
 def create_migration_manager(db_path: str = "data/household.db") -> MigrationManager:
-    """マイグレーション管理インスタンスを作成.
+    """
+    マイグレーション管理インスタンスを作成.
 
     Args:
         db_path: データベースファイルのパス
 
     Returns:
         マイグレーション管理インスタンス
+
     """
     from .connection import get_database_connection
 

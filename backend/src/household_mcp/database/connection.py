@@ -1,4 +1,5 @@
-"""家計簿分析MCPサーバー用データベース接続管理.
+"""
+家計簿分析MCPサーバー用データベース接続管理.
 
 SQLiteデータベースへの接続管理、コネクションプール、トランザクション管理を提供
 """
@@ -6,9 +7,10 @@ SQLiteデータベースへの接続管理、コネクションプール、ト�
 import logging
 import sqlite3
 import threading
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Generator, Optional
+from typing import Any
 
 # from .models import DatabaseSchema  # TODO: Implement DatabaseSchema
 
@@ -19,13 +21,15 @@ class DatabaseConnection:
     """データベース接続管理クラス."""
 
     def __init__(self, db_path: str = "household.db"):
-        """初期化.
+        """
+        初期化.
 
         Args:
             db_path: データベースファイルのパス
+
         """
         self.db_path = Path(db_path)
-        self._connection: Optional[sqlite3.Connection] = None
+        self._connection: sqlite3.Connection | None = None
         self._lock = threading.Lock()
 
     def connect(self) -> sqlite3.Connection:
@@ -87,13 +91,15 @@ class DatabaseConnection:
 
     @contextmanager
     def transaction(self) -> Generator[sqlite3.Connection, None, None]:
-        """トランザクション管理コンテキストマネージャー.
+        """
+        トランザクション管理コンテキストマネージャー.
 
         Yields:
             データベース接続オブジェクト
 
         Raises:
             sqlite3.Error: データベースエラー
+
         """
         connection = self.connect()
         savepoint = False
@@ -128,11 +134,12 @@ class DatabaseConnection:
     def execute_query(
         self,
         query: str,
-        parameters: Optional[tuple[Any, ...]] = None,
+        parameters: tuple[Any, ...] | None = None,
         fetch_one: bool = False,
         fetch_all: bool = True,
-    ) -> Optional[Any]:
-        """クエリを実行.
+    ) -> Any | None:
+        """
+        クエリを実行.
 
         Args:
             query: 実行するSQL文
@@ -145,6 +152,7 @@ class DatabaseConnection:
 
         Raises:
             sqlite3.Error: データベースエラー
+
         """
         connection = self.connect()
         try:
@@ -171,7 +179,8 @@ class DatabaseConnection:
             raise
 
     def execute_many(self, query: str, parameters_list: list[tuple[Any, ...]]) -> int:
-        """複数レコードの一括処理.
+        """
+        複数レコードの一括処理.
 
         Args:
             query: 実行するSQL文
@@ -182,6 +191,7 @@ class DatabaseConnection:
 
         Raises:
             sqlite3.Error: データベースエラー
+
         """
         connection = self.connect()
         try:
@@ -197,23 +207,27 @@ class DatabaseConnection:
             raise
 
     def get_table_names(self) -> list[str]:
-        """データベース内のテーブル名一覧を取得.
+        """
+        データベース内のテーブル名一覧を取得.
 
         Returns:
             テーブル名のリスト
+
         """
         query = "SELECT name FROM sqlite_master WHERE type='table'"
         result = self.execute_query(query, fetch_all=True)
         return [row[0] for row in result] if result else []
 
     def table_exists(self, table_name: str) -> bool:
-        """指定されたテーブルが存在するかチェック.
+        """
+        指定されたテーブルが存在するかチェック.
 
         Args:
             table_name: テーブル名
 
         Returns:
             テーブルの存在フラグ
+
         """
         query = """
         SELECT name FROM sqlite_master
@@ -223,13 +237,15 @@ class DatabaseConnection:
         return result is not None
 
     def get_row_count(self, table_name: str) -> int:
-        """指定されたテーブルの行数を取得.
+        """
+        指定されたテーブルの行数を取得.
 
         Args:
             table_name: テーブル名
 
         Returns:
             行数
+
         """
         # テーブル名はSQLパラメータとして渡せないため、厳密な検証＋ホワイトリストで安全性を担保
         import re as _re  # local import to avoid top-level dependency at import time
@@ -247,13 +263,15 @@ class DatabaseConnection:
         return result[0] if result else 0
 
     def backup_database(self, backup_path: str) -> None:
-        """データベースのバックアップを作成.
+        """
+        データベースのバックアップを作成.
 
         Args:
             backup_path: バックアップファイルのパス
 
         Raises:
             sqlite3.Error: データベースエラー
+
         """
         try:
             source_conn = self.connect()
@@ -282,17 +300,19 @@ class DatabaseConnection:
 
 
 # グローバルなデータベース接続インスタンス
-_db_connection: Optional[DatabaseConnection] = None
+_db_connection: DatabaseConnection | None = None
 
 
 def get_database_connection(db_path: str = "data/household.db") -> DatabaseConnection:
-    """データベース接続のシングルトンインスタンスを取得.
+    """
+    データベース接続のシングルトンインスタンスを取得.
 
     Args:
         db_path: データベースファイルのパス
 
     Returns:
         データベース接続インスタンス
+
     """
     global _db_connection
 

@@ -41,4 +41,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 # Run the HTTP API server
 CMD ["uvicorn", "household_mcp.web.http_server:create_http_app", \
-     "--factory", "--host", "0.0.0.0", "--port", "8000"]
+    "--factory", "--host", "0.0.0.0", "--port", "8000"]

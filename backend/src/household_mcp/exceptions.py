@@ -8,7 +8,8 @@ class HouseholdMCPError(Exception):
 
 
 class ValidationError(HouseholdMCPError):
-    """Raised when user input or query parameters are invalid.
+    """
+    Raised when user input or query parameters are invalid.
 
     Extended to optionally carry a ``field`` attribute so legacy validation
     helpers (e.g. utils.validators) can attach the field name that failed.

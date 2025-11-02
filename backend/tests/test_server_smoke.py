@@ -1,5 +1,5 @@
 import asyncio
-from typing import Sequence
+from collections.abc import Sequence
 
 from mcp.types import Tool
 

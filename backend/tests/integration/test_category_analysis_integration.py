@@ -7,7 +7,7 @@ import pytest
 
 # Import directly from the actual server module
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
-from household_mcp import server  # noqa: E402
+from household_mcp import server
 
 
 class TestCategoryAnalysisIntegration:
@@ -148,9 +148,9 @@ class TestCategoryAnalysisIntegration:
                     "CSV",
                     "ファイル",
                 ]
-                assert any(
-                    keyword in error_msg for keyword in japanese_keywords
-                ), f"Error message not in Japanese: {error_msg}"
+                assert any(keyword in error_msg for keyword in japanese_keywords), (
+                    f"Error message not in Japanese: {error_msg}"
+                )
 
     def test_category_analysis_response_format(self) -> None:
         """Test that the response follows the expected format."""

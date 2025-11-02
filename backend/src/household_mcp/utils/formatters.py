@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
-from typing import TYPE_CHECKING, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Union
 
 NumberLike = Union[int, float, Decimal]
 
@@ -24,8 +25,9 @@ def _to_decimal(value: NumberLike | str) -> Decimal:
         raise ValueError(f"Invalid numeric value: {value!r}") from exc
 
 
-def format_currency(value: Optional[NumberLike], unit: str = "円") -> str:
-    """Format a numeric value as currency.
+def format_currency(value: NumberLike | None, unit: str = "円") -> str:
+    """
+    Format a numeric value as currency.
 
     Args:
         value: Numeric value to format, or None.
@@ -33,6 +35,7 @@ def format_currency(value: Optional[NumberLike], unit: str = "円") -> str:
 
     Returns:
         Formatted currency string with thousand separators, or "N/A" if value is None.
+
     """
     if value is None:
         return "N/A"
@@ -40,8 +43,9 @@ def format_currency(value: Optional[NumberLike], unit: str = "円") -> str:
     return f"{amount:,.0f}{unit}"
 
 
-def format_percentage(value: Optional[NumberLike], digits: int = 1) -> str:
-    """Format a numeric value as percentage.
+def format_percentage(value: NumberLike | None, digits: int = 1) -> str:
+    """
+    Format a numeric value as percentage.
 
     Args:
         value: Numeric value to format (as decimal, e.g., 0.15 = 15%), or None.
@@ -49,6 +53,7 @@ def format_percentage(value: Optional[NumberLike], digits: int = 1) -> str:
 
     Returns:
         Formatted percentage string, or "N/A" if value is None or NaN.
+
     """
     if value is None:
         return "N/A"
@@ -62,11 +67,12 @@ def format_percentage(value: Optional[NumberLike], digits: int = 1) -> str:
 
 def format_category_trend_response(
     category: str,
-    metrics: Sequence["TrendMetrics"],
+    metrics: Sequence[TrendMetrics],
     *,
     include_average: bool = True,
 ) -> str:
-    """カテゴリのトレンドを自然言語要約として整形する。
+    """
+    カテゴリのトレンドを自然言語要約として整形する。
 
     期待フォーマット（テスト参照）:
     "食費の 2025年06月〜2025年07月 の推移です。\n- 2025年06月: 6,000円 （前月比 N/A, 前年同月比 N/A, 12か月平均 6,000円)\n..."
@@ -107,7 +113,7 @@ def format_category_trend_response(
     return "\n".join(lines)
 
 
-def trend_metrics_to_dict(metrics: Sequence["TrendMetrics"]) -> list[dict[str, object]]:
+def trend_metrics_to_dict(metrics: Sequence[TrendMetrics]) -> list[dict[str, object]]:
     """TrendMetrics シーケンスをシリアライズ可能な辞書リストへ変換。"""
 
     rows: list[dict[str, object]] = []
@@ -126,8 +132,8 @@ def trend_metrics_to_dict(metrics: Sequence["TrendMetrics"]) -> list[dict[str, o
 
 
 __all__ = [
+    "format_category_trend_response",
     "format_currency",
     "format_percentage",
-    "format_category_trend_response",
     "trend_metrics_to_dict",
 ]

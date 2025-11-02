@@ -4,8 +4,6 @@ NOTE: These tests require the 'db' extra to be installed.
 They are skipped automatically in environments without SQLAlchemy.
 """
 
-# flake8: noqa: F811
-
 import os
 from datetime import date
 from pathlib import Path

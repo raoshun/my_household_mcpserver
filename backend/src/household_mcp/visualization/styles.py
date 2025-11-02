@@ -1,10 +1,9 @@
-"""Chart styling and color configuration for household budget visualization.
+"""
+Chart styling and color configuration for household budget visualization.
 
 This module provides consistent styling, color palettes, and matplotlib
 configuration for all chart types in the household MCP server.
 """
-
-from typing import List
 
 
 class ChartStyles:
@@ -63,14 +62,16 @@ class ChartStyles:
     }
 
     @classmethod
-    def get_colors(cls, categories: List[str]) -> List[str]:
-        """Get colors for a list of categories.
+    def get_colors(cls, categories: list[str]) -> list[str]:
+        """
+        Get colors for a list of categories.
 
         Args:
             categories: List of category names
 
         Returns:
             List of color strings matching the categories
+
         """
         colors = []
         for i, category in enumerate(categories):
@@ -84,14 +85,16 @@ class ChartStyles:
         return colors
 
     @classmethod
-    def get_default_colors(cls, n_colors: int) -> List[str]:
-        """Get n colors from the default palette.
+    def get_default_colors(cls, n_colors: int) -> list[str]:
+        """
+        Get n colors from the default palette.
 
         Args:
             n_colors: Number of colors needed
 
         Returns:
             List of color strings
+
         """
         colors = []
         for i in range(n_colors):
@@ -100,12 +103,14 @@ class ChartStyles:
 
     @classmethod
     def get_single_color(cls, category: str) -> str:
-        """Get color for a single category.
+        """
+        Get color for a single category.
 
         Args:
             category: Category name
 
         Returns:
             Color string
+
         """
         return cls.CATEGORY_COLORS.get(category, cls.DEFAULT_COLORS[0])
