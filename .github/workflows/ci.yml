@@ -51,6 +51,10 @@ jobs:
       - name: Prepare sample data directory
         run: |
           mkdir -p backend/tests/fixtures/data
+          # Copy sample CSV files for integration tests (2024 months only)
+          if [ -d "data" ]; then
+            cp data/収入・支出詳細_2024-*.csv backend/tests/fixtures/data/ 2>/dev/null || true
+          fi
 
       - name: Create virtual environment and install dependencies
         working-directory: backend
@@ -168,6 +172,10 @@ jobs:
       - name: Prepare sample data directory
         run: |
           mkdir -p backend/tests/fixtures/data
+          # Copy sample CSV files for integration tests (2024 months only)
+          if [ -d "data" ]; then
+            cp data/収入・支出詳細_2024-*.csv backend/tests/fixtures/data/ 2>/dev/null || true
+          fi
 
       - name: Install dependencies with ${{ matrix.extras }} extra
         working-directory: backend
@@ -210,6 +218,10 @@ jobs:
       - name: Prepare sample data directory
         run: |
           mkdir -p backend/tests/fixtures/data
+          # Copy sample CSV files for integration tests (2024 months only)
+          if [ -d "data" ]; then
+            cp data/収入・支出詳細_2024-*.csv backend/tests/fixtures/data/ 2>/dev/null || true
+          fi
 
       - name: Install all dependencies (full extra)
         working-directory: backend
