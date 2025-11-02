@@ -858,8 +858,8 @@
 ### TASK-702: Webアプリケーションの実装（FR-018-2）
 
 - [x] **TASK-702-1**: プロジェクト構造の作成
-  - [x] `webapp/` ディレクトリ作成
-  - [x] `webapp/css/`, `webapp/js/` サブディレクトリ作成
+  - [x] `frontend/` ディレクトリ確認
+  - [x] `frontend/css/`, `frontend/js/` サブディレクトリ確認
   - [x] サーバーコードと完全分離
 
 - [x] **TASK-702-2**: HTML/CSS実装
@@ -922,7 +922,7 @@
 ### TASK-705: ドキュメント整備
 
 - [x] **TASK-705-1**: Webアプリドキュメント作成
-  - [x] `webapp/README.md` - 使い方・起動方法
+  - [x] `frontend/README.md` - 使い方・起動方法
   - [x] API仕様記載
   - [x] トラブルシューティング
 
@@ -985,9 +985,9 @@
 ### TASK-802: Webアプリケーションの実装（FR-009-2）
 
 - [x] **TASK-802-1**: プロジェクト構造の作成
-  - [x] `webapp/duplicates.html` - 重複検出専用ページ
-  - [x] `webapp/css/duplicates.css` - 専用スタイルシート
-  - [x] `webapp/js/duplicates.js` - 重複検出ロジック
+  - [x] `frontend/duplicates.html` - 重複検出専用ページ
+  - [x] `frontend/css/duplicates.css` - 専用スタイルシート
+  - [x] `frontend/js/duplicates.js` - 重複検出ロジック
 
 - [x] **TASK-802-2**: HTML/CSS実装
   - [x] 検出設定パネル（日付・金額の誤差設定）
@@ -1077,9 +1077,9 @@
    - GET /api/duplicates/stats
 
 2. **Webアプリ**: 重複検出専用ページ（3ファイル）
-   - webapp/duplicates.html
-   - webapp/css/duplicates.css
-   - webapp/js/duplicates.js
+   - frontend/duplicates.html
+   - frontend/css/duplicates.css
+   - frontend/js/duplicates.js
 
 3. **既存ページ更新**: ナビゲーション統合
 
@@ -1115,10 +1115,10 @@
 
 ### 9.3 フロントエンド移設（安全ステップ）
 
-- [x] **TASK-904**: `webapp/` → `frontend/` へ移動
-  - [x] `index.html`, `duplicates.html`, `css/`, `js/` の全ファイルを移動（コピー済み、後で旧ファイル削除）
-  - [x] `Start Webapp HTTP Server` タスクの `cwd` を `frontend/` に更新
-  - [x] `webapp/README.md` → `frontend/README.md` に統合（内容を更新）
+- [x] **TASK-904**: `frontend/` 構造化とタスク更新
+  - [x] `index.html`, `duplicates.html`, `css/`, `js/` ファイル確認
+  - [x] `Start Webapp HTTP Server` タスク → `Start Frontend HTTP Server` に改名
+  - [x] `frontend/README.md` 作成・更新
 
 ### 9.4 バックエンド移設（本体）
 
@@ -1134,7 +1134,7 @@
   - [x] All Checks: `uv -C backend run ...` に委譲
   - [x] Start HTTP API Server: `-C backend` で実行
   - [x] Start Dev Server: `cwd=backend` で実行
-  - [x] Start Full Webapp Stack: API(backend) + Web(frontend) 同時起動
+  - [x] Start Full Stack: API(backend) + Web(frontend) 同時起動
 - [x] **TASK-907**: CI ワークフロー（あれば）を `backend/` パスに更新
   - [x] `.github/workflows/ci.yml`: すべてのジョブで `working-directory: backend` を確認・整備済み
   - [x] `.github/workflows/frontend-ci.yml`: `working-directory: frontend` で正しく設定済み
@@ -1259,11 +1259,11 @@
 - **実装ファイル**:
   - Backend: `src/household_mcp/web/http_server.py` (+235行: 2エンドポイント)
   - Frontend:
-    - `webapp/js/api.js` (+41行: 2メソッド追加)
-    - `webapp/js/trend.js` (+537行: 新規作成)
-    - `webapp/js/main.js` (+24行: タブナビゲーション・trendManager統合)
-    - `webapp/index.html` (+76行: トレンドタブUI追加)
-    - `webapp/css/style.css` (+176行: トレンドUI スタイル追加)
+    - `frontend/js/api.js` (+41行: 2メソッド追加)
+    - `frontend/js/trend.js` (+537行: 新規作成)
+    - `frontend/js/main.js` (+24行: タブナビゲーション・trendManager統合)
+    - `frontend/index.html` (+76行: トレンドタブUI追加)
+    - `frontend/css/style.css` (+176行: トレンドUI スタイル追加)
 
 - **主要機能**:
   - 2つのRESTful APIエンドポイント
