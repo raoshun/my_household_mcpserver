@@ -340,3 +340,62 @@ class AssetManager:
             "allocations": allocations,
             "total_assets": total,
         }
+
+    def export_records_csv(
+        self,
+        asset_class_id: int | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+    ) -> str:
+        """
+        資産レコードをCSV形式でエクスポート.
+
+        Args:
+            asset_class_id: 資産クラスIDフィルタ
+            start_date: 開始日付
+            end_date: 終了日付
+
+        Returns:
+            CSV形式の文字列
+
+        """
+        import csv
+        import io
+
+        records = self.get_records(
+            asset_class_id=asset_class_id,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+        output = io.StringIO()
+        writer = csv.DictWriter(
+            output,
+            fieldnames=[
+                "id",
+                "record_date",
+                "asset_class_id",
+                "asset_class_name",
+                "sub_asset_name",
+                "amount",
+                "memo",
+                "created_at",
+            ],
+        )
+
+        writer.writeheader()
+        for record in records:
+            writer.writerow(
+                {
+                    "id": record.id,
+                    "record_date": record.record_date,
+                    "asset_class_id": record.asset_class_id,
+                    "asset_class_name": record.asset_class_name,
+                    "sub_asset_name": record.sub_asset_name,
+                    "amount": record.amount,
+                    "memo": record.memo or "",
+                    "created_at": record.created_at,
+                }
+            )
+
+        return output.getvalue()

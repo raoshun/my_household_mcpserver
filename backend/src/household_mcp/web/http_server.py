@@ -1116,6 +1116,81 @@ def create_http_app(
             logger.exception(f"Error deleting asset record: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
+    @app.get("/api/assets/export")
+    async def export_asset_records(  # type: ignore
+        format_type: str = Query(  # type: ignore[assignment]
+            "csv", description="Export format"
+        ),
+        asset_class_id: int | None = Query(  # type: ignore[assignment]
+            None, description="Filter by asset class ID"
+        ),
+        start_date: str | None = Query(  # type: ignore[assignment]
+            None, description="Start date (YYYY-MM-DD)"
+        ),
+        end_date: str | None = Query(  # type: ignore[assignment]
+            None, description="End date (YYYY-MM-DD)"
+        ),
+    ) -> dict[str, Any]:  # type: ignore
+        """
+        Export asset records in specified format.
+
+        Args:
+            format_type: Export format (csv)
+            asset_class_id: Filter by asset class ID
+            start_date: Filter by start date
+            end_date: Filter by end date
+
+        Returns:
+            CSV content as file download or JSON
+
+        """
+        try:
+            from datetime import datetime as dt
+
+            from fastapi.responses import Response
+
+            from household_mcp.assets.manager import AssetManager
+            from household_mcp.database.manager import DatabaseManager
+
+            if format_type != "csv":
+                msg = "Only 'csv' format is supported"
+                raise HTTPException(status_code=400, detail=msg)
+
+            # Parse dates if provided
+            start_dt = None
+            end_dt = None
+            if start_date:
+                start_dt = dt.strptime(start_date, "%Y-%m-%d")
+            if end_date:
+                end_dt = dt.strptime(end_date, "%Y-%m-%d")
+
+            db_manager = DatabaseManager()
+            with db_manager.session_scope() as session:
+                manager = AssetManager(session)
+                csv_content = manager.export_records_csv(
+                    asset_class_id=asset_class_id,
+                    start_date=start_dt,
+                    end_date=end_dt,
+                )
+
+                # Return as downloadable CSV
+                filename = "assets.csv"
+                disposition = f"attachment; filename={filename}"
+                return Response(
+                    content=csv_content,
+                    media_type="text/csv",
+                    headers={"Content-Disposition": disposition},
+                )  # type: ignore[return-value]
+
+        except ValueError as e:
+            msg = f"Invalid date format: {e!s}"
+            raise HTTPException(status_code=400, detail=msg)
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.exception(f"Error exporting asset records: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
     # ==================== Tools Endpoints ====================
 
     # ==================== Tools Endpoints ====================
