@@ -30,6 +30,7 @@ VS Code のタスク（.vscode/tasks.json）がモノレポ構成に対応して
 - **自然言語インターフェース**: 日本語でカテゴリ別・期間別の支出推移を確認
 - **トレンド分析**: 月次集計、前月比・前年同月比・12か月移動平均の計算
 - **カテゴリハイライト**: 指定期間で支出が大きいカテゴリを自動抽出
+- **MCPツール実行UI**: Web ブラウザから対話的にツール実行、結果表示
 - **重複レコード検出**: AIとの会話で重複取引を検出・解消（[詳細](docs/duplicate_detection.md)）
 - **ローカル完結設計**: CSV ファイルをローカルで読み込み、外部通信なしで解析
 
@@ -1142,6 +1143,83 @@ npm run format
 ```
 
 詳細なフロントエンドテストガイドは [frontend/tests/README.md](frontend/tests/README.md) を参照してください。
+
+## MCP ツール実行 UI
+
+家計簿アプリには、ブラウザから対話的に MCP ツールを実行できるユーザーインターフェースが組み込まれています。
+
+### アクセス方法
+
+1. **バックエンド API を起動**
+
+   ```bash
+   cd backend
+   uv run uvicorn household_mcp.web.http_server:app --reload --host 0.0.0.0 --port 8000
+   ```
+
+2. **フロントエンドを起動**
+
+   ```bash
+   cd frontend
+   python -m http.server 8080
+   ```
+
+3. **ブラウザで開く**
+
+   ```url
+   http://localhost:8080/mcp-tools.html
+   ```
+
+### 利用可能なツール
+
+| ツール名 | 説明 | パラメータ |
+|---------|------|----------|
+| **enhanced_monthly_summary** | 指定年月の家計簿集計 | `year` (int), `month` (int) |
+| **enhanced_category_trend** | カテゴリ別トレンド分析 | `category` (str), `start_month` (str), `end_month` (str) |
+| **detect_duplicates** | 重複取引検出 | `threshold` (float, 0-1) |
+| **get_duplicate_candidates** | 重複候補をリスト表示 | なし |
+| **confirm_duplicate** | 重複を確認して解消 | `id1` (int), `id2` (int) |
+
+### 機能
+
+- **ツールギャラリー**: カード形式で全ツールを表示
+- **パラメータ入力**: モーダルダイアログで必須/オプションパラメータを入力
+- **リアルタイム実行**: ツール実行後、JSON/テーブル形式で結果を表示
+- **エラーハンドリング**: 実行エラーをわかりやすく表示
+- **アクセシビリティ**: ARIA ラベル、キーボードナビゲーション対応
+- **レスポンシブデザイン**: モバイル(480px) / タブレット(768px) / デスクトップ対応
+
+### キーボード操作
+
+| キー | 動作 |
+|------|------|
+| **Tab** | フォーカスを次の要素に移動 |
+| **Shift+Tab** | フォーカスを前の要素に移動 |
+| **Esc** | モーダルダイアログを閉じる |
+| **Enter** | ボタンを実行（フォーカス時） |
+
+### カスタマイズ
+
+新しいツールを追加する場合は、`backend/src/household_mcp/web/http_server.py` の `TOOL_DEFINITIONS` リストに定義を追加してください：
+
+```python
+{
+    "name": "tool_identifier",
+    "display_name": "ツール表示名",
+    "description": "ツール説明",
+    "category": "分析",
+    "parameters": {
+        "required": [
+            {
+                "name": "param1",
+                "type": "integer",  # or "number", "string", "date"
+                "description": "パラメータ説明"
+            }
+        ],
+        "optional": []
+    }
+}
+```
 
 ## ライセンス
 
