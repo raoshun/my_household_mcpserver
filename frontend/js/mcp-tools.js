@@ -20,34 +20,32 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * ツール一覧をAPIから取得
+ * Load tools list from API and render gallery
  */
 async function loadTools() {
-    const loadingIndicator = document.getElementById('loading-indicator');
-    const errorMessage = document.getElementById('error-message');
-
-    loadingIndicator.classList.remove('hidden');
-    errorMessage.classList.add('hidden');
-
     try {
+        mcpToolsState.executionInProgress = true;
+        document.getElementById('tools-gallery').innerHTML =
+            '<div class="loading">ツール一覧を読み込み中...</div>';
+
         const response = await fetch('/api/tools');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const data = await response.json();
-
-        if (data.success && data.tools) {
-            mcpToolsState.tools = data.tools;
-            renderToolsGallery(data.tools);
-        } else {
-            throw new Error(data.error || 'ツール一覧の取得に失敗しました');
+        const result = await response.json();
+        if (!result.success || !result.data) {
+            throw new Error('Invalid response format from API');
         }
+
+        mcpToolsState.tools = result.data;
+        renderToolsGallery(mcpToolsState.tools);
     } catch (error) {
-        console.error('ツール一覧取得失敗:', error);
-        showError(`ツール一覧を取得できませんでした: ${error.message}`);
+        console.error('Error loading tools:', error);
+        document.getElementById('tools-gallery').innerHTML =
+            `<div class="error">ツール一覧の読み込みに失敗しました: ${error.message}</div>`;
     } finally {
-        loadingIndicator.classList.add('hidden');
+        mcpToolsState.executionInProgress = false;
     }
 }
 
