@@ -1,8 +1,9 @@
 """Integration tests for HTTP server endpoints."""
 
+from unittest.mock import patch
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import patch
 
 from household_mcp.web.http_server import create_http_app
 
@@ -115,17 +116,14 @@ class TestToolExecutionEndpoints:
         # Test with a valid tool name
         response = client.post(
             "/api/tools/enhanced_monthly_summary/execute",
-            json={"year": 2024, "month": 1}
+            json={"year": 2024, "month": 1},
         )
         # Should not return 404
         assert response.status_code != 404
 
     def test_tool_execute_invalid_tool_returns_error(self, client):
         """Test that invalid tool name returns appropriate error."""
-        response = client.post(
-            "/api/tools/nonexistent_tool/execute",
-            json={}
-        )
+        response = client.post("/api/tools/nonexistent_tool/execute", json={})
         # Should return 400 or 422, not 404 or 500
         assert response.status_code in [400, 422, 404]
 

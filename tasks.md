@@ -1422,13 +1422,13 @@
 
 ### 予防可能なエラー
 
-| エラー | テスト | ファイル |
-|--------|--------|----------|
-| 404: `/api/tools` 不在 | TEST-8, 9 | `test_http_server_endpoints.py` |
-| 500: Database manager 未初期化 | TEST-9 | `test_http_server_endpoints.py` |
-| ハードコード問題 (8001) | TEST-12, 13 | `config.test.js` |
-| イメージビルド問題 | TEST-4, 5 | `integration_test.sh` |
-| デフォルトポート不一致 | TEST-13 | `config.test.js` + `integration_test.sh` |
+| エラー                         | テスト      | ファイル                                 |
+| ------------------------------ | ----------- | ---------------------------------------- |
+| 404: `/api/tools` 不在         | TEST-8, 9   | `test_http_server_endpoints.py`          |
+| 500: Database manager 未初期化 | TEST-9      | `test_http_server_endpoints.py`          |
+| ハードコード問題 (8001)        | TEST-12, 13 | `config.test.js`                         |
+| イメージビルド問題             | TEST-4, 5   | `integration_test.sh`                    |
+| デフォルトポート不一致         | TEST-13     | `config.test.js` + `integration_test.sh` |
 
 ---
 
