@@ -20,10 +20,7 @@ except ImportError:
     HAS_FASTAPI = False
 
 from household_mcp.streaming import ImageStreamer
-from household_mcp.streaming.global_cache import (
-    ensure_global_cache,
-    get_global_cache,
-)
+from household_mcp.streaming.global_cache import ensure_global_cache, get_global_cache
 
 logger = logging.getLogger(__name__)
 
@@ -906,33 +903,23 @@ def create_http_app(
 
             # Import and execute the appropriate tool
             if tool_name == "enhanced_monthly_summary":
-                from household_mcp.tools.enhanced_tools import (
-                    enhanced_monthly_summary,
-                )
+                from household_mcp.tools.enhanced_tools import enhanced_monthly_summary
 
                 result = enhanced_monthly_summary(**params)
             elif tool_name == "enhanced_category_trend":
-                from household_mcp.tools.enhanced_tools import (
-                    enhanced_category_trend,
-                )
+                from household_mcp.tools.enhanced_tools import enhanced_category_trend
 
                 result = enhanced_category_trend(**params)
             elif tool_name == "detect_duplicates":
-                from household_mcp.tools.duplicate_tools import (
-                    detect_duplicates,
-                )
+                from household_mcp.tools.duplicate_tools import detect_duplicates
 
                 result = detect_duplicates(**params)
             elif tool_name == "get_duplicate_candidates":
-                from household_mcp.tools.duplicate_tools import (
-                    get_duplicate_candidates,
-                )
+                from household_mcp.tools.duplicate_tools import get_duplicate_candidates
 
                 result = get_duplicate_candidates(**params)
             elif tool_name == "confirm_duplicate":
-                from household_mcp.tools.duplicate_tools import (
-                    confirm_duplicate,
-                )
+                from household_mcp.tools.duplicate_tools import confirm_duplicate
 
                 result = confirm_duplicate(**params)
             else:

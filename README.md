@@ -1172,13 +1172,13 @@ npm run format
 
 ### 利用可能なツール
 
-| ツール名 | 説明 | パラメータ |
-|---------|------|----------|
-| **enhanced_monthly_summary** | 指定年月の家計簿集計 | `year` (int), `month` (int) |
-| **enhanced_category_trend** | カテゴリ別トレンド分析 | `category` (str), `start_month` (str), `end_month` (str) |
-| **detect_duplicates** | 重複取引検出 | `threshold` (float, 0-1) |
-| **get_duplicate_candidates** | 重複候補をリスト表示 | なし |
-| **confirm_duplicate** | 重複を確認して解消 | `id1` (int), `id2` (int) |
+| ツール名                     | 説明                   | パラメータ                                               |
+| ---------------------------- | ---------------------- | -------------------------------------------------------- |
+| **enhanced_monthly_summary** | 指定年月の家計簿集計   | `year` (int), `month` (int)                              |
+| **enhanced_category_trend**  | カテゴリ別トレンド分析 | `category` (str), `start_month` (str), `end_month` (str) |
+| **detect_duplicates**        | 重複取引検出           | `threshold` (float, 0-1)                                 |
+| **get_duplicate_candidates** | 重複候補をリスト表示   | なし                                                     |
+| **confirm_duplicate**        | 重複を確認して解消     | `id1` (int), `id2` (int)                                 |
 
 ### 機能
 
@@ -1191,12 +1191,12 @@ npm run format
 
 ### キーボード操作
 
-| キー | 動作 |
-|------|------|
-| **Tab** | フォーカスを次の要素に移動 |
-| **Shift+Tab** | フォーカスを前の要素に移動 |
-| **Esc** | モーダルダイアログを閉じる |
-| **Enter** | ボタンを実行（フォーカス時） |
+| キー          | 動作                         |
+| ------------- | ---------------------------- |
+| **Tab**       | フォーカスを次の要素に移動   |
+| **Shift+Tab** | フォーカスを前の要素に移動   |
+| **Esc**       | モーダルダイアログを閉じる   |
+| **Enter**     | ボタンを実行（フォーカス時） |
 
 ### カスタマイズ
 
