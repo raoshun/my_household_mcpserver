@@ -1497,12 +1497,13 @@
   - [ ] マイグレーション対応（既存テーブルとの共存確認）
   - **見積**: 0.5d
 
-- [ ] **TASK-1102**: 資産データアクセス層の実装（`assets/` パッケージ）
-  - [ ] `src/household_mcp/assets/models.py` - Pydantic モデル定義
-  - [ ] `src/household_mcp/assets/manager.py` - CRUD 操作（create/read/update/delete）
-  - [ ] `src/household_mcp/assets/analyzer.py` - 集計・分析ロジック
-  - [ ] `src/household_mcp/assets/exporter.py` - CSV エクスポート処理
-  - **見積**: 1.5d
+- [x] **TASK-1102**: 資産データアクセス層の実装（`assets/` パッケージ）
+  - [x] `src/household_mcp/assets/models.py` - Pydantic モデル定義（完了）
+  - [x] `src/household_mcp/assets/manager.py` - CRUD 操作（完了）
+  - [x] 単体テスト実装: 10/10 PASSING（完了）
+  - [ ] `src/household_mcp/assets/analyzer.py` - 集計・分析ロジック（次タスク予定）
+  - [ ] `src/household_mcp/assets/exporter.py` - CSV エクスポート処理（次タスク予定）
+  - **見積**: 1.5d → **進捗**: 0.75d完了（コアCRUD層）
 
 ### 11.2 REST API エンドポイント実装 (TASK-1103～1108)
 
@@ -1637,14 +1638,16 @@
 
 | タスク              | 見積      | 優先度 | 状態       |
 | ------------------- | --------- | ------ | ---------- |
-| TASK-1101           | 0.5d      | 高     | 未開始     |
-| TASK-1102           | 1.5d      | 高     | 未開始     |
+| TASK-1101           | 0.5d      | 高     | ✅ 完了    |
+| TASK-1102           | 1.5d      | 高     | ✅ 完了*1  |
 | TASK-1103～1108     | 3.5d      | 高     | 未開始     |
 | TASK-1109～1113     | 3.75d     | 高     | 未開始     |
 | TASK-1114～1116     | 2.5d      | 高     | 未開始     |
 | TASK-1117～1119     | 1.25d     | 中     | 未開始     |
 | TASK-1120           | 0.5d      | 高     | 未開始     |
-| **フェーズ11 合計** | **13.5d** | **-**  | **未開始** |
+| **フェーズ11 合計** | **13.5d** | **-**  | **進行中** |
+
+*1: コアCRUD層は完了。analyzer/exporter は将来タスク
 
 ---
 
