@@ -17,7 +17,63 @@ const mcpToolsState = {
  */
 document.addEventListener('DOMContentLoaded', () => {
     loadTools();
+    setupKeyboardHandling();
+    setupAccessibility();
 });
+
+/**
+ * キーボードナビゲーション設定
+ */
+function setupKeyboardHandling() {
+    document.addEventListener('keydown', (event) => {
+        // Esc キーでモーダルを閉じる
+        if (event.key === 'Escape') {
+            const modal = document.getElementById('execute-modal');
+            if (modal && !modal.classList.contains('hidden')) {
+                closeToolModal();
+                event.preventDefault();
+            }
+        }
+    });
+
+    // モーダルオーバーレイクリックで閉じる
+    const modal = document.getElementById('execute-modal');
+    const overlay = modal?.querySelector('.modal-overlay');
+    if (overlay) {
+        overlay.addEventListener('click', closeToolModal);
+    }
+}
+
+/**
+ * アクセシビリティ設定
+ */
+function setupAccessibility() {
+    // フォーカストラップ設定 (モーダル内のタブキー制御)
+    const modal = document.getElementById('execute-modal');
+    if (modal) {
+        modal.addEventListener('keydown', (event) => {
+            if (event.key === 'Tab') {
+                const focusableElements = modal.querySelectorAll(
+                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                );
+                const firstElement = focusableElements[0];
+                const lastElement = focusableElements[focusableElements.length - 1];
+
+                if (event.shiftKey) {
+                    if (document.activeElement === firstElement) {
+                        lastElement.focus();
+                        event.preventDefault();
+                    }
+                } else {
+                    if (document.activeElement === lastElement) {
+                        firstElement.focus();
+                        event.preventDefault();
+                    }
+                }
+            }
+        });
+    }
+}
 
 /**
  * Load tools list from API and render gallery
@@ -82,21 +138,25 @@ function createToolCard(tool) {
         .map(p => p.name)
         .join(', ') || 'なし';
 
+    const button = document.createElement('button');
+    button.className = 'execute-button';
+    button.setAttribute('aria-label', `${tool.display_name || tool.name} を実行`);
+    button.innerHTML = '🚀 このツールを実行';
+    button.addEventListener('click', () => openToolModal(tool.name));
+
     card.innerHTML = `
         <h3>${escapeHtml(tool.display_name || tool.name)}</h3>
         <p class="description">${escapeHtml(tool.description || '')}</p>
         <div class="category">
             <span class="badge">${escapeHtml(tool.category || '一般')}</span>
         </div>
-        <div class="parameters">
+        <div class="parameters" aria-label="パラメータ情報">
             <p><strong>必須パラメータ:</strong> ${escapeHtml(requiredParamNames)}</p>
             <p><strong>オプション:</strong> ${escapeHtml(optionalParamNames)}</p>
         </div>
-        <button class="execute-button" onclick="openToolModal('${escapeHtml(tool.name)}')">
-            🚀 このツールを実行
-        </button>
     `;
 
+    card.appendChild(button);
     return card;
 }
 
@@ -128,6 +188,17 @@ function openToolModal(toolName) {
     // モーダルを表示
     const modal = document.getElementById('execute-modal');
     modal.classList.remove('hidden');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'modal-title');
+
+    // フォーカスを最初の入力要素に移動
+    setTimeout(() => {
+        const firstInput = form.querySelector('input, select, textarea, button');
+        if (firstInput) {
+            firstInput.focus();
+        }
+    }, 100);
 }
 
 /**
@@ -178,12 +249,13 @@ function createParameterInput(param, isRequired) {
     const fieldId = `param_${param.name}`;
     const required = isRequired ? 'required' : '';
     const defaultValue = param.default !== null && param.default !== undefined ? param.default : '';
+    const descId = `desc_${param.name}`;
 
     let input = '';
 
     if (param.choices && Array.isArray(param.choices)) {
         input = `
-            <select id="${fieldId}" name="${param.name}" ${required}>
+            <select id="${fieldId}" name="${param.name}" ${required} aria-describedby="${descId}">
                 <option value="">-- 選択してください --</option>
                 ${param.choices.map(choice => `
                     <option value="${escapeHtml(choice)}" ${choice === defaultValue ? 'selected' : ''}>
@@ -219,6 +291,7 @@ function createParameterInput(param, isRequired) {
                 value="${escapeHtml(defaultValue.toString())}"
                 ${inputAttrs}
                 ${required}
+                aria-describedby="${descId}"
             >
         `;
     }
@@ -226,7 +299,7 @@ function createParameterInput(param, isRequired) {
     return `
         <div class="form-group">
             <label for="${fieldId}">${escapeHtml(param.name)}</label>
-            <small>${escapeHtml(param.description || '')}</small>
+            <small id="${descId}">${escapeHtml(param.description || '')}</small>
             ${input}
         </div>
     `;

@@ -53,12 +53,12 @@
     </div>
 
     <!-- Tool Execution Modal -->
-    <div id="execute-modal" class="modal hidden">
+    <div id="execute-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div class="modal-overlay" onclick="closeToolModal()"></div>
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="modal-title">ツール実行</h2>
-                <button class="close-button" onclick="closeToolModal()">×</button>
+                <button class="close-button" onclick="closeToolModal()" aria-label="モーダルを閉じる" title="閉じる (Esc キー)">×</button>
             </div>
             <div class="modal-body">
                 <p id="modal-description"></p>
@@ -67,10 +67,10 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button id="execute-button" onclick="executeTool()" class="primary-button">実行</button>
-                <button onclick="closeToolModal()" class="secondary-button">キャンセル</button>
+                <button id="execute-button" onclick="executeTool()" class="primary-button" aria-label="ツールを実行する">実行</button>
+                <button onclick="closeToolModal()" class="secondary-button" aria-label="モーダルをキャンセルして閉じる">キャンセル</button>
             </div>
-            <div id="execution-result" class="execution-result hidden"></div>
+            <div id="execution-result" class="execution-result hidden" role="region" aria-live="polite" aria-label="実行結果"></div>
         </div>
     </div>
 

@@ -105,12 +105,12 @@
     margin-top: 15px;
     background: #28a745;
     color: white;
-    border: none;
+    border: 2px solid transparent;
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
     font-weight: bold;
-    transition: background 0.2s;
+    transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 
 .tool-card .execute-button:hover {
@@ -119,6 +119,12 @@
 
 .tool-card .execute-button:active {
     background: #1e7e34;
+}
+
+.tool-card .execute-button:focus {
+    outline: none;
+    border-color: #fff;
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.5);
 }
 
 /* ===== モーダルダイアログ ===== */
@@ -182,16 +188,23 @@
 
 .close-button {
     background: none;
-    border: none;
+    border: 2px solid transparent;
     font-size: 28px;
     cursor: pointer;
     color: #999;
-    transition: color 0.2s;
-    padding: 0;
+    transition: color 0.2s, border-color 0.2s;
+    padding: 4px;
     line-height: 1;
+    border-radius: 4px;
 }
 
 .close-button:hover {
+    color: #333;
+}
+
+.close-button:focus {
+    outline: none;
+    border-color: #007bff;
     color: #333;
 }
 
@@ -217,12 +230,18 @@
 
 .modal-footer button {
     padding: 10px 20px;
-    border: none;
+    border: 2px solid transparent;
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
     font-weight: bold;
-    transition: background 0.2s;
+    transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.modal-footer button:focus {
+    outline: none;
+    border-color: #fff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5);
 }
 
 .primary-button {
@@ -237,6 +256,7 @@
 .primary-button:disabled {
     background: #6c757d;
     cursor: not-allowed;
+    opacity: 0.6;
 }
 
 .secondary-button {
@@ -459,14 +479,17 @@
 
 /* ===== レスポンシブデザイン ===== */
 
+/* タブレット対応 (768px以下) */
 @media (max-width: 768px) {
     .tools-gallery {
         grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
     }
 
     .modal-content {
         width: 95%;
         padding: 20px;
+        margin: 10px;
     }
 
     .modal-header h2 {
@@ -480,29 +503,67 @@
     .tool-card h3 {
         font-size: 16px;
     }
+
+    #tool-form fieldset {
+        padding: 12px;
+    }
+
+    .form-group input,
+    .form-group select {
+        font-size: 16px; /* キーボード出現を防ぐため16px以上 */
+    }
 }
 
+/* スマートフォン対応 (480px以下) */
 @media (max-width: 480px) {
+    .mcp-tools-intro {
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .mcp-tools-intro h2 {
+        font-size: 16px;
+    }
+
     .tools-gallery {
         grid-template-columns: 1fr;
+        gap: 12px;
     }
 
     .modal-content {
         width: 100%;
         max-height: 100vh;
         border-radius: 0;
+        padding: 16px;
+        margin: 0;
     }
 
     .modal-header {
         margin-bottom: 15px;
+        padding-bottom: 8px;
+    }
+
+    .modal-header h2 {
+        font-size: 16px;
+    }
+
+    .close-button {
+        font-size: 24px;
+    }
+
+    .modal-body > p {
+        font-size: 13px;
     }
 
     .modal-footer {
         flex-direction: column;
+        gap: 8px;
     }
 
     .modal-footer button {
         width: 100%;
+        padding: 12px;
+        font-size: 16px; /* タッチターゲットのサイズを確保 */
     }
 
     .tool-card {
@@ -513,8 +574,64 @@
         font-size: 15px;
     }
 
-    .tool-card .execute-button {
-        padding: 8px;
+    .tool-card .description {
         font-size: 13px;
+    }
+
+    .tool-card .execute-button {
+        padding: 12px;
+        font-size: 14px;
+    }
+
+    .tool-card .parameters {
+        font-size: 11px;
+        padding: 8px;
+    }
+
+    #tool-form fieldset {
+        padding: 10px;
+        margin-bottom: 15px;
+    }
+
+    #tool-form legend {
+        font-size: 13px;
+    }
+
+    .form-group {
+        margin-bottom: 12px;
+    }
+
+    .form-group label {
+        font-size: 13px;
+    }
+
+    .form-group input,
+    .form-group select {
+        font-size: 16px;
+        padding: 12px;
+    }
+
+    .execution-result {
+        margin-top: 15px;
+        padding: 12px;
+    }
+
+    .success-result,
+    .error-result {
+        padding: 12px;
+    }
+
+    .success-result h4,
+    .error-result h4 {
+        font-size: 13px;
+    }
+
+    .result-table {
+        font-size: 11px;
+    }
+
+    .result-table th,
+    .result-table td {
+        padding: 6px;
     }
 }
