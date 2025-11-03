@@ -1798,7 +1798,562 @@ Response: `{ success: true, tool_name, execution_time_ms, result }`
 
 ---
 
-## 13. 変更履歴
+## 13. 資産推移分析機能設計（FR-022対応）
+
+### 13.1 概要
+
+FR-022では、複数の資産クラス（現金、株、投資信託、不動産、年金）の時系列データを手動登録・管理し、資産推移を可視化・分析する機能を実装します。資産データは独立したテーブルで管理され、将来の家計簿連携に備えた設計となっています。
+
+### 13.2 データベース設計
+
+#### 13.2.1 資産クラステーブル（assets_classes）
+
+```sql
+CREATE TABLE assets_classes (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    display_name TEXT NOT NULL,
+    description TEXT,
+    icon TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+初期データ（5つの資産クラス）:
+
+| id  | name       | display_name | description    | icon |
+| --- | ---------- | ------------ | -------------- | ---- |
+| 1   | cash       | 現金         | 現金・預金     | 💰    |
+| 2   | stocks     | 株           | 国内株・外国株 | 📈    |
+| 3   | funds      | 投資信託     | 投資信託全般   | 📊    |
+| 4   | realestate | 不動産       | 土地・建物等   | 🏠    |
+| 5   | pension    | 年金         | 確定拠出年金等 | 🎯    |
+
+#### 13.2.2 資産レコードテーブル（asset_records）
+
+```sql
+CREATE TABLE asset_records (
+    id INTEGER PRIMARY KEY,
+    record_date DATE NOT NULL,
+    asset_class_id INTEGER NOT NULL REFERENCES assets_classes(id),
+    sub_asset_name TEXT NOT NULL,
+    amount INTEGER NOT NULL,  -- JPY, 単位: 円
+    memo TEXT,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    is_manual BOOLEAN DEFAULT TRUE,
+    source_type TEXT DEFAULT 'manual',  -- 'manual', 'linked', 'calculated'
+    linked_transaction_id INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE,
+    created_by TEXT DEFAULT 'user'
+);
+
+CREATE INDEX idx_asset_records_date ON asset_records(record_date);
+CREATE INDEX idx_asset_records_class ON asset_records(asset_class_id);
+CREATE INDEX idx_asset_records_is_deleted ON asset_records(is_deleted);
+```
+
+**フィールド説明**:
+
+- `record_date`: 資産登録日（通常は月末日、日中の任意日でも可）
+- `asset_class_id`: 資産クラスID（FK）
+- `sub_asset_name`: サブ資産名（例：「普通預金」「楽天VTI」等、フリーテキスト）
+- `amount`: 金額（JPY、正の整数値）
+- `is_deleted`: 論理削除フラグ（将来的に削除履歴管理に対応）
+- `is_manual`: 手動登録フラグ（v1.2では全て True）
+- `source_type`: データソース種別（v1.2では全て 'manual'、将来は 'linked' や 'calculated' も想定）
+- `linked_transaction_id`: 家計簿の取引ID（将来の連携用、現状は NULL）
+
+### 13.3 API エンドポイント設計
+
+#### 13.3.1 資産クラス取得
+
+```http
+GET /api/assets/classes
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "classes": [
+    {
+      "id": 1,
+      "name": "cash",
+      "display_name": "現金",
+      "description": "現金・預金",
+      "icon": "💰"
+    },
+    ...
+  ]
+}
+```
+
+#### 13.3.2 資産レコード一覧取得
+
+```http
+GET /api/assets/records
+Query Parameters:
+  - asset_class_id: INTEGER (optional)
+  - start_date: DATE (optional, YYYY-MM-DD)
+  - end_date: DATE (optional, YYYY-MM-DD)
+  - include_deleted: BOOLEAN (default: false)
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "records": [
+    {
+      "id": 1,
+      "record_date": "2025-01-31",
+      "asset_class_id": 1,
+      "asset_class_name": "現金",
+      "sub_asset_name": "普通預金",
+      "amount": 1000000,
+      "memo": "給与振込",
+      "created_at": "2025-01-31T00:00:00Z",
+      "updated_at": "2025-01-31T00:00:00Z"
+    },
+    ...
+  ],
+  "total_count": 100
+}
+```
+
+#### 13.3.3 資産レコード登録
+
+```http
+POST /api/assets/records
+```
+
+Request:
+
+```json
+{
+  "record_date": "2025-02-28",
+  "asset_class_id": 1,
+  "sub_asset_name": "普通預金",
+  "amount": 1050000,
+  "memo": "給与振込"
+}
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "record": {
+    "id": 2,
+    "record_date": "2025-02-28",
+    "asset_class_id": 1,
+    "asset_class_name": "現金",
+    "sub_asset_name": "普通預金",
+    "amount": 1050000,
+    "memo": "給与振込",
+    "created_at": "2025-02-28T00:00:00Z"
+  }
+}
+```
+
+#### 13.3.4 資産レコード編集
+
+```http
+PUT /api/assets/records/{record_id}
+```
+
+Request: 上記 POST と同様（更新するフィールドのみ指定可）
+
+Response: 更新後のレコード
+
+#### 13.3.5 資産レコード削除
+
+```http
+DELETE /api/assets/records/{record_id}
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "message": "レコードを削除しました"
+}
+```
+
+#### 13.3.6 資産集計（月末時点）
+
+```http
+GET /api/assets/summary
+Query Parameters:
+  - start_year: INTEGER
+  - start_month: INTEGER
+  - end_year: INTEGER
+  - end_month: INTEGER
+  - fill_method: 'forward_fill' | 'zero' (default: 'forward_fill')
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "summary": {
+    "2025-01": {
+      "1": 1000000,      // 資産クラスID 1 (現金): 1,000,000 円
+      "2": 500000,       // 資産クラスID 2 (株): 500,000 円
+      ...
+      "total": 2500000
+    },
+    "2025-02": {
+      ...
+    }
+  },
+  "classes": {
+    "1": "現金",
+    "2": "株",
+    ...
+  }
+}
+```
+
+#### 13.3.7 資産配分（月末時点）
+
+```http
+GET /api/assets/allocation
+Query Parameters:
+  - year: INTEGER
+  - month: INTEGER
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "allocation": [
+    {
+      "asset_class_id": 1,
+      "asset_class_name": "現金",
+      "amount": 1000000,
+      "percentage": 40.0
+    },
+    {
+      "asset_class_id": 2,
+      "asset_class_name": "株",
+      "amount": 800000,
+      "percentage": 32.0
+    },
+    ...
+  ],
+  "total_assets": 2500000
+}
+```
+
+#### 13.3.8 資産エクスポート（CSV）
+
+```http
+GET /api/assets/export
+Query Parameters:
+  - format: 'csv' (required)
+  - start_date: DATE (optional)
+  - end_date: DATE (optional)
+  - asset_class_id: INTEGER (optional)
+```
+
+Response: CSV ファイル（`Content-Disposition: attachment` で返却）
+
+### 13.4 バックエンド実装構成
+
+新規モジュール追加:
+
+```text
+backend/src/household_mcp/
+├── assets/
+│   ├── __init__.py
+│   ├── models.py              # SQLAlchemy/Pydantic モデル
+│   ├── manager.py             # 資産データ操作（CRUD）
+│   ├── analyzer.py            # 集計・分析ロジック
+│   └── exporter.py            # CSV エクスポート処理
+└── web/
+    └── routes/
+        └── assets_routes.py    # FastAPI ルートハンドラ
+```
+
+#### 13.4.1 models.py
+
+```python
+from pydantic import BaseModel
+from typing import Optional
+from datetime import date
+
+class AssetClassModel(BaseModel):
+    id: int
+    name: str
+    display_name: str
+    description: Optional[str] = None
+    icon: Optional[str] = None
+
+class AssetRecordModel(BaseModel):
+    id: Optional[int] = None
+    record_date: date
+    asset_class_id: int
+    sub_asset_name: str
+    amount: int  # JPY
+    memo: Optional[str] = None
+    is_manual: bool = True
+    source_type: str = 'manual'
+
+class AssetSummaryModel(BaseModel):
+    year: int
+    month: int
+    summary: dict  # { class_id: amount, ... }
+    total: int
+```
+
+#### 13.4.2 manager.py
+
+主要メソッド:
+
+```python
+class AssetManager:
+    def __init__(self, db_path: str):
+        self.db = DatabaseManager(db_path)
+
+    def create_record(self, record: AssetRecordModel) -> AssetRecordModel: ...
+    def get_records(self, filters: dict) -> List[AssetRecordModel]: ...
+    def update_record(self, record_id: int, data: dict) -> AssetRecordModel: ...
+    def delete_record(self, record_id: int) -> bool: ...
+    def get_classes(self) -> List[AssetClassModel]: ...
+```
+
+#### 13.4.3 analyzer.py
+
+```python
+class AssetAnalyzer:
+    def get_summary(self, start_year: int, start_month: int,
+                    end_year: int, end_month: int,
+                    fill_method: str = 'forward_fill') -> dict: ...
+
+    def get_allocation(self, year: int, month: int) -> List[dict]: ...
+
+    def get_monthly_snapshot(self, year: int, month: int) -> dict: ...
+```
+
+### 13.5 フロントエンド実装
+
+#### 13.5.1 ページ構成
+
+新ページ `assets.html`:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>資産管理 | 家計簿分析</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="main-nav">
+        <!-- 他ページへのリンク -->
+        <a href="assets.html" class="active">📈 資産管理</a>
+    </nav>
+
+    <div class="container">
+        <h1>資産推移分析</h1>
+
+        <!-- 資産登録フォーム -->
+        <section id="asset-form-section">
+            <h2>資産登録</h2>
+            <form id="asset-form">
+                <input type="date" id="record-date" required>
+                <select id="asset-class" required>
+                    <!-- 動的挿入 -->
+                </select>
+                <input type="text" id="sub-asset-name" placeholder="サブ資産名" required>
+                <input type="number" id="amount" placeholder="金額（円）" required>
+                <textarea id="memo" placeholder="メモ（オプション）"></textarea>
+                <button type="submit">登録</button>
+            </form>
+        </section>
+
+        <!-- 資産一覧テーブル -->
+        <section id="asset-list-section">
+            <h2>資産一覧</h2>
+            <table id="asset-table">
+                <thead>
+                    <tr>
+                        <th>登録日</th>
+                        <th>資産クラス</th>
+                        <th>サブ資産名</th>
+                        <th>金額</th>
+                        <th>アクション</th>
+                    </tr>
+                </thead>
+                <tbody id="asset-tbody">
+                </tbody>
+            </table>
+        </section>
+
+        <!-- 期間選択 -->
+        <section id="period-selection">
+            <h2>期間選択</h2>
+            <div class="period-controls">
+                <button class="preset-btn" data-preset="3m">直近3ヶ月</button>
+                <button class="preset-btn" data-preset="6m">直近6ヶ月</button>
+                <button class="preset-btn" data-preset="12m">直近12ヶ月</button>
+                <button class="preset-btn" data-preset="all">全期間</button>
+                <input type="date" id="custom-start">
+                <input type="date" id="custom-end">
+                <button id="apply-custom-period">適用</button>
+            </div>
+        </section>
+
+        <!-- グラフタブ -->
+        <section id="chart-section">
+            <div class="chart-tabs">
+                <button class="chart-tab-btn active" data-tab="trend">推移グラフ</button>
+                <button class="chart-tab-btn" data-tab="allocation">配分（月末時点）</button>
+            </div>
+
+            <div id="trend-tab" class="chart-tab-content active">
+                <canvas id="trend-chart"></canvas>
+            </div>
+
+            <div id="allocation-tab" class="chart-tab-content">
+                <canvas id="allocation-chart"></canvas>
+            </div>
+        </section>
+
+        <!-- 統計サマリー -->
+        <section id="summary-section">
+            <h2>統計サマリー</h2>
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <div class="label">合計資産額</div>
+                    <div class="value" id="total-assets">-</div>
+                </div>
+                <div class="summary-card">
+                    <div class="label">前月比</div>
+                    <div class="value" id="month-on-month">-</div>
+                </div>
+                <div class="summary-card">
+                    <div class="label">最大資産額</div>
+                    <div class="value" id="max-assets">-</div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- 編集モーダル -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <h3>資産情報編集</h3>
+            <form id="edit-form">
+                <!-- 登録フォームと同じフィールド -->
+                <button type="submit">更新</button>
+                <button type="button" id="close-modal">キャンセル</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/assets.js"></script>
+</body>
+</html>
+```
+
+#### 13.5.2 スタイル（css/assets.css）
+
+- フォーム、テーブル、グラフ、カードレイアウト
+- レスポンシブデザイン（モバイル・タブレット・PC対応）
+- 資産クラスアイコンの表示
+
+#### 13.5.3 JavaScript（js/assets.js）
+
+主要機能:
+
+```javascript
+class AssetManager {
+    constructor() {
+        this.apiBase = '/api/assets';
+        this.init();
+    }
+
+    async init() {
+        await this.loadClasses();
+        await this.loadRecords();
+        this.setupEventListeners();
+    }
+
+    async loadClasses() { ... }
+    async loadRecords(filters = {}) { ... }
+    async createRecord(data) { ... }
+    async updateRecord(id, data) { ... }
+    async deleteRecord(id) { ... }
+    async loadSummary(startYear, startMonth, endYear, endMonth) { ... }
+    async loadAllocation(year, month) { ... }
+
+    renderRecordsTable(records) { ... }
+    renderTrendChart(summaryData) { ... }
+    renderAllocationChart(allocationData) { ... }
+    setupEventListeners() { ... }
+}
+
+const manager = new AssetManager();
+```
+
+### 13.6 統合ポイント
+
+#### 13.6.1 トップページナビゲーション修正
+
+`frontend/index.html` のナビゲーションに「資産管理」リンクを追加:
+
+```html
+<nav class="main-nav">
+    <a href="index.html">📊 月次分析</a>
+    <a href="assets.html">💰 資産管理</a>
+    <a href="mcp-tools.html">🔧 MCPツール実行</a>
+</nav>
+```
+
+#### 13.6.2 HTTPサーバーに新ルート追加
+
+`backend/src/household_mcp/web/http_server.py` に以下を追加:
+
+```python
+from household_mcp.web.routes import assets_routes
+
+app.include_router(assets_routes.router, prefix="/api")
+```
+
+#### 13.6.3 データベース初期化
+
+`backend/src/household_mcp/database/manager.py` に `initialize_assets_tables()` メソッドを追加
+
+### 13.7 テスト戦略
+
+#### 13.7.1 ユニットテスト
+
+- `tests/test_assets_manager.py`: CRUD 操作のテスト
+- `tests/test_assets_analyzer.py`: 集計・分析ロジックのテスト
+
+#### 13.7.2 統合テスト
+
+- `tests/test_assets_api.py`: APIエンドポイントのテスト
+
+#### 13.7.3 手動テスト
+
+- 資産登録・編集・削除
+- グラフ表示と期間指定
+- CSV エクスポート
+
+---
+
+## 14. 変更履歴
 
 | 日付       | バージョン | 概要                                                 |
 | ---------- | ---------- | ---------------------------------------------------- |
@@ -1808,6 +2363,7 @@ Response: `{ success: true, tool_name, execution_time_ms, result }`
 | 2025-10-30 | 0.4.0      | 重複検出・解決機能設計を追加（FR-009対応）           |
 | 2025-11-01 | 0.5.0      | Webアプリケーション設計を追加（FR-018対応）          |
 | 2025-11-02 | 0.6.0      | MCP ツール実行フロントエンド設計を追加（FR-021対応） |
+| 2025-11-04 | 0.7.0      | 資産推移分析機能設計を追加（FR-022対応）             |
 
 ---
 
