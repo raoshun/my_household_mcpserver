@@ -1379,7 +1379,58 @@
   - [ ] API ドキュメント更新（/api/tools エンドポイント）
   - [ ] スクリーンショット・デモ追加（将来）
 
-### 工数見積
+---
+
+## フェーズ11: エラー予防テスト追加（Day N）
+
+エラー事象: 404/500 エラー、ハードコード設定値、デフォルトポート不一致、イメージビルド問題
+
+- [x] **TASK-1101**: バックエンド統合テスト実装
+  - [x] HTTP サーバーエンドポイント可用性テスト (`backend/tests/integration/test_http_server_endpoints.py`)
+    - [x] `/api/tools` エンドポイント確認
+    - [x] 全 MCP ツール定義の存在確認
+    - [x] Database manager 初期化テスト
+    - [x] `/api/duplicates/candidates` エンドポイント確認
+    - [x] CORS ヘッダーテスト
+    - [x] OpenAPI ドキュメント確認
+
+- [x] **TASK-1102**: フロントエンド設定テスト実装
+  - [x] AppConfig 初期化テスト (`frontend/tests/config.test.js`)
+    - [x] DEFAULT_API_PORT = 8000 確認
+    - [x] API ベース URL 自動検出テスト
+    - [x] localStorage 設定保存・復元テスト
+    - [x] URL パラメータサポートテスト
+    - [x] 設定優先順位テスト（localStorage > URL param > auto-detect）
+    - [x] 環境別設定テスト（Docker vs Local）
+
+- [x] **TASK-1103**: Docker 統合テスト実装
+  - [x] Docker Compose 統合テスト (`scripts/integration_test.sh`)
+    - [x] イメージビルド確認
+    - [x] コンテナヘルスチェック確認
+    - [x] バックエンド API エンドポイント確認
+    - [x] フロントエンド ファイル提供確認
+    - [x] config.js デプロイ確認
+    - [x] DEFAULT_API_PORT = 8000 確認
+
+- [x] **TASK-1104**: テスト予防ガイド作成
+  - [x] `TEST_PREVENTION_GUIDE.md` 作成
+    - [x] エラー原因の明示
+    - [x] テスト項目の詳細説明
+    - [x] 実行方法の記載
+    - [x] 予防効果の説明
+    - [x] CI/CD 統合提案
+
+### 予防可能なエラー
+
+| エラー | テスト | ファイル |
+|--------|--------|----------|
+| 404: `/api/tools` 不在 | TEST-8, 9 | `test_http_server_endpoints.py` |
+| 500: Database manager 未初期化 | TEST-9 | `test_http_server_endpoints.py` |
+| ハードコード問題 (8001) | TEST-12, 13 | `config.test.js` |
+| イメージビルド問題 | TEST-4, 5 | `integration_test.sh` |
+| デフォルトポート不一致 | TEST-13 | `config.test.js` + `integration_test.sh` |
+
+---
 
 | タスク    | 見積     | 担当者   | 状態   |
 | --------- | -------- | -------- | ------ |

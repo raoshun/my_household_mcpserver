@@ -83,6 +83,23 @@ def create_http_app(
             allow_headers=["*"],
         )
 
+    # Initialize database manager for duplicate tools
+    try:
+        import os
+
+        from household_mcp.database.manager import DatabaseManager
+        from household_mcp.tools.duplicate_tools import set_database_manager
+
+        data_dir = os.environ.get(
+            "DATA_DIR", os.path.join(os.path.dirname(__file__), "../../../data")
+        )
+        db_path = os.path.join(data_dir, "household.db")
+        db_manager = DatabaseManager(db_path=db_path)
+        set_database_manager(db_manager)
+        logger.info(f"Database manager initialized with db_path: {db_path}")
+    except Exception as e:
+        logger.warning(f"Could not initialize database manager: {e}")
+
     @app.get("/api/charts/{chart_id}")
     async def stream_chart(chart_id: str) -> StreamingResponse:  # type: ignore[no-untyped-def]
         """

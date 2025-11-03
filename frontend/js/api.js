@@ -3,7 +3,7 @@
  * Handles all HTTP requests to the FastAPI backend
  */
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = appConfig?.apiBaseUrl || 'http://127.0.0.1:8001';
 
 class APIClient {
     constructor(baseUrl = API_BASE_URL) {

@@ -71,6 +71,8 @@ header h1 {
     gap: 1rem;
     justify-content: center;
     margin-top: 1.5rem;
+    flex-wrap: wrap;
+    align-items: center;
 }
 
 .main-nav a {
@@ -92,6 +94,26 @@ header h1 {
     background-color: rgba(255, 255, 255, 0.4);
     font-weight: 600;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Config Button */
+.config-btn {
+    padding: 0.5rem 1rem;
+    background-color: rgba(59, 130, 246, 0.3);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    margin-left: auto;
+}
+
+.config-btn:hover {
+    background-color: rgba(59, 130, 246, 0.5);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
 }
 
 /* Sections */

@@ -6,13 +6,17 @@
     <title>重複検出 - 家計簿分析</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/duplicates.css">
+    <!-- Configuration (must load before app scripts) -->
+    <script src="js/config.js"></script>
 </head>
 <body>
     <header>
         <h1>家計簿分析 - 重複検出</h1>
         <nav>
             <a href="index.html">メイン画面</a>
+            <a href="mcp-tools.html">🔧 MCPツール実行</a>
             <a href="duplicates.html" class="active">重複検出</a>
+            <button id="api-config-btn" class="config-btn" title="API サーバー設定" onclick="showApiConfigModal()">⚙️ API設定</button>
         </nav>
     </header>
 

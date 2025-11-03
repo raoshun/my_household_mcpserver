@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="css/mcp-tools.css">
     <!-- Chart.js for data visualization -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Configuration (must load before mcp-tools.js) -->
+    <script src="js/config.js"></script>
 </head>
 <body>
     <div class="container">
@@ -18,6 +20,7 @@
                 <a href="index.html">メイン画面</a>
                 <a href="mcp-tools.html" class="active">🔧 MCPツール実行</a>
                 <a href="duplicates.html">重複検出</a>
+                <button id="api-config-btn" class="config-btn" title="API サーバー設定" onclick="showApiConfigModal()">⚙️ API設定</button>
             </nav>
         </header>
 

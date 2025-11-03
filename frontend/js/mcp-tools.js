@@ -4,6 +4,12 @@
  */
 
 /**
+ * API ベース URL（動的設定）
+ * config.js の AppConfig から取得
+ */
+let API_BASE_URL = appConfig?.apiBaseUrl || 'http://127.0.0.1:8001';
+
+/**
  * グローバル状態管理
  */
 const mcpToolsState = {
@@ -84,7 +90,7 @@ async function loadTools() {
         document.getElementById('tools-gallery').innerHTML =
             '<div class="loading">ツール一覧を読み込み中...</div>';
 
-        const response = await fetch('/api/tools');
+        const response = await fetch(API_BASE_URL + '/api/tools');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -326,7 +332,7 @@ async function executeTool() {
     const convertedParams = convertParameters(tool, params);
 
     try {
-        const response = await fetch(`/api/tools/${encodeURIComponent(tool.name)}/execute`, {
+        const response = await fetch(API_BASE_URL + `/api/tools/${encodeURIComponent(tool.name)}/execute`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
