@@ -334,7 +334,7 @@ ignore = [
     "UP035",  # typing.List/Dict/etc deprecated (keep Python 3.11 compatibility)
     "UP007",  # Union type annotation (X | Y requires Python 3.10+)
     "UP028",  # Replace yield over for loop (existing style preference)
-    "UP038",  # isinstance with tuple vs X | Y (Python 3.10+ syntax, keep compatibility)
+    # "UP038",  # REMOVED: This rule was removed in ruff v0.6+
 ]
 
 [tool.ruff.lint.mccabe]

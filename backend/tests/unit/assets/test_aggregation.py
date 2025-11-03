@@ -1,11 +1,12 @@
 """Test asset aggregation methods."""
 
-import pytest
 from datetime import datetime
 
-from household_mcp.database.manager import DatabaseManager
+import pytest
+
 from household_mcp.assets.manager import AssetManager
 from household_mcp.assets.models import AssetRecordRequest
+from household_mcp.database.manager import DatabaseManager
 
 
 @pytest.fixture
@@ -73,13 +74,12 @@ class TestAssetAggregation:
 
             # Create a map of class IDs to balances
             balance_map = {
-                item["asset_class_id"]: item["balance"]
-                for item in summary["summary"]
+                item["asset_class_id"]: item["balance"] for item in summary["summary"]
             }
 
             assert balance_map[1] == 1000000  # cash
-            assert balance_map[2] == 500000   # stocks
-            assert balance_map[3] == 300000   # funds
+            assert balance_map[2] == 500000  # stocks
+            assert balance_map[3] == 300000  # funds
 
     def test_get_allocation(self, temp_db_with_records):
         """Test getting asset allocation."""

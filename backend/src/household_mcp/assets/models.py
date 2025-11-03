@@ -1,7 +1,6 @@
 """Asset management module."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -14,8 +13,8 @@ class AssetClassResponse(BaseModel):
     id: int
     name: str
     display_name: str
-    description: Optional[str] = None
-    icon: Optional[str] = None
+    description: str | None = None
+    icon: str | None = None
     created_at: datetime
 
 
@@ -26,7 +25,7 @@ class AssetRecordRequest(BaseModel):
     asset_class_id: int
     sub_asset_name: str
     amount: int  # JPY
-    memo: Optional[str] = None
+    memo: str | None = None
 
 
 class AssetRecordResponse(BaseModel):
@@ -40,7 +39,7 @@ class AssetRecordResponse(BaseModel):
     asset_class_name: str
     sub_asset_name: str
     amount: int  # JPY
-    memo: Optional[str] = None
+    memo: str | None = None
     is_manual: int
     source_type: str
     created_at: datetime

@@ -1,7 +1,6 @@
 """Asset management service."""
 
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy.orm import Session
 
@@ -49,9 +48,9 @@ class AssetManager:
 
     def get_records(
         self,
-        asset_class_id: Optional[int] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        asset_class_id: int | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         include_deleted: bool = False,
     ) -> list[AssetRecordResponse]:
         """
@@ -84,7 +83,7 @@ class AssetManager:
         records = query.order_by(AssetRecord.record_date.desc()).all()
         return [self._record_to_response(r) for r in records]
 
-    def get_record(self, record_id: int) -> Optional[AssetRecordResponse]:
+    def get_record(self, record_id: int) -> AssetRecordResponse | None:
         """
         資産レコード取得.
 
