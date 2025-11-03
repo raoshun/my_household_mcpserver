@@ -6,14 +6,14 @@
 
 ## CRITICAL: Do NOT Create Implementation Reports
 
-**重要**: 作業実績や実装完了に関するMarkdownレポートを自動的に作成しないでください。
+**重要**: 作業実績や実装完了に関する Markdown レポートを自動的に作成しないでください。
 
 - ❌ **作成してはいけないもの**: `*_IMPLEMENTATION_REPORT.md`, `*_CHECKLIST.md`, `PROGRESS_REPORT.md` など
-- ✅ **代わりに更新するもの**: `requirements.md`, `design.md`, `tasks.md` の3つの公式ドキュメントのみ
+- ✅ **代わりに更新するもの**: `requirements.md`, `design.md`, `tasks.md` の 3 つの公式ドキュメントのみ
 
 ### 例外（ユーザーが明示的に要求した場合のみ）
 
-以下の場合に限り、追加のMarkdownファイルを作成できます：
+以下の場合に限り、追加の Markdown ファイルを作成できます：
 
 - ユーザーが「レポートを作成して」と明示的に依頼した場合
 - ユーザーが「チェックリストを作成して」と明示的に依頼した場合
@@ -339,10 +339,10 @@ Each commit should be:
 
 ### Commit Frequency Guidelines
 
-| Task Size | Estimated Time | Commit Frequency |
-|-----------|----------------|------------------|
-| Small     | < 1 hour       | 1 commit         |
-| Medium    | 1-4 hours      | 1-2 commits      |
+| Task Size | Estimated Time | Commit Frequency                          |
+| --------- | -------------- | ----------------------------------------- |
+| Small     | < 1 hour       | 1 commit                                  |
+| Medium    | 1-4 hours      | 1-2 commits                               |
 | Large     | > 4 hours      | Split into subtasks, 1 commit per subtask |
 
 ### Multi-Task Commits (Exceptional)

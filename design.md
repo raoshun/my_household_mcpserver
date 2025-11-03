@@ -331,15 +331,15 @@ my_household_mcpserver/
 
 ### 11.4 移行計画（ファイル移動マッピング）
 
-| 旧パス                          | 新パス                                  |
-|---------------------------------|-----------------------------------------|
-| `src/`                          | `backend/src/`                           |
-| `tests/`                        | `backend/tests/`                         |
-| `frontend/`                     | `frontend/`                              |
-| `pyproject.toml`                | `backend/pyproject.toml`                 |
-| `scripts/`（Python系のみ）     | `backend/scripts/` へ、汎用はルート維持    |
-| `README.md`（ルート）          | ルートに維持（内容更新）                  |
-| `docs/`                         | ルートに維持（リンク更新）                |
+| 旧パス                     | 新パス                                  |
+| -------------------------- | --------------------------------------- |
+| `src/`                     | `backend/src/`                          |
+| `tests/`                   | `backend/tests/`                        |
+| `frontend/`                | `frontend/`                             |
+| `pyproject.toml`           | `backend/pyproject.toml`                |
+| `scripts/`（Python系のみ） | `backend/scripts/` へ、汎用はルート維持 |
+| `README.md`（ルート）      | ルートに維持（内容更新）                |
+| `docs/`                    | ルートに維持（リンク更新）              |
 
 注意点:
 
