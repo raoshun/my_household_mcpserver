@@ -459,3 +459,408 @@ curl -O http://localhost:8000/api/charts/1a2b3c4d5e6f7g8h...
 - **実測値**: 増分 1.25MB（大規模データセット100カテゴリ）
 
 詳細は `PROGRESS.md` の TASK-607 を参照してください。
+
+---
+
+## 資産管理 API
+
+### 概要
+
+資産管理 API は、複数の資産クラス（現金、株式、投信、不動産、年金）の残高を管理し、資産配分分析と時系列トレンド分析を提供します。
+
+**ベースURL**: `http://localhost:8000/api/assets/`
+
+### エンドポイント一覧
+
+| メソッド | パス            | 説明                         |
+| -------- | --------------- | ---------------------------- |
+| POST     | `/records`      | 資産レコード追加             |
+| GET      | `/records`      | 資産レコード一覧取得         |
+| PUT      | `/records/{id}` | 資産レコード更新             |
+| DELETE   | `/records/{id}` | 資産レコード削除（論理削除） |
+| GET      | `/summary`      | 月次サマリー取得             |
+| GET      | `/allocation`   | 資産配分分析取得             |
+| GET      | `/export`       | CSV エクスポート             |
+| GET      | `/classes`      | 資産クラス一覧取得           |
+
+### データモデル
+
+#### AssetClass
+
+```json
+{
+  "id": 1,
+  "name": "cash",
+  "display_name": "現金"
+}
+```
+
+**固定クラス**:
+
+- `1`: cash（現金）
+- `2`: stocks（株式）
+- `3`: funds（投信）
+- `4`: realestate（不動産）
+- `5`: pension（年金）
+
+#### AssetRecord
+
+```json
+{
+  "id": 1,
+  "record_date": "2025-01-31",
+  "asset_class_id": 1,
+  "asset_class_name": "現金",
+  "sub_asset_name": "普通預金",
+  "amount": 1000000,
+  "memo": "給与振込",
+  "created_at": "2025-01-31T12:00:00",
+  "deleted_at": null
+}
+```
+
+### エンドポイント詳細
+
+#### 1. レコード追加: POST /records
+
+新しい資産レコードを追加します。
+
+**リクエストボディ**:
+
+```json
+{
+  "record_date": "2025-01-31",
+  "asset_class_id": 1,
+  "sub_asset_name": "普通預金",
+  "amount": 1000000,
+  "memo": "給与振込"
+}
+```
+
+**レスポンス（201 Created）**:
+
+```json
+{
+  "id": 1,
+  "record_date": "2025-01-31",
+  "asset_class_id": 1,
+  "asset_class_name": "現金",
+  "sub_asset_name": "普通預金",
+  "amount": 1000000,
+  "memo": "給与振込",
+  "created_at": "2025-01-31T12:00:00",
+  "deleted_at": null
+}
+```
+
+**使用例**:
+
+```bash
+curl -X POST http://localhost:8000/api/assets/records \
+  -H "Content-Type: application/json" \
+  -d '{
+    "record_date": "2025-01-31",
+    "asset_class_id": 1,
+    "sub_asset_name": "普通預金",
+    "amount": 1000000,
+    "memo": "給与振込"
+  }'
+```
+
+#### 2. レコード一覧: GET /records
+
+資産レコード一覧を取得します。
+
+**クエリパラメータ**:
+
+| パラメータ       | 型      | 説明                                 |
+| ---------------- | ------- | ------------------------------------ |
+| `asset_class_id` | integer | 資産クラスID（オプション）           |
+| `start_date`     | string  | 開始日（YYYY-MM-DD形式、オプション） |
+| `end_date`       | string  | 終了日（YYYY-MM-DD形式、オプション） |
+
+**レスポンス（200 OK）**:
+
+```json
+[
+  {
+    "id": 1,
+    "record_date": "2025-01-31",
+    "asset_class_id": 1,
+    "asset_class_name": "現金",
+    "sub_asset_name": "普通預金",
+    "amount": 1000000,
+    "memo": "給与振込",
+    "created_at": "2025-01-31T12:00:00",
+    "deleted_at": null
+  }
+]
+```
+
+**使用例**:
+
+```bash
+# 全レコード取得
+curl http://localhost:8000/api/assets/records
+
+# 現金クラスのレコード取得
+curl http://localhost:8000/api/assets/records?asset_class_id=1
+
+# 日付範囲指定
+curl "http://localhost:8000/api/assets/records?start_date=2025-01-01&end_date=2025-01-31"
+```
+
+#### 3. レコード更新: PUT /records/{id}
+
+既存の資産レコードを更新します。
+
+**パスパラメータ**:
+
+- `id` (integer): レコードID
+
+**リクエストボディ**: AssetRecordRequest と同じ
+
+**レスポンス（200 OK）**: 更新後のレコード
+
+**使用例**:
+
+```bash
+curl -X PUT http://localhost:8000/api/assets/records/1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "record_date": "2025-02-28",
+    "asset_class_id": 1,
+    "sub_asset_name": "定期預金",
+    "amount": 1500000,
+    "memo": "更新テスト"
+  }'
+```
+
+#### 4. レコード削除: DELETE /records/{id}
+
+資産レコードを削除します（論理削除）。
+
+**パスパラメータ**:
+
+- `id` (integer): レコードID
+
+**レスポンス（204 No Content）**: 削除成功
+
+**使用例**:
+
+```bash
+curl -X DELETE http://localhost:8000/api/assets/records/1
+```
+
+#### 5. 月次サマリー: GET /summary
+
+指定月の資産サマリーを取得します。
+
+**クエリパラメータ**:
+
+| パラメータ | 型      | 必須 | 説明           |
+| ---------- | ------- | ---- | -------------- |
+| `year`     | integer | ✓    | 対象年（YYYY） |
+| `month`    | integer | ✓    | 対象月（1-12） |
+
+**レスポンス（200 OK）**:
+
+```json
+{
+  "year": 2025,
+  "month": 1,
+  "date": "2025-01-31",
+  "total_balance": 1800000,
+  "summary": [
+    {
+      "asset_class_id": 1,
+      "asset_class_name": "現金",
+      "balance": 1000000,
+      "record_count": 1
+    },
+    {
+      "asset_class_id": 2,
+      "asset_class_name": "株式",
+      "balance": 500000,
+      "record_count": 1
+    },
+    {
+      "asset_class_id": 3,
+      "asset_class_name": "投信",
+      "balance": 300000,
+      "record_count": 1
+    }
+  ]
+}
+```
+
+**使用例**:
+
+```bash
+curl "http://localhost:8000/api/assets/summary?year=2025&month=1"
+```
+
+#### 6. 資産配分分析: GET /allocation
+
+指定月の資産配分分析を取得します。
+
+**クエリパラメータ**: サマリーと同じ
+
+**レスポンス（200 OK）**:
+
+```json
+{
+  "year": 2025,
+  "month": 1,
+  "date": "2025-01-31",
+  "total_assets": 1800000,
+  "allocations": [
+    {
+      "asset_class_id": 1,
+      "asset_class_name": "現金",
+      "balance": 1000000,
+      "percentage": 55.56
+    },
+    {
+      "asset_class_id": 2,
+      "asset_class_name": "株式",
+      "balance": 500000,
+      "percentage": 27.78
+    },
+    {
+      "asset_class_id": 3,
+      "asset_class_name": "投信",
+      "balance": 300000,
+      "percentage": 16.67
+    }
+  ]
+}
+```
+
+**使用例**:
+
+```bash
+curl "http://localhost:8000/api/assets/allocation?year=2025&month=1"
+```
+
+#### 7. CSV エクスポート: GET /export
+
+資産レコードを CSV 形式でエクスポートします。
+
+**クエリパラメータ**:
+
+| パラメータ       | 型      | 説明                                 |
+| ---------------- | ------- | ------------------------------------ |
+| `asset_class_id` | integer | 資産クラスID（オプション）           |
+| `start_date`     | string  | 開始日（YYYY-MM-DD形式、オプション） |
+| `end_date`       | string  | 終了日（YYYY-MM-DD形式、オプション） |
+
+**レスポンス（200 OK）**:
+
+```text
+record_date,asset_class_name,sub_asset_name,amount,memo
+2025-01-31,現金,普通預金,1000000,給与振込
+2025-01-31,株式,楽天VTI,500000,
+2025-01-31,投信,投信ABC,300000,
+```
+
+**レスポンスヘッダ**:
+
+- `Content-Type: text/csv; charset=utf-8`
+- `Content-Disposition: attachment; filename=assets_export.csv`
+
+**使用例**:
+
+```bash
+# 全レコードをCSVでダウンロード
+curl http://localhost:8000/api/assets/export > assets.csv
+
+# 現金クラスのみをエクスポート
+curl "http://localhost:8000/api/assets/export?asset_class_id=1" > assets_cash.csv
+
+# 特定期間をエクスポート
+curl "http://localhost:8000/api/assets/export?start_date=2025-01-01&end_date=2025-01-31" > assets_jan.csv
+```
+
+#### 8. 資産クラス一覧: GET /classes
+
+利用可能な資産クラス一覧を取得します。
+
+**レスポンス（200 OK）**:
+
+```json
+[
+  {"id": 1, "name": "cash", "display_name": "現金"},
+  {"id": 2, "name": "stocks", "display_name": "株式"},
+  {"id": 3, "name": "funds", "display_name": "投信"},
+  {"id": 4, "name": "realestate", "display_name": "不動産"},
+  {"id": 5, "name": "pension", "display_name": "年金"}
+]
+```
+
+**使用例**:
+
+```bash
+curl http://localhost:8000/api/assets/classes
+```
+
+### エラーレスポンス例
+
+#### 400 Bad Request - 無効なパラメータ
+
+```json
+{
+  "detail": [
+    {
+      "type": "missing",
+      "loc": ["query", "year"],
+      "msg": "Field required",
+      "input": {}
+    }
+  ]
+}
+```
+
+#### 404 Not Found - レコード見つからない
+
+```json
+{
+  "detail": "Record not found"
+}
+```
+
+#### 422 Unprocessable Entity - 検証エラー
+
+```json
+{
+  "detail": [
+    {
+      "type": "value_error",
+      "loc": ["body", "amount"],
+      "msg": "Amount must be positive",
+      "input": {"amount": -1000}
+    }
+  ]
+}
+```
+
+### パフォーマンス特性
+
+**NFR-022**: API レスポンスタイム < 1秒
+
+- GET /records: 50-150ms（1000件）
+- GET /summary: 80-200ms
+- GET /allocation: 100-250ms
+- POST /records: 50-150ms
+- PUT /records/{id}: 50-150ms
+- DELETE /records/{id}: 50-100ms
+- GET /export: 200-500ms（1000件CSV生成含む）
+
+**NFR-023**: グラフ生成 < 3秒
+
+- フロントエンド Chart.js 描画: 100-300ms（1000+ 月次データ）
+
+**NFR-024**: 大規模データセット処理
+
+- 1000件で月次集計: < 1秒
+- メモリ使用量: < 50MB（増分）
