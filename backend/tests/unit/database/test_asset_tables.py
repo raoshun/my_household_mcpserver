@@ -1,7 +1,8 @@
 """Test asset tables initialization."""
 
-import pytest
 from datetime import datetime
+
+import pytest
 from sqlalchemy import text
 
 from household_mcp.database.manager import DatabaseManager
@@ -92,9 +93,7 @@ class TestAssetRecordsTable:
     def test_asset_record_with_all_fields(self, temp_db):
         """Test asset record with all fields."""
         with temp_db.session_scope() as session:
-            asset_class = (
-                session.query(AssetClass).filter_by(name="cash").first()
-            )
+            asset_class = session.query(AssetClass).filter_by(name="cash").first()
 
             record = AssetRecord(
                 record_date=datetime(2025, 1, 31),
@@ -121,9 +120,7 @@ class TestAssetRecordsTable:
     def test_asset_record_with_relationship(self, temp_db):
         """Test asset record relationship to asset class."""
         with temp_db.session_scope() as session:
-            asset_class = (
-                session.query(AssetClass).filter_by(name="stocks").first()
-            )
+            asset_class = session.query(AssetClass).filter_by(name="stocks").first()
 
             record = AssetRecord(
                 record_date=datetime(2025, 2, 28),
@@ -135,9 +132,7 @@ class TestAssetRecordsTable:
             session.flush()
 
             retrieved = (
-                session.query(AssetRecord)
-                .filter_by(sub_asset_name="楽天VTI")
-                .first()
+                session.query(AssetRecord).filter_by(sub_asset_name="楽天VTI").first()
             )
             assert retrieved.asset_class.name == "stocks"
             assert retrieved.asset_class.display_name == "株"
