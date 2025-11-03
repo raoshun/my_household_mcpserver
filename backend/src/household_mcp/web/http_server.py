@@ -863,6 +863,93 @@ def create_http_app(
             logger.exception(f"Error getting asset classes: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
+    @app.get("/api/assets/records")
+    async def get_asset_records(  # type: ignore
+        asset_class_id: int | None = Query(
+            None, description="Filter by asset class ID"
+        ),  # type: ignore[assignment]
+        start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),  # type: ignore[assignment]
+        end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),  # type: ignore[assignment]
+    ) -> dict[str, Any]:  # type: ignore
+        """
+        Get asset records with optional filtering.
+
+        Args:
+            asset_class_id: Filter by asset class ID
+            start_date: Filter by start date
+            end_date: Filter by end date
+
+        Returns:
+            List of asset records matching filters
+
+        """
+        try:
+            from datetime import datetime as dt
+
+            from household_mcp.assets.manager import AssetManager
+            from household_mcp.database.manager import DatabaseManager
+
+            db_manager = DatabaseManager()
+            with db_manager.session_scope() as session:
+                manager = AssetManager(session)
+
+                # Parse dates if provided
+                start_dt = None
+                end_dt = None
+                if start_date:
+                    start_dt = dt.strptime(start_date, "%Y-%m-%d")
+                if end_date:
+                    end_dt = dt.strptime(end_date, "%Y-%m-%d")
+
+                records = manager.get_records(
+                    asset_class_id=asset_class_id,
+                    start_date=start_dt,
+                    end_date=end_dt,
+                )
+                return {
+                    "success": True,
+                    "data": [r.model_dump() for r in records],
+                    "count": len(records),
+                }
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=f"Invalid date format: {e!s}")
+        except Exception as e:
+            logger.exception(f"Error getting asset records: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.post("/api/assets/records")
+    async def create_asset_record(  # type: ignore
+        request: Any = None,  # type: ignore
+    ) -> dict[str, Any]:  # type: ignore
+        """
+        Create a new asset record.
+
+        Args:
+            request: AssetRecordRequest with record data
+
+        Returns:
+            Created asset record with ID
+
+        """
+        try:
+            from household_mcp.assets.manager import AssetManager
+            from household_mcp.database.manager import DatabaseManager
+
+            if not request:
+                raise HTTPException(status_code=400, detail="Request body required")
+
+            db_manager = DatabaseManager()
+            with db_manager.session_scope() as session:
+                manager = AssetManager(session)
+                result = manager.create_record(request)
+                return {
+                    "success": True,
+                    "data": result.model_dump(),
+                }
+        except Exception as e:
+            logger.exception(f"Error creating asset record: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
     # ==================== Tools Endpoints ====================
 
     @app.get("/api/tools")
