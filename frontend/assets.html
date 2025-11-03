@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>資産管理 - Household Budget Analyzer</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/assets.css">
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Configuration (must load before app.js) -->
+    <script src="js/config.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💰 資産管理アプリ</h1>
+            <p class="subtitle">資産の推移追跡・分析</p>
+            <nav class="main-nav">
+                <a href="index.html">メイン画面</a>
+                <a href="assets.html" class="active">💰 資産管理</a>
+                <a href="mcp-tools.html">🔧 MCPツール実行</a>
+                <a href="duplicates.html">重複検出</a>
+                <button id="api-config-btn" class="config-btn" title="API サーバー設定" onclick="showApiConfigModal()">⚙️ API設定</button>
+            </nav>
+        </header>
+
+        <main>
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <button class="tab-button active" data-tab="overview">📊 概要</button>
+                <button class="tab-button" data-tab="records">📝 資産レコード</button>
+                <button class="tab-button" data-tab="allocation">📈 資産配分</button>
+                <button class="tab-button" data-tab="export">📥 エクスポート</button>
+            </div>
+
+            <!-- Overview Tab -->
+            <div id="overview-tab" class="tab-content active">
+                <!-- Control Panel -->
+                <section class="control-panel">
+                    <h2>📅 期間選択</h2>
+                    <div class="controls">
+                        <div class="control-group">
+                            <label for="overview-year">年:</label>
+                            <select id="overview-year">
+                                <!-- Dynamically populated -->
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label for="overview-month">月:</label>
+                            <select id="overview-month">
+                                <!-- Dynamically populated -->
+                            </select>
+                        </div>
+                        <button id="load-overview-btn" class="primary-button">データ読み込み</button>
+                    </div>
+                    <div id="overview-loading" class="loading hidden">
+                        <span class="spinner"></span>
+                        <span>データを読み込み中...</span>
+                    </div>
+                    <div id="overview-error" class="error hidden"></div>
+                </section>
+
+                <!-- Summary Statistics -->
+                <section class="summary-section">
+                    <h2>📈 資産サマリー</h2>
+                    <div class="summary-cards">
+                        <div class="card">
+                            <h3>総資産額</h3>
+                            <p class="stat-value" id="total-assets">¥0</p>
+                        </div>
+                        <div class="card">
+                            <h3>前月比</h3>
+                            <p class="stat-value" id="month-change">0%</p>
+                        </div>
+                        <div class="card">
+                            <h3>最大資産額</h3>
+                            <p class="stat-value" id="max-assets">¥0</p>
+                        </div>
+                        <div class="card">
+                            <h3>資産クラス数</h3>
+                            <p class="stat-value" id="asset-class-count">0</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Charts Section -->
+                <section class="charts-section">
+                    <div class="chart-container">
+                        <h3>資産配分（円グラフ）</h3>
+                        <canvas id="allocation-pie-chart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>資産クラス別残高（棒グラフ）</h3>
+                        <canvas id="assets-bar-chart"></canvas>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Records Tab -->
+            <div id="records-tab" class="tab-content">
+                <section class="records-section">
+                    <h2>📝 資産レコード管理</h2>
+
+                    <!-- Add Record Form -->
+                    <div class="form-section">
+                        <h3>新規レコード追加</h3>
+                        <form id="add-record-form" class="form-grid">
+                            <div class="form-group">
+                                <label for="record-date">日付:</label>
+                                <input type="date" id="record-date" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="asset-class">資産クラス:</label>
+                                <select id="asset-class" required>
+                                    <!-- Dynamically populated -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="asset-name">資産名:</label>
+                                <input type="text" id="asset-name" placeholder="例：メイン銀行口座" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="asset-amount">金額:</label>
+                                <input type="number" id="asset-amount" placeholder="0" step="0.01" required>
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="asset-memo">メモ:</label>
+                                <input type="text" id="asset-memo" placeholder="オプション">
+                            </div>
+                            <button type="submit" class="primary-button">追加</button>
+                            <button type="reset" class="secondary-button">クリア</button>
+                        </form>
+                        <div id="form-message" class="message hidden"></div>
+                    </div>
+
+                    <!-- Records Table -->
+                    <div class="records-table-section">
+                        <h3>レコード一覧</h3>
+                        <div class="table-controls">
+                            <div class="search-box">
+                                <input type="text" id="record-search" placeholder="資産名で検索...">
+                            </div>
+                            <button id="refresh-records-btn" class="secondary-button">🔄 更新</button>
+                        </div>
+                        <div id="records-loading" class="loading hidden">
+                            <span class="spinner"></span>
+                            <span>レコードを読み込み中...</span>
+                        </div>
+                        <table id="records-table" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>日付</th>
+                                    <th>資産クラス</th>
+                                    <th>資産名</th>
+                                    <th>金額</th>
+                                    <th>メモ</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="records-tbody">
+                                <!-- Dynamically populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Allocation Tab -->
+            <div id="allocation-tab" class="tab-content">
+                <section class="allocation-section">
+                    <h2>📈 資産配分分析</h2>
+
+                    <!-- Control Panel -->
+                    <div class="control-panel">
+                        <div class="controls">
+                            <div class="control-group">
+                                <label for="allocation-year">年:</label>
+                                <select id="allocation-year">
+                                    <!-- Dynamically populated -->
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <label for="allocation-month">月:</label>
+                                <select id="allocation-month">
+                                    <!-- Dynamically populated -->
+                                </select>
+                            </div>
+                            <button id="load-allocation-btn" class="primary-button">データ読み込み</button>
+                        </div>
+                        <div id="allocation-loading" class="loading hidden">
+                            <span class="spinner"></span>
+                            <span>データを読み込み中...</span>
+                        </div>
+                        <div id="allocation-error" class="error hidden"></div>
+                    </div>
+
+                    <!-- Allocation Details -->
+                    <div class="allocation-details">
+                        <h3>資産配分比率</h3>
+                        <div class="allocation-table-wrapper">
+                            <table id="allocation-table" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>資産クラス</th>
+                                        <th>残高</th>
+                                        <th>配分比率</th>
+                                        <th>グラフ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="allocation-tbody">
+                                    <!-- Dynamically populated -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="charts-section">
+                        <div class="chart-container">
+                            <h3>資産配分（ドーナツ図）</h3>
+                            <canvas id="allocation-doughnut-chart"></canvas>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Export Tab -->
+            <div id="export-tab" class="tab-content">
+                <section class="export-section">
+                    <h2>📥 CSVエクスポート</h2>
+
+                    <div class="export-options">
+                        <h3>エクスポート条件</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="export-format">フォーマット:</label>
+                                <select id="export-format">
+                                    <option value="csv">CSV</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="export-asset-class">資産クラス:</label>
+                                <select id="export-asset-class">
+                                    <option value="">全て</option>
+                                    <!-- Dynamically populated -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="export-start-date">開始日:</label>
+                                <input type="date" id="export-start-date">
+                            </div>
+                            <div class="form-group">
+                                <label for="export-end-date">終了日:</label>
+                                <input type="date" id="export-end-date">
+                            </div>
+                        </div>
+                        <button id="export-btn" class="primary-button">📥 エクスポート</button>
+                        <div id="export-message" class="message hidden"></div>
+                    </div>
+
+                    <!-- Export Info -->
+                    <div class="info-section">
+                        <h3>ℹ️ 使用方法</h3>
+                        <ul>
+                            <li>「エクスポート」ボタンをクリックしてCSVファイルをダウンロードします</li>
+                            <li>資産クラス、日付範囲でフィルタリング可能です</li>
+                            <li>CSV ファイルは Excel や Google Sheets で開くことができます</li>
+                        </ul>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>レコード編集</h2>
+                <button class="modal-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form id="edit-record-form" class="form-grid">
+                <input type="hidden" id="edit-record-id">
+                <div class="form-group">
+                    <label for="edit-record-date">日付:</label>
+                    <input type="date" id="edit-record-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-asset-class">資産クラス:</label>
+                    <select id="edit-asset-class" required>
+                        <!-- Dynamically populated -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-asset-name">資産名:</label>
+                    <input type="text" id="edit-asset-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-asset-amount">金額:</label>
+                    <input type="number" id="edit-asset-amount" step="0.01" required>
+                </div>
+                <div class="form-group full-width">
+                    <label for="edit-asset-memo">メモ:</label>
+                    <input type="text" id="edit-asset-memo">
+                </div>
+                <button type="submit" class="primary-button">保存</button>
+                <button type="button" class="secondary-button" onclick="closeEditModal()">キャンセル</button>
+            </form>
+            <div id="edit-message" class="message hidden"></div>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div id="delete-confirm-modal" class="modal hidden">
+        <div class="modal-content small">
+            <h2>削除確認</h2>
+            <p id="delete-confirm-message">このレコードを削除しますか?</p>
+            <div class="modal-buttons">
+                <button id="confirm-delete-btn" class="danger-button">削除</button>
+                <button onclick="closeDeleteConfirmModal()" class="secondary-button">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Config Modal (shared with index.html) -->
+    <div id="api-config-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>API サーバー設定</h2>
+                <button class="modal-close" onclick="closeApiConfigModal()">&times;</button>
+            </div>
+            <form id="api-config-form">
+                <div class="form-group">
+                    <label for="api-host">ホスト:</label>
+                    <input type="text" id="api-host" value="localhost" required>
+                </div>
+                <div class="form-group">
+                    <label for="api-port">ポート:</label>
+                    <input type="number" id="api-port" value="8000" min="1" max="65535" required>
+                </div>
+                <button type="submit" class="primary-button">保存</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/assets.js"></script>
+</body>
+</html>
