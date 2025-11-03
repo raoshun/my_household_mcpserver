@@ -20,7 +20,10 @@ except ImportError:
     HAS_FASTAPI = False
 
 from household_mcp.streaming import ImageStreamer
-from household_mcp.streaming.global_cache import ensure_global_cache, get_global_cache
+from household_mcp.streaming.global_cache import (
+    ensure_global_cache,
+    get_global_cache,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +82,7 @@ def create_http_app(
             CORSMiddleware,
             allow_origins=origins,
             allow_credentials=True,
-            allow_methods=["GET"],
+            allow_methods=["GET", "POST"],
             allow_headers=["*"],
         )
 
@@ -694,5 +697,265 @@ def create_http_app(
     # Store cache and streamer as app state for external access
     app.state.chart_cache = chart_cache
     app.state.image_streamer = image_streamer
+
+    # MCP Tool Definitions
+    TOOL_DEFINITIONS = [
+        {
+            "name": "enhanced_monthly_summary",
+            "display_name": "月別支出分析",
+            "description": "指定された年月の収支データを取得し、カテゴリ別の分析を行います",
+            "category": "analysis",
+            "parameters": {
+                "required": [
+                    {
+                        "name": "year",
+                        "type": "integer",
+                        "description": "年（例: 2024）",
+                    },
+                    {
+                        "name": "month",
+                        "type": "integer",
+                        "description": "月（1-12）",
+                    },
+                ],
+                "optional": [
+                    {
+                        "name": "output_format",
+                        "type": "choice",
+                        "description": "出力形式",
+                        "choices": ["json", "csv"],
+                    },
+                ],
+            },
+        },
+        {
+            "name": "enhanced_category_trend",
+            "display_name": "カテゴリ別推移分析",
+            "description": "指定された期間のカテゴリ別支出推移を分析します",
+            "category": "analysis",
+            "parameters": {
+                "required": [
+                    {
+                        "name": "category",
+                        "type": "string",
+                        "description": "カテゴリ名（例: 食費、交通費）",
+                    },
+                ],
+                "optional": [
+                    {
+                        "name": "start_month",
+                        "type": "string",
+                        "description": "開始年月（YYYY-MM）",
+                    },
+                    {
+                        "name": "end_month",
+                        "type": "string",
+                        "description": "終了年月（YYYY-MM）",
+                    },
+                ],
+            },
+        },
+        {
+            "name": "detect_duplicates",
+            "display_name": "重複検出",
+            "description": "指定された期間の重複する可能性のある取引を検出します",
+            "category": "validation",
+            "parameters": {
+                "required": [
+                    {
+                        "name": "year",
+                        "type": "integer",
+                        "description": "年（例: 2024）",
+                    },
+                    {
+                        "name": "month",
+                        "type": "integer",
+                        "description": "月（1-12）",
+                    },
+                ],
+                "optional": [
+                    {
+                        "name": "date_tolerance_days",
+                        "type": "integer",
+                        "description": "日付の許容誤差（日数）",
+                    },
+                ],
+            },
+        },
+        {
+            "name": "get_duplicate_candidates",
+            "display_name": "重複候補取得",
+            "description": "重複の可能性がある取引候補を取得します",
+            "category": "validation",
+            "parameters": {
+                "required": [],
+                "optional": [
+                    {
+                        "name": "limit",
+                        "type": "integer",
+                        "description": "返す候補の最大数",
+                    },
+                ],
+            },
+        },
+        {
+            "name": "confirm_duplicate",
+            "display_name": "重複確定",
+            "description": "重複として確定された取引を記録します",
+            "category": "validation",
+            "parameters": {
+                "required": [
+                    {
+                        "name": "transaction_id_1",
+                        "type": "integer",
+                        "description": "取引ID 1",
+                    },
+                    {
+                        "name": "transaction_id_2",
+                        "type": "integer",
+                        "description": "取引ID 2",
+                    },
+                ],
+                "optional": [],
+            },
+        },
+    ]
+
+    @app.get("/api/tools")
+    async def list_tools() -> dict[str, Any]:  # type: ignore[no-untyped-def]
+        """
+        List all available MCP tools.
+
+        Returns:
+            Dictionary with tools list
+
+        """
+        try:
+            return {
+                "success": True,
+                "data": TOOL_DEFINITIONS,
+            }
+        except Exception as e:
+            logger.exception(f"Error listing tools: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/api/tools/{tool_name}")
+    async def get_tool(
+        tool_name: str,
+    ) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+        """
+        Get details for a specific tool.
+
+        Args:
+            tool_name: Name of the tool
+
+        Returns:
+            Dictionary with tool definition
+
+        """
+        try:
+            tool = next(
+                (t for t in TOOL_DEFINITIONS if t["name"] == tool_name),
+                None,
+            )
+            if not tool:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Tool '{tool_name}' not found",
+                )
+            return {
+                "success": True,
+                "data": tool,
+            }
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.exception(f"Error getting tool {tool_name}: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.post("/api/tools/{tool_name}/execute")
+    async def execute_tool(  # type: ignore[no-untyped-def]
+        tool_name: str,
+        body: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+        """
+        Execute a specific MCP tool with given parameters.
+
+        Args:
+            tool_name: Name of the tool to execute
+            body: Request body with tool parameters
+
+        Returns:
+            Dictionary with execution results
+
+        """
+        try:
+            # Verify tool exists
+            tool = next(
+                (t for t in TOOL_DEFINITIONS if t["name"] == tool_name),
+                None,
+            )
+            if not tool:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Tool '{tool_name}' not found",
+                )
+
+            # Get parameters from request body
+            params = body or {}
+
+            # Import and execute the appropriate tool
+            if tool_name == "enhanced_monthly_summary":
+                from household_mcp.tools.enhanced_tools import (
+                    enhanced_monthly_summary,
+                )
+
+                result = enhanced_monthly_summary(**params)
+            elif tool_name == "enhanced_category_trend":
+                from household_mcp.tools.enhanced_tools import (
+                    enhanced_category_trend,
+                )
+
+                result = enhanced_category_trend(**params)
+            elif tool_name == "detect_duplicates":
+                from household_mcp.tools.duplicate_tools import (
+                    detect_duplicates,
+                )
+
+                result = detect_duplicates(**params)
+            elif tool_name == "get_duplicate_candidates":
+                from household_mcp.tools.duplicate_tools import (
+                    get_duplicate_candidates,
+                )
+
+                result = get_duplicate_candidates(**params)
+            elif tool_name == "confirm_duplicate":
+                from household_mcp.tools.duplicate_tools import (
+                    confirm_duplicate,
+                )
+
+                result = confirm_duplicate(**params)
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Unknown tool: {tool_name}",
+                )
+
+            return {
+                "success": True,
+                "data": result,
+            }
+
+        except HTTPException:
+            raise
+        except TypeError as e:
+            logger.exception(f"Invalid parameters for {tool_name}: {e}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid parameters: {e!s}",
+            )
+        except Exception as e:
+            logger.exception(f"Error executing tool {tool_name}: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
 
     return app
