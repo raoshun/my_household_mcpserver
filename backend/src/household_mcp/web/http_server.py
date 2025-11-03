@@ -835,6 +835,36 @@ def create_http_app(
         },
     ]
 
+    # ==================== Asset Management Endpoints ====================
+
+    @app.get("/api/assets/classes")
+    async def get_asset_classes() -> dict[str, Any]:  # type: ignore
+        """
+        Get all asset classes.
+
+        Returns:
+            List of asset classes with metadata
+
+        """
+        try:
+            from household_mcp.assets.manager import AssetManager
+            from household_mcp.database.manager import DatabaseManager
+
+            db_manager = DatabaseManager()
+            with db_manager.session_scope() as session:
+                manager = AssetManager(session)
+                classes = manager.get_asset_classes()
+                return {
+                    "success": True,
+                    "data": classes,
+                    "count": len(classes),
+                }
+        except Exception as e:
+            logger.exception(f"Error getting asset classes: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # ==================== Tools Endpoints ====================
+
     @app.get("/api/tools")
     async def list_tools() -> dict[str, Any]:  # type: ignore[no-untyped-def]
         """
