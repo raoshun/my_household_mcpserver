@@ -919,13 +919,13 @@ def create_http_app(
 
     @app.post("/api/assets/records")
     async def create_asset_record(  # type: ignore
-        request: Any = None,  # type: ignore
+        request_body: Any,  # type: ignore
     ) -> dict[str, Any]:  # type: ignore
         """
         Create a new asset record.
 
         Args:
-            request: AssetRecordRequest with record data
+            request_body: AssetRecordRequest with record data
 
         Returns:
             Created asset record with ID
@@ -933,10 +933,14 @@ def create_http_app(
         """
         try:
             from household_mcp.assets.manager import AssetManager
+            from household_mcp.assets.models import AssetRecordRequest
             from household_mcp.database.manager import DatabaseManager
 
-            if not request:
-                raise HTTPException(status_code=400, detail="Request body required")
+            # Parse request body into AssetRecordRequest
+            if isinstance(request_body, dict):
+                request = AssetRecordRequest(**request_body)
+            else:
+                request = request_body
 
             db_manager = DatabaseManager()
             with db_manager.session_scope() as session:
@@ -1026,6 +1030,90 @@ def create_http_app(
             raise HTTPException(status_code=400, detail=f"Invalid parameters: {e!s}")
         except Exception as e:
             logger.exception(f"Error getting asset allocation: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.put("/api/assets/records/{record_id}")
+    async def update_asset_record(  # type: ignore
+        record_id: int,
+        request_body: Any = None,  # type: ignore
+    ) -> dict[str, Any]:  # type: ignore
+        """
+        Update an asset record.
+
+        Args:
+            record_id: Record ID to update
+            request_body: AssetRecordRequest with updated data
+
+        Returns:
+            Updated asset record
+
+        """
+        try:
+            from household_mcp.assets.manager import AssetManager
+            from household_mcp.assets.models import AssetRecordRequest
+            from household_mcp.database.manager import DatabaseManager
+
+            if not request_body:
+                msg = "Request body required"
+                raise HTTPException(status_code=400, detail=msg)
+
+            # Parse request body into AssetRecordRequest
+            if isinstance(request_body, dict):
+                request = AssetRecordRequest(**request_body)
+            else:
+                request = request_body
+
+            db_manager = DatabaseManager()
+            with db_manager.session_scope() as session:
+                manager = AssetManager(session)
+                try:
+                    result = manager.update_record(record_id, request)
+                    return {
+                        "success": True,
+                        "data": result.model_dump(),
+                    }
+                except ValueError:
+                    msg = f"Record {record_id} not found"
+                    raise HTTPException(status_code=404, detail=msg)
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.exception(f"Error updating asset record: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.delete("/api/assets/records/{record_id}")
+    async def delete_asset_record(  # type: ignore
+        record_id: int,
+    ) -> dict[str, Any]:  # type: ignore
+        """
+        Delete (soft-delete) an asset record.
+
+        Args:
+            record_id: Record ID to delete
+
+        Returns:
+            Deletion result
+
+        """
+        try:
+            from household_mcp.assets.manager import AssetManager
+            from household_mcp.database.manager import DatabaseManager
+
+            db_manager = DatabaseManager()
+            with db_manager.session_scope() as session:
+                manager = AssetManager(session)
+                result = manager.delete_record(record_id)
+                if not result:
+                    msg = f"Record {record_id} not found"
+                    raise HTTPException(status_code=404, detail=msg)
+                return {
+                    "success": True,
+                    "message": f"Record {record_id} deleted successfully",
+                }
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.exception(f"Error deleting asset record: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
     # ==================== Tools Endpoints ====================
