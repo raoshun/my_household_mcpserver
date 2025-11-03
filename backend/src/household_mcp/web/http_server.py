@@ -950,6 +950,86 @@ def create_http_app(
             logger.exception(f"Error creating asset record: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
+    @app.get("/api/assets/summary")
+    async def get_asset_summary(  # type: ignore
+        year: int = Query(..., description="Year"),  # type: ignore[assignment]
+        month: int = Query(..., description="Month (1-12)"),  # type: ignore[assignment]
+    ) -> dict[str, Any]:  # type: ignore
+        """
+        Get asset summary for specified month.
+
+        Args:
+            year: Target year
+            month: Target month (1-12)
+
+        Returns:
+            Asset class breakdown and total balance
+
+        """
+        try:
+            from household_mcp.assets.manager import AssetManager
+            from household_mcp.database.manager import DatabaseManager
+
+            if not (1 <= month <= 12):
+                raise HTTPException(
+                    status_code=400, detail="Month must be between 1 and 12"
+                )
+
+            db_manager = DatabaseManager()
+            with db_manager.session_scope() as session:
+                manager = AssetManager(session)
+                summary = manager.get_summary(year, month)
+                return {
+                    "success": True,
+                    "data": summary,
+                }
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=f"Invalid parameters: {e!s}")
+        except Exception as e:
+            logger.exception(f"Error getting asset summary: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/api/assets/allocation")
+    async def get_asset_allocation(  # type: ignore
+        year: int = Query(..., description="Year"),  # type: ignore[assignment]
+        month: int = Query(..., description="Month (1-12)"),  # type: ignore[assignment]
+    ) -> dict[str, Any]:  # type: ignore
+        """
+        Get asset allocation for specified month.
+
+        Args:
+            year: Target year
+            month: Target month (1-12)
+
+        Returns:
+            Asset allocation with percentages
+
+        """
+        try:
+            from household_mcp.assets.manager import AssetManager
+            from household_mcp.database.manager import DatabaseManager
+
+            if not (1 <= month <= 12):
+                raise HTTPException(
+                    status_code=400, detail="Month must be between 1 and 12"
+                )
+
+            db_manager = DatabaseManager()
+            with db_manager.session_scope() as session:
+                manager = AssetManager(session)
+                allocation = manager.get_allocation(year, month)
+                return {
+                    "success": True,
+                    "data": allocation,
+                }
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=f"Invalid parameters: {e!s}")
+        except Exception as e:
+            logger.exception(f"Error getting asset allocation: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # ==================== Tools Endpoints ====================
+
     # ==================== Tools Endpoints ====================
 
     @app.get("/api/tools")

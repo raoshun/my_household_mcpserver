@@ -201,3 +201,143 @@ class AssetManager:
             created_at=record.created_at,
             updated_at=record.updated_at,
         )
+
+    def get_summary(self, year: int, month: int) -> dict:
+        """
+        月末時点の資産クラス別残高を集計.
+
+        Args:
+            year: 対象年
+            month: 対象月
+
+        Returns:
+            {
+                'year': int,
+                'month': int,
+                'date': str (YYYY-MM-DD),
+                'summary': {
+                    'asset_class_id': int,
+                    'asset_class_name': str,
+                    'balance': int (JPY)
+                }
+            }
+
+        """
+        from datetime import date, timedelta
+
+        # 月末日を計算
+        if month == 12:
+            next_month_date = date(year + 1, 1, 1)
+        else:
+            next_month_date = date(year, month + 1, 1)
+
+        month_end_date = next_month_date - timedelta(days=1)
+        month_end_datetime = datetime(
+            month_end_date.year,
+            month_end_date.month,
+            month_end_date.day,
+            23,
+            59,
+            59,
+        )
+
+        # 月末日時点で有効な（削除されていない）各資産クラスの
+        # 最新レコードを取得
+        query = (
+            self.session.query(
+                AssetClass.id,
+                AssetClass.display_name,
+                AssetRecord.amount,
+            )
+            .join(AssetRecord, AssetClass.id == AssetRecord.asset_class_id)
+            .filter(
+                AssetRecord.record_date <= month_end_datetime,
+                AssetRecord.is_deleted == 0,
+            )
+            .distinct(AssetClass.id)
+            .order_by(
+                AssetClass.id,
+                AssetRecord.record_date.desc(),
+            )
+        )
+
+        summary = []
+        for class_id, class_name, balance in query:
+            summary.append(
+                {
+                    "asset_class_id": class_id,
+                    "asset_class_name": class_name,
+                    "balance": balance,
+                }
+            )
+
+        total_balance = sum(item["balance"] for item in summary)
+
+        return {
+            "year": year,
+            "month": month,
+            "date": month_end_date.isoformat(),
+            "summary": summary,
+            "total_balance": total_balance,
+        }
+
+    def get_allocation(self, year: int, month: int) -> dict:
+        """
+        月末時点の資産配分を計算.
+
+        Args:
+            year: 対象年
+            month: 対象月
+
+        Returns:
+            {
+                'year': int,
+                'month': int,
+                'date': str (YYYY-MM-DD),
+                'allocations': [
+                    {
+                        'asset_class_id': int,
+                        'asset_class_name': str,
+                        'balance': int (JPY),
+                        'percentage': float (%)
+                    }
+                ],
+                'total_assets': int (JPY)
+            }
+
+        """
+        summary = self.get_summary(year, month)
+
+        total = summary["total_balance"]
+        allocations = []
+
+        if total > 0:
+            for item in summary["summary"]:
+                percentage = (item["balance"] / total) * 100
+                allocations.append(
+                    {
+                        "asset_class_id": item["asset_class_id"],
+                        "asset_class_name": item["asset_class_name"],
+                        "balance": item["balance"],
+                        "percentage": round(percentage, 2),
+                    }
+                )
+        else:
+            # 資産がない場合
+            for item in summary["summary"]:
+                allocations.append(
+                    {
+                        "asset_class_id": item["asset_class_id"],
+                        "asset_class_name": item["asset_class_name"],
+                        "balance": 0,
+                        "percentage": 0.0,
+                    }
+                )
+
+        return {
+            "year": year,
+            "month": month,
+            "date": summary["date"],
+            "allocations": allocations,
+            "total_assets": total,
+        }
