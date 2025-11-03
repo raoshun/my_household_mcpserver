@@ -1062,7 +1062,8 @@ class AccountManager:
             self._execute_account_update(account_id, update_fields)
 
             existing_name = None
-            if existing and isinstance(existing, (list, tuple)) and len(existing) > 1:
+            is_list_or_tuple = isinstance(existing, list | tuple)
+            if existing and is_list_or_tuple and len(existing) > 1:
                 existing_name = existing[1]
             return {
                 "success": True,

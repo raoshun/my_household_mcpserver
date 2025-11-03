@@ -68,7 +68,7 @@ class CSVImporter:
         for idx, row in df.iterrows():
             try:
                 # インデックスを整数に変換
-                row_num = int(idx) if isinstance(idx, (int, float)) else 0
+                row_num = int(idx) if isinstance(idx, int | float) else 0
 
                 # 既存ならスキップ（ユニーク制約 idx_source_file_row にも一致）
                 if row_num in existing_rows:
@@ -100,7 +100,7 @@ class CSVImporter:
                 imported += 1
 
             except Exception as e:
-                row_num = int(idx) if isinstance(idx, (int, float)) else -1
+                row_num = int(idx) if isinstance(idx, int | float) else -1
                 errors.append({"row": row_num, "error": str(e)})
 
         # 一括挿入で高速化
