@@ -137,3 +137,77 @@ class DuplicateCheck(Base):
             f"t1={self.transaction_id_1}, t2={self.transaction_id_2}, "
             f"decision={self.user_decision})>"
         )
+
+
+class AssetClass(Base):
+    """資産クラス定義テーブル."""
+
+    __tablename__ = "assets_classes"
+
+    # Primary key
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # 資産クラス情報
+    name = Column(String(50), nullable=False, unique=True)
+    display_name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    icon = Column(String(10), nullable=True)
+
+    # メタ情報
+    created_at = Column(DateTime, default=datetime.now)
+
+    # リレーション
+    records = relationship("AssetRecord", back_populates="asset_class")
+
+    def __repr__(self) -> str:
+        """文字列表現."""
+        return (
+            f"<AssetClass(id={self.id}, name={self.name}, "
+            f"display_name={self.display_name})>"
+        )
+
+
+class AssetRecord(Base):
+    """資産レコードテーブル."""
+
+    __tablename__ = "asset_records"
+
+    # Primary key
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # 資産データ
+    record_date = Column(DateTime, nullable=False, index=True)
+    asset_class_id = Column(Integer, ForeignKey("assets_classes.id"), nullable=False)
+    sub_asset_name = Column(String(255), nullable=False)
+    amount = Column(Integer, nullable=False)  # JPY単位
+    memo = Column(Text, nullable=True)
+
+    # 管理フラグ
+    is_deleted = Column(Integer, default=0, index=True)
+    is_manual = Column(Integer, default=1)
+    # 'manual', 'linked', 'calculated'
+    source_type = Column(String(50), default="manual")
+    linked_transaction_id = Column(Integer, nullable=True)
+
+    # メタ情報
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    created_by = Column(String(100), default="user")
+
+    # リレーション
+    asset_class = relationship("AssetClass", back_populates="records")
+
+    # テーブル制約
+    __table_args__ = (
+        Index("idx_asset_records_date", "record_date"),
+        Index("idx_asset_records_class", "asset_class_id"),
+        Index("idx_asset_records_is_deleted", "is_deleted"),
+        Index("idx_asset_records_date_class", "record_date", "asset_class_id"),
+    )
+
+    def __repr__(self) -> str:
+        """文字列表現."""
+        return (
+            f"<AssetRecord(id={self.id}, record_date={self.record_date}, "
+            f"asset_class_id={self.asset_class_id}, amount={self.amount})>"
+        )

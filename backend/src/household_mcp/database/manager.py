@@ -10,7 +10,7 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from .models import Base
+from .models import AssetClass, Base
 
 
 @event.listens_for(Engine, "connect")  # type: ignore[misc]
@@ -78,6 +78,50 @@ class DatabaseManager:
     def initialize_database(self) -> None:
         """データベースを初期化（テーブル作成）."""
         Base.metadata.create_all(self.engine)
+        self._initialize_asset_classes()
+
+    def _initialize_asset_classes(self) -> None:
+        """資産クラス初期データを挿入."""
+        with self.session_scope() as session:
+            # 既に存在するクラスをチェック
+            existing = session.query(AssetClass).count()
+            if existing > 0:
+                return
+
+            # 5つの資産クラスを挿入
+            asset_classes = [
+                AssetClass(
+                    name="cash",
+                    display_name="現金",
+                    description="現金・預金",
+                    icon="💰",
+                ),
+                AssetClass(
+                    name="stocks",
+                    display_name="株",
+                    description="国内株・外国株",
+                    icon="📈",
+                ),
+                AssetClass(
+                    name="funds",
+                    display_name="投資信託",
+                    description="投資信託全般",
+                    icon="📊",
+                ),
+                AssetClass(
+                    name="realestate",
+                    display_name="不動産",
+                    description="土地・建物等",
+                    icon="🏠",
+                ),
+                AssetClass(
+                    name="pension",
+                    display_name="年金",
+                    description="確定拠出年金等",
+                    icon="🎯",
+                ),
+            ]
+            session.add_all(asset_classes)
 
     def drop_all_tables(self) -> None:
         """すべてのテーブルを削除（テスト用）."""
