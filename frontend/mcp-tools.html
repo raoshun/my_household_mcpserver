@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCPツール実行 - Household Budget Analyzer</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/mcp-tools.css">
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 家計簿分析アプリ</h1>
+            <p class="subtitle">インタラクティブな家計簿データの可視化・分析</p>
+            <nav class="main-nav">
+                <a href="index.html">メイン画面</a>
+                <a href="mcp-tools.html" class="active">🔧 MCPツール実行</a>
+                <a href="duplicates.html">重複検出</a>
+            </nav>
+        </header>
+
+        <main>
+            <section class="mcp-tools-intro">
+                <h2>🔧 MCP ツール実行</h2>
+                <p>
+                    このページではサーバーで利用可能な MCP ツール
+                    を手動で実行できます。各ツールはカード形式で表示されます。
+                    実行したいツールの「このツールを実行」ボタンをクリックしてください。
+                </p>
+            </section>
+
+            <!-- Error Message Display -->
+            <div id="error-message" class="error hidden"></div>
+            <div id="loading-indicator" class="loading hidden">
+                <span class="spinner"></span>
+                <span>ツール一覧を読み込み中...</span>
+            </div>
+
+            <!-- Tools Gallery -->
+            <section class="tools-gallery-section">
+                <h2>📋 ツール一覧</h2>
+                <div id="tools-gallery" class="tools-gallery">
+                    <!-- Tools will be dynamically inserted here -->
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Household Budget Analyzer. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <!-- Tool Execution Modal -->
+    <div id="execute-modal" class="modal hidden">
+        <div class="modal-overlay" onclick="closeToolModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">ツール実行</h2>
+                <button class="close-button" onclick="closeToolModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="modal-description"></p>
+                <form id="tool-form">
+                    <!-- Parameters will be dynamically inserted here -->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="execute-button" onclick="executeTool()" class="primary-button">実行</button>
+                <button onclick="closeToolModal()" class="secondary-button">キャンセル</button>
+            </div>
+            <div id="execution-result" class="execution-result hidden"></div>
+        </div>
+    </div>
+
+    <script src="js/mcp-tools.js"></script>
+</body>
+</html>
