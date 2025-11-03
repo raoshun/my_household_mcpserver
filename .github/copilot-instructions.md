@@ -63,6 +63,28 @@ This project follows **Kiro's Spec-Driven Development** methodology with a struc
 3. Propose structured requirements
 4. Request user confirmation before proceeding
 
+#### Approval Recording Rule for Requirements
+
+**IMPORTANT: Record approvals per individual requirement (FR-XXX)**
+
+In the **§13. 承認記録** section of `requirements.md`:
+
+- Create a subsection for each major requirement (FR-XXX)
+- Record approval status, approval date, and summary
+- Format:
+
+```markdown
+### FR-XXX: [Requirement Name]
+
+- **ステータス**: ✅ 承認済み / 🔷 検討中 / ❌ 却下
+- **承認日**: YYYY-MM-DD
+- **概要**: [Brief description of what was approved]
+- **受け入れ条件**: [Link to acceptance criteria or "全て明記済み"]
+- **次ステップ**: [What comes next (design.md, implementation, etc.)]
+```
+
+**Rationale**: This maintains a clear audit trail of which specific requirements were approved and when, enabling traceability and future reference.
+
 ### Stage 2: Technical Design (design.md)
 
 **When interacting with design.md:**

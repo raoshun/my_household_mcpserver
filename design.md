@@ -1718,7 +1718,87 @@ class ChartManager {
 
 ---
 
-## 12. 変更履歴
+## 12. MCP ツール実行フロントエンド設計（FR-021対応）
+
+### 12.1 概要
+
+FR-021では、フロントエンドから利用可能なMCPツールを手動で実行できるUIを提供します。ユーザーが各ツールをカード形式のギャラリーから選択し、パラメータを入力して実行結果を確認できる仕組みです。
+
+### 12.2 ページ構成
+
+#### 12.2.1 トップページ修正（index.html）
+
+現在の `index.html` ナビゲーションに分岐リンクを追加：
+
+```html
+<nav class="main-nav">
+    <a href="index.html" class="active">メイン画面</a>
+    <a href="mcp-tools.html">🔧 MCPツール実行</a>
+    <a href="duplicates.html">重複検出</a>
+</nav>
+```
+
+#### 12.2.2 新ページ `mcp-tools.html`
+
+- 標準的なHTMLテンプレート、Chart.js CDN、スタイルシート参照
+- `<div id="tools-gallery">` にカード群を動的挿入
+- モーダルダイアログ用の `<div id="execute-modal">` を定義
+- `<script src="js/mcp-tools.js"></script>` で機能実装
+
+### 12.3 API設計
+
+#### 12.3.1 ツール一覧取得
+
+```http
+GET /api/tools
+```
+
+Response: `{ success: true, tools: [ { name, display_name, description, category, parameters } ] }`
+
+#### 12.3.2 ツール詳細取得
+
+```http
+GET /api/tools/{tool_name}
+```
+
+Response: `{ success: true, tool: { ... } }`
+
+#### 12.3.3 ツール実行
+
+```http
+POST /api/tools/{tool_name}/execute
+```
+
+Body: `{ year, month, ... }`
+
+Response: `{ success: true, tool_name, execution_time_ms, result }`
+
+### 12.4 フロントエンド実装
+
+**ファイル構成**:
+
+- `frontend/mcp-tools.html` - メインページ
+- `frontend/css/mcp-tools.css` - ギャラリー・モーダルスタイル
+- `frontend/js/mcp-tools.js` - ツール管理・実行ロジック
+
+**主な機能**:
+
+- API からツール定義取得 → カードレイアウト生成
+- 「実行」ボタン → パラメータ入力モーダル表示
+- パラメータ型に応じた入力フィールド生成（文字列、数値、日付、選択肢）
+- ツール実行 → 結果表示（テキスト/テーブル/グラフ）
+
+### 12.5 バックエンド API実装
+
+**HTTPサーバー（http_server.py）に追加**:
+
+- `GET /api/tools` - ツール一覧定義を返す
+- `GET /api/tools/{tool_name}` - 指定ツール詳細を返す  
+- `POST /api/tools/{tool_name}/execute` - ツール実行（MCP ツール関数を呼び出し）
+
+---
+
+## 13. 変更履歴
 
 | 日付       | バージョン | 概要                                                 |
 | ---------- | ---------- | ---------------------------------------------------- |
@@ -1727,6 +1807,7 @@ class ChartManager {
 | 2025-10-04 | 0.3.0      | 画像生成・HTTPストリーミング機能設計を追加           |
 | 2025-10-30 | 0.4.0      | 重複検出・解決機能設計を追加（FR-009対応）           |
 | 2025-11-01 | 0.5.0      | Webアプリケーション設計を追加（FR-018対応）          |
+| 2025-11-02 | 0.6.0      | MCP ツール実行フロントエンド設計を追加（FR-021対応） |
 
 ---
 
