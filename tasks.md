@@ -1810,20 +1810,24 @@ a97f251 - feat(frontend): Implement asset management page (TASK-1109, 1110)
 
 #### 12.1 バックエンド基盤構築（Week 1）
 
-- [ ] **TASK-1201**: 分析モジュール骨組みと依存関係整備（1.5d）
-  - [ ] `backend/src/household_mcp/analysis/financial_independence.py` 新設：`FinancialIndependenceAnalyzer` クラス
-  - [ ] `backend/src/household_mcp/analysis/expense_classifier.py` 新設：`ExpenseClassifier` クラス（IQR式分類）
-  - [ ] `backend/src/household_mcp/analysis/fire_calculator.py` 新設：`FIRECalculator` クラス
-  - [ ] `backend/src/household_mcp/analysis/trend_statistics.py` 新設：`TrendStatistics` クラス
-  - [ ] requirements.txt に scipy/pandas/numpy が含まれることを確認（TS-031）
+- [x] **TASK-1201**: 分析モジュール骨組みと依存関係整備（1.5d）
+  - [x] `backend/src/household_mcp/analysis/financial_independence.py` 新設：`FinancialIndependenceAnalyzer` クラス
+  - [x] `backend/src/household_mcp/analysis/expense_classifier.py` 新設：`ExpenseClassifier` クラス（IQR式分類）
+  - [x] `backend/src/household_mcp/analysis/fire_calculator.py` 新設：`FIRECalculator` クラス
+  - [x] `backend/src/household_mcp/analysis/trend_statistics.py` 新設：`TrendStatistics` クラス
+  - [x] pyproject.toml に scipy>=1.11.0 を追加（TS-031）
   - **対応**: FR-023-1, FR-023-3, NFR-025, NFR-026
+  - **完了日**: 2025-01-XX
+  - **git**: 3d1cbff feat: Implement financial independence analysis module skeleton
 
-- [ ] **TASK-1202**: データベース拡張（新テーブル追加）（0.75d）
-  - [ ] SQLite スキーマにテーブル追加：`expense_classification`（カテゴリ分類と信頼度スコア）
-  - [ ] SQLite スキーマにテーブル追加：`fi_progress_cache`（月次 FIRE 進捗スナップショット）
-  - [ ] マイグレーションスクリプト作成（`backend/scripts/migrate_fi_tables.py`）
-  - [ ] 既存データ構造との互換性確認
+- [x] **TASK-1202**: データベース拡張（新テーブル追加）（0.75d）
+  - [x] SQLite スキーマにテーブル追加：`expense_classification`（カテゴリ分類と信頼度スコア）
+  - [x] SQLite スキーマにテーブル追加：`fi_progress_cache`（月次 FIRE 進捗スナップショット）
+  - [x] マイグレーションスクリプト作成（`backend/scripts/migrate_fi_tables.py`）
+  - [x] 既存データ構造との互換性確認
   - **対応**: FR-023-2, FR-023-4, NFR-026
+  - **完了日**: 2025-01-XX
+  - **git**: 0132847 feat: Add FIRE analysis database tables and migration script
 
 #### 12.2 バックエンド分析ロジック実装（Week 1-2）
 
@@ -1984,29 +1988,29 @@ a97f251 - feat(frontend): Implement asset management page (TASK-1109, 1110)
 
 ### フェーズ12 工数見積
 
-| タスク ID         | 見積 | 優先度 | 状態   | 対応FR |
-| :---------------- | :--- | :----- | :----- | :----- |
-| TASK-1201         | 1.5d | 🔴高   | 未開始 | FR-023-1,3 |
-| TASK-1202         | 0.75d | 🔴高  | 未開始 | FR-023-2,4 |
-| TASK-1203         | 1.5d | 🔴高  | 未開始 | FR-023-5 |
-| TASK-1204         | 0.25d | 🟡中  | 未開始 | FR-023-1 |
-| TASK-1205         | 1.0d | 🔴高  | 未開始 | FR-023-2,3 |
-| TASK-1206         | 1.0d | 🔴高  | 未開始 | FR-023-4 |
-| TASK-1207         | 1.0d | 🔴高  | 未開始 | FR-023-9 |
-| TASK-1208         | 1.0d | 🔴高  | 未開始 | FR-023-6,7 |
-| TASK-1209         | 0.5d | 🟡中  | 未開始 | FR-023-7 |
-| TASK-1210         | 1.5d | 🔴高  | 未開始 | FR-023-8,9 |
-| TASK-1211         | 0.5d | 🟡中  | 未開始 | FR-023-8 |
-| TASK-1212         | 2.0d | 🔴高  | 未開始 | FR-023-6,8 |
-| TASK-1213         | 0.5d | 🟡中  | 未開始 | FR-023-6 |
-| TASK-1214         | 1.5d | 🔴高  | 未開始 | TS-031 |
-| TASK-1215         | 1.25d | 🔴高 | 未開始 | TS-034~038 |
-| TASK-1216         | 1.0d | 🔴高  | 未開始 | TS-032,033 |
-| TASK-1217         | 0.75d | 🟡中 | 未開始 | TS-032,033 |
-| TASK-1218         | 0.5d | 🔴高  | 未開始 | 品質確認 |
-| TASK-1219         | 1.0d | 🟡中  | 未開始 | ドキュメント |
-| TASK-1220         | 0.5d | 🟡中  | 未開始 | CI/CD |
-| **フェーズ12 合計** | **20.0d** | **-** | **計画中** | **FR-023** |
+| タスク ID           | 見積      | 優先度 | 状態       | 対応FR       |
+| :------------------ | :-------- | :----- | :--------- | :----------- |
+| TASK-1201           | 1.5d      | 🔴高    | 未開始     | FR-023-1,3   |
+| TASK-1202           | 0.75d     | 🔴高    | 未開始     | FR-023-2,4   |
+| TASK-1203           | 1.5d      | 🔴高    | 未開始     | FR-023-5     |
+| TASK-1204           | 0.25d     | 🟡中    | 未開始     | FR-023-1     |
+| TASK-1205           | 1.0d      | 🔴高    | 未開始     | FR-023-2,3   |
+| TASK-1206           | 1.0d      | 🔴高    | 未開始     | FR-023-4     |
+| TASK-1207           | 1.0d      | 🔴高    | 未開始     | FR-023-9     |
+| TASK-1208           | 1.0d      | 🔴高    | 未開始     | FR-023-6,7   |
+| TASK-1209           | 0.5d      | 🟡中    | 未開始     | FR-023-7     |
+| TASK-1210           | 1.5d      | 🔴高    | 未開始     | FR-023-8,9   |
+| TASK-1211           | 0.5d      | 🟡中    | 未開始     | FR-023-8     |
+| TASK-1212           | 2.0d      | 🔴高    | 未開始     | FR-023-6,8   |
+| TASK-1213           | 0.5d      | 🟡中    | 未開始     | FR-023-6     |
+| TASK-1214           | 1.5d      | 🔴高    | 未開始     | TS-031       |
+| TASK-1215           | 1.25d     | 🔴高    | 未開始     | TS-034~038   |
+| TASK-1216           | 1.0d      | 🔴高    | 未開始     | TS-032,033   |
+| TASK-1217           | 0.75d     | 🟡中    | 未開始     | TS-032,033   |
+| TASK-1218           | 0.5d      | 🔴高    | 未開始     | 品質確認     |
+| TASK-1219           | 1.0d      | 🟡中    | 未開始     | ドキュメント |
+| TASK-1220           | 0.5d      | 🟡中    | 未開始     | CI/CD        |
+| **フェーズ12 合計** | **20.0d** | **-**  | **計画中** | **FR-023**   |
 
 ---
 

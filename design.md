@@ -2416,16 +2416,16 @@ app.include_router(assets_routes.router, prefix="/api")
 
 #### 14.2.2 新規コンポーネント
 
-| コンポーネント | ファイルパス | 責務 | 対応要件 |
-|--------------|-------------|-----|---------|
-| **FinancialIndependenceAnalyzer** | `backend/src/household_mcp/analysis/financial_independence.py` | コア計算ロジック（目標資産、月利、到達予測） | FR-023-1〜4 |
-| **ExpenseClassifier** | `backend/src/household_mcp/analysis/expense_classifier.py` | 定常・臨時支出分離（統計分析） | FR-023-5 |
-| **FIRECalculator** | `backend/src/household_mcp/analysis/fire_calculator.py` | FIRE基準計算ユーティリティ | FR-023-1 |
-| **TrendStatistics** | `backend/src/household_mcp/analysis/trend_statistics.py` | 移動平均・回帰分析 | FR-023-2 |
-| **FI API Routes** | `backend/src/household_mcp/web/routes/financial_independence.py` | REST APIエンドポイント | FR-023-7 |
-| **FI MCP Tools** | `backend/src/household_mcp/tools/financial_independence_tools.py` | MCPツール5種 | FR-023-9 |
-| **FI Dashboard** | `frontend/financial-independence.html` | Webダッシュボード | FR-023-8 |
-| **FI Scripts** | `frontend/js/financial-independence.js` | フロントエンドロジック | FR-023-8 |
+| コンポーネント                    | ファイルパス                                                      | 責務                                         | 対応要件    |
+| --------------------------------- | ----------------------------------------------------------------- | -------------------------------------------- | ----------- |
+| **FinancialIndependenceAnalyzer** | `backend/src/household_mcp/analysis/financial_independence.py`    | コア計算ロジック（目標資産、月利、到達予測） | FR-023-1〜4 |
+| **ExpenseClassifier**             | `backend/src/household_mcp/analysis/expense_classifier.py`        | 定常・臨時支出分離（統計分析）               | FR-023-5    |
+| **FIRECalculator**                | `backend/src/household_mcp/analysis/fire_calculator.py`           | FIRE基準計算ユーティリティ                   | FR-023-1    |
+| **TrendStatistics**               | `backend/src/household_mcp/analysis/trend_statistics.py`          | 移動平均・回帰分析                           | FR-023-2    |
+| **FI API Routes**                 | `backend/src/household_mcp/web/routes/financial_independence.py`  | REST APIエンドポイント                       | FR-023-7    |
+| **FI MCP Tools**                  | `backend/src/household_mcp/tools/financial_independence_tools.py` | MCPツール5種                                 | FR-023-9    |
+| **FI Dashboard**                  | `frontend/financial-independence.html`                            | Webダッシュボード                            | FR-023-8    |
+| **FI Scripts**                    | `frontend/js/financial-independence.js`                           | フロントエンドロジック                       | FR-023-8    |
 
 ---
 
@@ -2723,12 +2723,12 @@ def calculate_scenarios(
 
 #### 14.5.1 エンドポイント一覧
 
-| メソッド | パス | 概要 | 主なパラメータ |
-|---------|-----|------|--------------|
-| GET | `/api/financial-independence/status` | 現在の到達率と進捗情報 | `period_months` (default: 12) |
-| GET | `/api/financial-independence/projections` | シナリオ別到達予測 | `period_months`, `scenario` |
-| GET | `/api/financial-independence/expense-breakdown` | 定常・臨時支出の分離結果 | `period_months` |
-| POST | `/api/financial-independence/update-expense-classification` | 定常・臨時分類の更新 | `category`, `classification` |
+| メソッド | パス                                                        | 概要                     | 主なパラメータ                |
+| -------- | ----------------------------------------------------------- | ------------------------ | ----------------------------- |
+| GET      | `/api/financial-independence/status`                        | 現在の到達率と進捗情報   | `period_months` (default: 12) |
+| GET      | `/api/financial-independence/projections`                   | シナリオ別到達予測       | `period_months`, `scenario`   |
+| GET      | `/api/financial-independence/expense-breakdown`             | 定常・臨時支出の分離結果 | `period_months`               |
+| POST     | `/api/financial-independence/update-expense-classification` | 定常・臨時分類の更新     | `category`, `classification`  |
 
 #### 14.5.2 APIスキーマ定義
 
@@ -2819,13 +2819,13 @@ def calculate_scenarios(
 
 #### 14.6.1 ツール一覧
 
-| ツール名 | 概要 | 入力 | 出力形式 |
-|---------|------|------|---------|
-| `get_financial_independence_status` | 現在の到達率と進捗 | `period_months` (opt) | 日本語説明文 + 数値データ |
-| `analyze_expense_patterns` | 定常・臨時支出分析 | `period_months` (opt) | カテゴリ別分類 + 削減候補 |
-| `project_financial_independence_date` | 到達予測とシナリオ比較 | `additional_savings` (opt) | シナリオ別到達予定日 |
-| `suggest_improvement_actions` | 改善提案 | `focus_area` (opt) | 優先度付きアクション |
-| `compare_scenarios` | 複数シナリオ比較 | `scenarios` (list) | 効果比較表 |
+| ツール名                              | 概要                   | 入力                       | 出力形式                  |
+| ------------------------------------- | ---------------------- | -------------------------- | ------------------------- |
+| `get_financial_independence_status`   | 現在の到達率と進捗     | `period_months` (opt)      | 日本語説明文 + 数値データ |
+| `analyze_expense_patterns`            | 定常・臨時支出分析     | `period_months` (opt)      | カテゴリ別分類 + 削減候補 |
+| `project_financial_independence_date` | 到達予測とシナリオ比較 | `additional_savings` (opt) | シナリオ別到達予定日      |
+| `suggest_improvement_actions`         | 改善提案               | `focus_area` (opt)         | 優先度付きアクション      |
+| `compare_scenarios`                   | 複数シナリオ比較       | `scenarios` (list)         | 効果比較表                |
 
 #### 14.6.2 ツール実装例
 
@@ -3326,11 +3326,11 @@ const fiManager = new FinancialIndependenceManager();
 
 ### 14.8 非機能要件への対応
 
-| NFR | 対応方法 |
-|-----|---------|
-| **NFR-025**: 到達率計算5秒以内 | キャッシュテーブル活用、pandas最適化（vectorized操作）、非同期処理 |
-| **NFR-026**: 定常・臨時分離10秒以内 | 月別集計の事前計算、カテゴリ数上限（100程度想定） |
-| **NFR-027**: ダッシュボード3秒以内 | Chart.js軽量化、Progressive Loading、API並列リクエスト |
+| NFR                                 | 対応方法                                                           |
+| ----------------------------------- | ------------------------------------------------------------------ |
+| **NFR-025**: 到達率計算5秒以内      | キャッシュテーブル活用、pandas最適化（vectorized操作）、非同期処理 |
+| **NFR-026**: 定常・臨時分離10秒以内 | 月別集計の事前計算、カテゴリ数上限（100程度想定）                  |
+| **NFR-027**: ダッシュボード3秒以内  | Chart.js軽量化、Progressive Loading、API並列リクエスト             |
 
 ---
 
@@ -3387,16 +3387,16 @@ async def test_get_status_endpoint(client):
 
 ## 15. 変更履歴
 
-| 日付       | バージョン | 概要                                                 |
-| ---------- | ---------- | ---------------------------------------------------- |
-| 2025-07-29 | 1.0        | 旧バージョン（DB 前提の構成）                        |
-| 2025-10-03 | 0.2.0      | CSV 前提アーキテクチャに刷新、トレンド分析設計を追加 |
-| 2025-10-04 | 0.3.0      | 画像生成・HTTPストリーミング機能設計を追加           |
-| 2025-10-30 | 0.4.0      | 重複検出・解決機能設計を追加（FR-009対応）           |
-| 2025-11-01 | 0.5.0      | Webアプリケーション設計を追加（FR-018対応）          |
-| 2025-11-02 | 0.6.0      | MCP ツール実行フロントエンド設計を追加（FR-021対応） |
-| 2025-11-04 | 0.6.1      | 資産推移分析機能設計を追加（FR-022対応）             |
-| **2025-11-05** | **0.7.0** | **経済的自由到達率可視化機能設計を追加（FR-023対応）** |
+| 日付           | バージョン | 概要                                                   |
+| -------------- | ---------- | ------------------------------------------------------ |
+| 2025-07-29     | 1.0        | 旧バージョン（DB 前提の構成）                          |
+| 2025-10-03     | 0.2.0      | CSV 前提アーキテクチャに刷新、トレンド分析設計を追加   |
+| 2025-10-04     | 0.3.0      | 画像生成・HTTPストリーミング機能設計を追加             |
+| 2025-10-30     | 0.4.0      | 重複検出・解決機能設計を追加（FR-009対応）             |
+| 2025-11-01     | 0.5.0      | Webアプリケーション設計を追加（FR-018対応）            |
+| 2025-11-02     | 0.6.0      | MCP ツール実行フロントエンド設計を追加（FR-021対応）   |
+| 2025-11-04     | 0.6.1      | 資産推移分析機能設計を追加（FR-022対応）               |
+| **2025-11-05** | **0.7.0**  | **経済的自由到達率可視化機能設計を追加（FR-023対応）** |
 
 ---
 

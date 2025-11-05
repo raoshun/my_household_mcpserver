@@ -14,10 +14,7 @@ from household_mcp.analysis.expense_classifier import (
     ExpenseClassifier,
 )
 from household_mcp.analysis.fire_calculator import FIRECalculator
-from household_mcp.analysis.trend_statistics import (
-    ProjectionScenario,
-    TrendStatistics,
-)
+from household_mcp.analysis.trend_statistics import ProjectionScenario, TrendStatistics
 
 
 class FinancialIndependenceAnalyzer:

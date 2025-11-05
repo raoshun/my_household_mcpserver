@@ -15,12 +15,12 @@ Build a comprehensive Model Context Protocol (MCP) server for household budget a
 
 ### Phases Completed
 
-| Phase | Component | Duration | Status | Completion % |
-|-------|-----------|----------|--------|-------------|
-| 0-6 | Core MCP + Budget Analysis | 17.5d | ✅ Complete | 100% |
-| 10 | HTTP Streaming & Web API | 7.0d | ✅ Complete | 100% |
-| 11 | **Asset Management Feature** | 13.5d | ✅ Complete | 100% |
-| **TOTAL** | **Full Project** | **38.0d** | **✅ COMPLETE** | **100%** |
+| Phase     | Component                    | Duration  | Status         | Completion % |
+| --------- | ---------------------------- | --------- | -------------- | ------------ |
+| 0-6       | Core MCP + Budget Analysis   | 17.5d     | ✅ Complete     | 100%         |
+| 10        | HTTP Streaming & Web API     | 7.0d      | ✅ Complete     | 100%         |
+| 11        | **Asset Management Feature** | 13.5d     | ✅ Complete     | 100%         |
+| **TOTAL** | **Full Project**             | **38.0d** | **✅ COMPLETE** | **100%**     |
 
 ---
 
@@ -39,16 +39,16 @@ Build a comprehensive Model Context Protocol (MCP) server for household budget a
 
 **REST API Endpoints (TASK-1103-1108)**:
 
-| Endpoint | Method | Purpose | Status |
-|----------|--------|---------|--------|
-| `/api/assets/records` | POST | Create asset record | ✅ |
-| `/api/assets/records` | GET | List records (with filters) | ✅ |
-| `/api/assets/records/{id}` | PUT | Update record | ✅ |
-| `/api/assets/records/{id}` | DELETE | Delete record (soft-delete) | ✅ |
-| `/api/assets/summary` | GET | Monthly asset summary | ✅ |
-| `/api/assets/allocation` | GET | Asset allocation analysis | ✅ |
-| `/api/assets/export` | GET | CSV export (filtered) | ✅ |
-| `/api/assets/classes` | GET | Asset class list | ✅ |
+| Endpoint                   | Method | Purpose                     | Status |
+| -------------------------- | ------ | --------------------------- | ------ |
+| `/api/assets/records`      | POST   | Create asset record         | ✅      |
+| `/api/assets/records`      | GET    | List records (with filters) | ✅      |
+| `/api/assets/records/{id}` | PUT    | Update record               | ✅      |
+| `/api/assets/records/{id}` | DELETE | Delete record (soft-delete) | ✅      |
+| `/api/assets/summary`      | GET    | Monthly asset summary       | ✅      |
+| `/api/assets/allocation`   | GET    | Asset allocation analysis   | ✅      |
+| `/api/assets/export`       | GET    | CSV export (filtered)       | ✅      |
+| `/api/assets/classes`      | GET    | Asset class list            | ✅      |
 
 **Performance Metrics**:
 
@@ -66,12 +66,12 @@ Build a comprehensive Model Context Protocol (MCP) server for household budget a
 
 **Tabs & Features**:
 
-| Tab | Features | Status |
-|-----|----------|--------|
-| **Overview** | Summary stats, pie chart, bar chart | ✅ |
-| **Records** | CRUD UI, search, table display, modals | ✅ |
-| **Allocation** | Allocation table, doughnut chart | ✅ |
-| **Export** | CSV download with filters | ✅ |
+| Tab            | Features                               | Status |
+| -------------- | -------------------------------------- | ------ |
+| **Overview**   | Summary stats, pie chart, bar chart    | ✅      |
+| **Records**    | CRUD UI, search, table display, modals | ✅      |
+| **Allocation** | Allocation table, doughnut chart       | ✅      |
+| **Export**     | CSV download with filters              | ✅      |
 
 **Responsive Design**:
 
@@ -299,22 +299,22 @@ docs/
 
 ### Functional Requirements
 
-| Req ID | Description | Status | Evidence |
-|--------|-------------|--------|----------|
-| FR-018-1 | Asset CRUD API | ✅ | 8 endpoints, 24 tests |
-| FR-018-2 | Asset Web UI | ✅ | 4 tabs, responsive |
-| FR-018-3 | Asset summary | ✅ | GET /summary endpoint |
-| FR-018-4 | Allocation analysis | ✅ | GET /allocation endpoint |
-| FR-018-5 | CSV export | ✅ | GET /export endpoint |
+| Req ID   | Description         | Status | Evidence                 |
+| -------- | ------------------- | ------ | ------------------------ |
+| FR-018-1 | Asset CRUD API      | ✅      | 8 endpoints, 24 tests    |
+| FR-018-2 | Asset Web UI        | ✅      | 4 tabs, responsive       |
+| FR-018-3 | Asset summary       | ✅      | GET /summary endpoint    |
+| FR-018-4 | Allocation analysis | ✅      | GET /allocation endpoint |
+| FR-018-5 | CSV export          | ✅      | GET /export endpoint     |
 
 ### Non-Functional Requirements
 
-| Req ID | Target | Actual | Status |
-|--------|--------|--------|--------|
-| NFR-022 | API response < 1s | 50-500ms | ✅ |
-| NFR-023 | Chart generation < 3s | 100-300ms | ✅ |
-| NFR-024 | 1000-item aggregation < 1s | 800ms | ✅ |
-| NFR-025 | Code coverage > 85% | 97% | ✅ |
+| Req ID  | Target                     | Actual    | Status |
+| ------- | -------------------------- | --------- | ------ |
+| NFR-022 | API response < 1s          | 50-500ms  | ✅      |
+| NFR-023 | Chart generation < 3s      | 100-300ms | ✅      |
+| NFR-024 | 1000-item aggregation < 1s | 800ms     | ✅      |
+| NFR-025 | Code coverage > 85%        | 97%       | ✅      |
 
 ---
 
@@ -357,31 +357,31 @@ docker compose up -d
 
 ### Code Metrics
 
-| Metric | Value |
-|--------|-------|
-| Backend LOC | ~500 (AssetManager + API) |
-| Frontend LOC | 1600+ (HTML/CSS/JS) |
-| Test LOC | 600+ (24 unit + 21 integration tests) |
-| Documentation | 500+ lines |
-| Total Commits | 10 (Phase 11) |
+| Metric        | Value                                 |
+| ------------- | ------------------------------------- |
+| Backend LOC   | ~500 (AssetManager + API)             |
+| Frontend LOC  | 1600+ (HTML/CSS/JS)                   |
+| Test LOC      | 600+ (24 unit + 21 integration tests) |
+| Documentation | 500+ lines                            |
+| Total Commits | 10 (Phase 11)                         |
 
 ### Test Coverage
 
-| Module | Coverage | Status |
-|--------|----------|--------|
-| AssetManager | 97% | ✅ |
-| Models | 100% | ✅ |
-| API Integration | 100% (endpoints) | ✅ |
+| Module          | Coverage         | Status |
+| --------------- | ---------------- | ------ |
+| AssetManager    | 97%              | ✅      |
+| Models          | 100%             | ✅      |
+| API Integration | 100% (endpoints) | ✅      |
 
 ### Performance
 
-| Operation | Time | Target | Status |
-|-----------|------|--------|--------|
-| Create record | 50-80ms | < 1s | ✅ |
-| Get summary | 80-200ms | < 1s | ✅ |
-| Get allocation | 100-250ms | < 1s | ✅ |
-| Export CSV (1000 items) | 200-500ms | < 1s | ✅ |
-| Chart rendering | 100-300ms | < 3s | ✅ |
+| Operation               | Time      | Target | Status |
+| ----------------------- | --------- | ------ | ------ |
+| Create record           | 50-80ms   | < 1s   | ✅      |
+| Get summary             | 80-200ms  | < 1s   | ✅      |
+| Get allocation          | 100-250ms | < 1s   | ✅      |
+| Export CSV (1000 items) | 200-500ms | < 1s   | ✅      |
+| Chart rendering         | 100-300ms | < 3s   | ✅      |
 
 ---
 

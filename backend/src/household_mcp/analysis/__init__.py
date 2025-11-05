@@ -3,11 +3,7 @@
 from .expense_classifier import ClassificationResult, ExpenseClassifier
 from .financial_independence import FinancialIndependenceAnalyzer
 from .fire_calculator import FIRECalculator
-from .trend_statistics import (
-    GrowthRateAnalysis,
-    ProjectionScenario,
-    TrendStatistics,
-)
+from .trend_statistics import GrowthRateAnalysis, ProjectionScenario, TrendStatistics
 from .trends import CategoryTrendAnalyzer, TrendMetrics
 
 __all__ = [
