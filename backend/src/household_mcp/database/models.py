@@ -211,3 +211,116 @@ class AssetRecord(Base):
             f"<AssetRecord(id={self.id}, record_date={self.record_date}, "
             f"asset_class_id={self.asset_class_id}, amount={self.amount})>"
         )
+
+
+class ExpenseClassification(Base):
+    """支出分類結果テーブル（定期/不定期分類と信頼度）."""
+
+    __tablename__ = "expense_classification"
+
+    # Primary key
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # 分類対象期間
+    analysis_period_start = Column(DateTime, nullable=False, index=True)
+    analysis_period_end = Column(DateTime, nullable=False, index=True)
+
+    # 支出カテゴリ
+    category_major = Column(String(100), nullable=False)
+    category_minor = Column(String(100), nullable=True)
+
+    # 分類結果
+    classification = Column(String(20), nullable=False)  # regular/irregular
+    confidence = Column(Numeric(5, 4), nullable=False)  # 0.0-1.0
+
+    # 分析指標
+    iqr_analysis = Column(Text, nullable=True)  # JSON形式
+    occurrence_rate = Column(Numeric(5, 4), nullable=True)
+    coefficient_of_variation = Column(Numeric(5, 4), nullable=True)
+    outlier_count = Column(Integer, nullable=True)
+
+    # 統計量
+    mean_amount = Column(Numeric(12, 2), nullable=True)
+    std_amount = Column(Numeric(12, 2), nullable=True)
+    occurrence_count = Column(Integer, nullable=True)
+    total_months = Column(Integer, nullable=True)
+
+    # メタ情報
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+    # テーブル制約
+    __table_args__ = (
+        Index(
+            "idx_expense_classification_period",
+            "analysis_period_start",
+            "analysis_period_end",
+        ),
+        Index(
+            "idx_expense_classification_category",
+            "category_major",
+            "category_minor",
+        ),
+        Index("idx_expense_classification_type", "classification"),
+    )
+
+    def __repr__(self) -> str:
+        """文字列表現."""
+        return (
+            f"<ExpenseClassification(id={self.id}, "
+            f"category={self.category_major}, "
+            f"classification={self.classification}, "
+            f"confidence={self.confidence})>"
+        )
+
+
+class FIProgressCache(Base):
+    """FIRE進捗スナップショットキャッシュテーブル."""
+
+    __tablename__ = "fi_progress_cache"
+
+    # Primary key
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # スナップショット期間
+    snapshot_date = Column(DateTime, nullable=False, index=True)
+    data_period_end = Column(DateTime, nullable=False, index=True)
+
+    # FIRE指標
+    current_assets = Column(Numeric(15, 2), nullable=False)
+    annual_expense = Column(Numeric(15, 2), nullable=False)
+    fire_target = Column(Numeric(15, 2), nullable=False)
+    progress_rate = Column(Numeric(5, 2), nullable=False)  # 0-999+
+
+    # 成長率分析
+    monthly_growth_rate = Column(Numeric(5, 4), nullable=True)  # 小数形式
+    growth_confidence = Column(Numeric(5, 4), nullable=True)  # 0.0-1.0
+    data_points_used = Column(Integer, nullable=True)
+
+    # 達成予測
+    months_to_fi = Column(Numeric(7, 2), nullable=True)  # NULLの場合は達成不可能
+    is_achievable = Column(Integer, default=1)  # 0: 達成不可能, 1: 達成可能
+
+    # シナリオ投影（12ヶ月後、60ヶ月後）
+    projected_12m = Column(Numeric(15, 2), nullable=True)
+    projected_60m = Column(Numeric(15, 2), nullable=True)
+
+    # メタ情報
+    analysis_method = Column(String(50), default="regression")
+    created_at = Column(DateTime, default=datetime.now)
+
+    # テーブル制約
+    __table_args__ = (
+        Index("idx_fi_progress_snapshot_date", "snapshot_date"),
+        Index("idx_fi_progress_data_period_end", "data_period_end"),
+        Index("idx_fi_progress_created_at", "created_at"),
+    )
+
+    def __repr__(self) -> str:
+        """文字列表現."""
+        return (
+            f"<FIProgressCache(id={self.id}, "
+            f"snapshot_date={self.snapshot_date}, "
+            f"progress_rate={self.progress_rate}, "
+            f"months_to_fi={self.months_to_fi})>"
+        )
