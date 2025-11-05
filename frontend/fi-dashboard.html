@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIRE進捗ダッシュボード | 家計簿MCP</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="css/fi-dashboard.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 FIRE進捗ダッシュボード</h1>
+            <p class="subtitle">経済的自由への道のり</p>
+        </header>
+
+        <main>
+            <!-- ステータスカード -->
+            <section class="status-section">
+                <div class="card-grid">
+                    <div class="card status-card">
+                        <div class="card-header">
+                            <h3>現在のFI進度</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="progress-container">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="progressFill"></div>
+                                </div>
+                                <div class="progress-text">
+                                    <span class="progress-value" id="progressValue">20.0</span>
+                                    <span class="progress-unit">%</span>
+                                </div>
+                            </div>
+                            <p class="status-info">目標達成まで あと <span id="yearsToFI">5.0</span> 年</p>
+                        </div>
+                    </div>
+
+                    <div class="card metric-card">
+                        <div class="card-header">
+                            <h3>現在の資産</h3>
+                        </div>
+                        <div class="card-body">
+                            <p class="metric-value" id="currentAssets">¥5,000,000</p>
+                            <p class="metric-label">目標: <span id="fireTarget">¥25,000,000</span></p>
+                        </div>
+                    </div>
+
+                    <div class="card metric-card">
+                        <div class="card-header">
+                            <h3>月間成長率</h3>
+                        </div>
+                        <div class="card-body">
+                            <p class="metric-value" id="monthlyGrowth">1.0%</p>
+                            <p class="metric-label">年率: <span id="annualGrowth">12.0%</span></p>
+                        </div>
+                    </div>
+
+                    <div class="card metric-card">
+                        <div class="card-header">
+                            <h3>年間支出</h3>
+                        </div>
+                        <div class="card-body">
+                            <p class="metric-value" id="annualExpense">¥1,000,000</p>
+                            <p class="metric-label">FIRE目標: <span id="fireExpense">¥1,000,000</span></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- グラフセクション -->
+            <section class="charts-section">
+                <div class="chart-container">
+                    <div class="card full-width">
+                        <div class="card-header">
+                            <h3>資産成長予測（60ヶ月）</h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="projectionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>支出分類</h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="expenseChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>シナリオ比較</h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="scenarioChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- アクションセクション -->
+            <section class="actions-section">
+                <div class="card full-width">
+                    <div class="card-header">
+                        <h3>改善提案</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="suggestions-list" id="suggestionsList">
+                            <p class="loading">読み込み中...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- シミュレーションセクション -->
+            <section class="simulation-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>月間貯蓄シミュレーション</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="additionalSavings">月間追加貯蓄額（円）</label>
+                            <input
+                                type="number"
+                                id="additionalSavings"
+                                placeholder="50000"
+                                min="0"
+                                step="10000"
+                                value="0"
+                            >
+                        </div>
+                        <button class="btn btn-primary" onclick="simulateSavings()">
+                            シミュレーション実行
+                        </button>
+                        <div id="simulationResult" class="simulation-result" style="display: none;">
+                            <p>FIRE達成が <strong id="yearsSaved">0.5</strong> 年短縮されます</p>
+                            <p>新しいFIRE達成予定日: <strong id="newFIDate">4.5年後</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 更新ボタン -->
+            <section class="refresh-section">
+                <button class="btn btn-secondary" onclick="refreshDashboard()">
+                    更新
+                </button>
+                <span class="last-updated" id="lastUpdated">最終更新: --</span>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Household MCP Server | FIRE Progress Dashboard</p>
+        </footer>
+    </div>
+
+    <script src="js/fi-dashboard.js"></script>
+</body>
+</html>
