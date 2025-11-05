@@ -66,13 +66,17 @@ jobs:
           echo "✅ Data directory contents:"
           ls -lh backend/tests/fixtures/data/ | head -20
 
-      - name: Create virtual environment and install dependencies
+      - name: Install dependencies
         working-directory: backend
         run: |
           uv venv
-          uv pip install -e .[web,visualization,logging]
+          uv pip install -e .[web,visualization,logging,e2e]
           uv pip install pytest pytest-cov bandit[toml] pre-commit
-          echo "✅ Dependencies installed"
+
+      - name: Install Playwright browsers
+        working-directory: backend
+        run: |
+          uv run playwright install chromium
 
       - name: Run pre-commit (all files)
         uses: pre-commit/action@v3.0.1
@@ -143,7 +147,7 @@ jobs:
         working-directory: backend
         run: |
           uv venv
-          uv pip install -e .[web,visualization,logging]
+          uv pip install -e .[web,visualization,logging,e2e]
           uv pip install ruff bandit[toml]
 
       - name: Lint code (ruff check)
