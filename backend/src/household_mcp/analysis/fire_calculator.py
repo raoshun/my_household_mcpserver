@@ -6,8 +6,6 @@ FIRE基準に基づいた目標資産額の計算と関連ユーティリティ�
 
 from __future__ import annotations
 
-from typing import Optional
-
 
 class FIRECalculator:
     """FIRE基準に基づいて目標資産額を計算するクラス"""
@@ -17,7 +15,7 @@ class FIRECalculator:
 
     @staticmethod
     def calculate_fire_target(
-        annual_expense: float, custom_multiplier: Optional[float] = None
+        annual_expense: float, custom_multiplier: float | None = None
     ) -> float:
         """
         FIRE基準に基づいて目標資産額を計算

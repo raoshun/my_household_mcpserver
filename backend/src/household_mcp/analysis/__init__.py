@@ -8,12 +8,12 @@ from .trends import CategoryTrendAnalyzer, TrendMetrics
 
 __all__ = [
     "CategoryTrendAnalyzer",
-    "TrendMetrics",
-    "ExpenseClassifier",
     "ClassificationResult",
+    "ExpenseClassifier",
     "FIRECalculator",
-    "TrendStatistics",
+    "FinancialIndependenceAnalyzer",
     "GrowthRateAnalysis",
     "ProjectionScenario",
-    "FinancialIndependenceAnalyzer",
+    "TrendMetrics",
+    "TrendStatistics",
 ]

@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 import math
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 import numpy as np
 from scipy import stats
@@ -31,7 +31,7 @@ class ProjectionScenario(NamedTuple):
     growth_rate: float  # 月間成長率（小数形式）
     current_assets: float
     target_assets: float
-    months_to_fi: Optional[float]  # 達成までの月数（不可能な場合はNone）
+    months_to_fi: float | None  # 達成までの月数（不可能な場合はNone）
     projected_assets_12m: float  # 12ヶ月後の予想資産
     projected_assets_60m: float  # 60ヶ月後の予想資産
     is_achievable: bool  # 達成可能かどうか
@@ -86,7 +86,7 @@ class TrendStatistics:
         y = np.array(asset_values)
 
         # 線形回帰実行
-        slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
+        slope, intercept, r_value, p_value, _std_err = stats.linregress(x, y)
 
         # 成長率に変換
         # 初月資産を基準に計算
@@ -153,7 +153,7 @@ class TrendStatistics:
     @staticmethod
     def calculate_months_to_fi(
         current_assets: float, target_assets: float, monthly_growth_rate: float
-    ) -> Optional[float]:
+    ) -> float | None:
         """
         FIRE達成までの月数を計算
 
