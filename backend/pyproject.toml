@@ -25,6 +25,7 @@ dependencies = [
     # Minimum runtime set required for current functionality (CSV loading, analysis, MCP exposure)
     "pandas>=2.1.4",
     "numpy>=1.26.0",
+    "scipy>=1.11.0",
     "mcp[cli]>=1.13.1",
     "fastmcp>=0.4.0",
 ]
