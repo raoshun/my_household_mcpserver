@@ -1,12 +1,13 @@
 # 家計簿分析 MCP サーバー設計書
 
-- **バージョン**: 0.6.0
-- **更新日**: 2025-11-02
+- **バージョン**: 0.7.0
+- **更新日**: 2025-11-05
 - **作成者**: GitHub Copilot (AI assistant)
-- **対象要件**: [requirements.md](./requirements.md) v1.2 に記載の FR-001〜FR-020、NFR-001〜NFR-015
+- **対象要件**: [requirements.md](./requirements.md) v1.3 に記載の FR-001〜FR-023、NFR-001〜NFR-027
 - **実装状況**:
-  - FR-001〜FR-003, FR-018（Webアプリ）: 実装済み
+  - FR-001〜FR-003, FR-018（Webアプリ）, FR-022（資産管理）: 実装済み
   - FR-004〜FR-006（画像生成・ストリーミング）: 部分実装（基盤のみ）
+  - FR-023（経済的自由到達率）: 設計フェーズ ← 本ドキュメントで追加
   - FR-007〜FR-017: 計画中（Node.js/TS版）
 
 ---
@@ -2353,7 +2354,1038 @@ app.include_router(assets_routes.router, prefix="/api")
 
 ---
 
-## 14. 変更履歴
+---
+
+## 14. 経済的自由への到達率可視化機能（FR-023）
+
+### 14.1 概要
+
+**対応要件**: FR-023-1 〜 FR-023-9  
+**依存関係**: FR-001〜FR-005（家計簿データ）、FR-022（資産管理データ）
+
+本機能は、ユーザーが経済的自由（FIRE基準）への到達率をリアルタイムで把握し、複数のシナリオで到達予測を行うことを可能にする。
+
+#### 主要機能
+
+1. **FIRE基準の目標資産額算出**（年支出 × 25）
+2. **資産増加トレンドの分析**（月利計算、移動平均）
+3. **定常・臨時支出の分離**（統計的手法）
+4. **シナリオ別到達予測**（悲観/中立/楽観）
+5. **Webダッシュボード**（進捗率・到達予定日の可視化）
+6. **MCPツール5種**（会話ベースの進捗確認・改善提案）
+
+---
+
+### 14.2 アーキテクチャ設計
+
+#### 14.2.1 全体データフロー
+
+```text
+┌─────────────────────┐      ┌─────────────────────┐
+│  家計簿データ(CSV)   │      │  資産データ(SQLite)  │
+│  FR-001〜FR-005     │      │  FR-022             │
+└──────────┬──────────┘      └──────────┬──────────┘
+           │                             │
+           │ 月別支出                    │ 月末資産額
+           ▼                             ▼
+    ┌──────────────────────────────────────────┐
+    │  FinancialIndependenceAnalyzer           │
+    │  ・定常・臨時支出分離                     │
+    │  ・年支出額算出 → FIRE目標資産額         │
+    │  ・資産増加率（月利）計算                │
+    │  ・移動平均・回帰分析                    │
+    │  ・到達月数予測（複合金利モデル）        │
+    └──────────┬───────────────────────────────┘
+               │
+        ┌──────┴───────┐
+        │              │
+        ▼              ▼
+  ┌─────────┐   ┌──────────────┐
+  │ REST API │   │  MCP Tools   │
+  │ (FastAPI)│   │  (5 tools)   │
+  └────┬─────┘   └──────┬───────┘
+       │                │
+       ▼                ▼
+  ┌─────────────┐  ┌─────────────┐
+  │ Web UI      │  │ LLM Client  │
+  │ (financial- │  │ (自然言語)   │
+  │  independ-  │  │             │
+  │  ence.html) │  │             │
+  └─────────────┘  └─────────────┘
+```
+
+#### 14.2.2 新規コンポーネント
+
+| コンポーネント | ファイルパス | 責務 | 対応要件 |
+|--------------|-------------|-----|---------|
+| **FinancialIndependenceAnalyzer** | `backend/src/household_mcp/analysis/financial_independence.py` | コア計算ロジック（目標資産、月利、到達予測） | FR-023-1〜4 |
+| **ExpenseClassifier** | `backend/src/household_mcp/analysis/expense_classifier.py` | 定常・臨時支出分離（統計分析） | FR-023-5 |
+| **FIRECalculator** | `backend/src/household_mcp/analysis/fire_calculator.py` | FIRE基準計算ユーティリティ | FR-023-1 |
+| **TrendStatistics** | `backend/src/household_mcp/analysis/trend_statistics.py` | 移動平均・回帰分析 | FR-023-2 |
+| **FI API Routes** | `backend/src/household_mcp/web/routes/financial_independence.py` | REST APIエンドポイント | FR-023-7 |
+| **FI MCP Tools** | `backend/src/household_mcp/tools/financial_independence_tools.py` | MCPツール5種 | FR-023-9 |
+| **FI Dashboard** | `frontend/financial-independence.html` | Webダッシュボード | FR-023-8 |
+| **FI Scripts** | `frontend/js/financial-independence.js` | フロントエンドロジック | FR-023-8 |
+
+---
+
+### 14.3 データモデル設計
+
+#### 14.3.1 定常・臨時支出分類テーブル（SQLite拡張）
+
+```sql
+CREATE TABLE IF NOT EXISTS expense_classification (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category_name TEXT NOT NULL UNIQUE,
+    classification TEXT NOT NULL CHECK(classification IN ('regular', 'irregular')),
+    confidence_score REAL,  -- 自動分類の信頼度 (0.0〜1.0)
+    manual_override BOOLEAN DEFAULT FALSE,  -- ユーザーが手動で分類したか
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(category_name)
+);
+
+-- インデックス
+CREATE INDEX IF NOT EXISTS idx_expense_class_category ON expense_classification(category_name);
+```
+
+#### 14.3.2 FIRE進捗キャッシュテーブル（オプション）
+
+パフォーマンス最適化のため、計算結果をキャッシュ：
+
+```sql
+CREATE TABLE IF NOT EXISTS fi_progress_cache (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    calculation_date DATE NOT NULL,
+    target_amount REAL NOT NULL,
+    current_assets REAL NOT NULL,
+    monthly_rate REAL,  -- 月利
+    months_to_fi INTEGER,  -- 到達月数
+    annual_expense REAL,  -- 年支出額
+    pessimistic_months INTEGER,
+    neutral_months INTEGER,
+    optimistic_months INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- インデックス
+CREATE INDEX IF NOT EXISTS idx_fi_cache_date ON fi_progress_cache(calculation_date DESC);
+```
+
+---
+
+### 14.4 アルゴリズム設計
+
+#### 14.4.1 定常・臨時支出分離ロジック（FR-023-5）
+
+**統計的手法：IQR（四分位範囲）+ 出現頻度**
+
+```python
+def classify_expenses(df: pd.DataFrame, analysis_months: int = 12) -> dict[str, str]:
+    """
+    カテゴリ別に定常・臨時を分類
+
+    Args:
+        df: 家計簿DataFrame（columns: ['日付', 'カテゴリ', '金額']）
+        analysis_months: 分析対象月数
+
+    Returns:
+        {カテゴリ名: 'regular' or 'irregular'}
+    """
+    # 1. 月別・カテゴリ別集計
+    monthly_by_category = df.groupby([
+        df['日付'].dt.to_period('M'),
+        'カテゴリ'
+    ])['金額'].sum().unstack(fill_value=0)
+
+    classifications = {}
+
+    for category in monthly_by_category.columns:
+        values = monthly_by_category[category]
+
+        # 2. 出現頻度チェック
+        non_zero_months = (values > 0).sum()
+        occurrence_rate = non_zero_months / len(values)
+
+        # 3. 変動係数（CV）計算
+        mean_val = values.mean()
+        std_val = values.std()
+        cv = std_val / mean_val if mean_val > 0 else float('inf')
+
+        # 4. IQR（四分位範囲）チェック
+        q1 = values.quantile(0.25)
+        q3 = values.quantile(0.75)
+        iqr = q3 - q1
+
+        # 5. 分類基準
+        # - 出現率が75%以上
+        # - CVが0.5未満（変動が小さい）
+        # - IQRが小さい
+        if occurrence_rate >= 0.75 and cv < 0.5:
+            classifications[category] = 'regular'
+        else:
+            classifications[category] = 'irregular'
+
+    return classifications
+```
+
+**信頼度スコア計算**：
+
+```python
+def calculate_confidence(occurrence_rate: float, cv: float) -> float:
+    """
+    分類の信頼度を計算（0.0〜1.0）
+    """
+    # 出現率スコア（0〜0.5）
+    occurrence_score = min(occurrence_rate, 1.0) * 0.5
+
+    # 変動スコア（0〜0.5）：CVが小さいほど高スコア
+    variation_score = max(0, (1 - min(cv, 1.0))) * 0.5
+
+    return occurrence_score + variation_score
+```
+
+#### 14.4.2 FIRE目標資産額計算（FR-023-1）
+
+```python
+def calculate_fire_target(
+    monthly_expenses: pd.Series,
+    user_custom_annual_expense: float | None = None
+) -> float:
+    """
+    FIRE目標資産額を計算
+
+    Args:
+        monthly_expenses: 月別支出額のSeries（定常支出のみ）
+        user_custom_annual_expense: ユーザー指定の年支出額（オプション）
+
+    Returns:
+        目標資産額（円）
+    """
+    if user_custom_annual_expense:
+        annual_expense = user_custom_annual_expense
+    else:
+        # 直近12ヶ月の平均月支出
+        avg_monthly = monthly_expenses.tail(12).mean()
+        annual_expense = avg_monthly * 12
+
+    # FIRE基準: 年支出 × 25
+    return annual_expense * 25
+```
+
+#### 14.4.3 月利計算とトレンド分析（FR-023-2）
+
+```python
+def calculate_monthly_growth_rate(asset_history: pd.DataFrame) -> dict:
+    """
+    資産の月別増加率を計算
+
+    Args:
+        asset_history: 資産履歴DataFrame（columns: ['年月', '総資産額']）
+
+    Returns:
+        {
+            'monthly_rates': [月利のリスト],
+            'moving_average_3m': 3ヶ月移動平均,
+            'trend': 'accelerating' | 'stable' | 'decelerating'
+        }
+    """
+    # 1. 月次増加率計算
+    asset_history = asset_history.sort_values('年月')
+    asset_history['month_rate'] = asset_history['総資産額'].pct_change()
+
+    # 2. 3ヶ月移動平均
+    asset_history['ma_3m'] = asset_history['month_rate'].rolling(3).mean()
+
+    # 3. 回帰分析でトレンド判定
+    from scipy import stats
+    x = np.arange(len(asset_history))
+    y = asset_history['month_rate'].values
+    slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
+
+    # 傾きでトレンド判定
+    if slope > 0.001:
+        trend = 'accelerating'
+    elif slope < -0.001:
+        trend = 'decelerating'
+    else:
+        trend = 'stable'
+
+    return {
+        'monthly_rates': asset_history['month_rate'].tolist(),
+        'moving_average_3m': asset_history['ma_3m'].iloc[-1],
+        'trend': trend,
+        'slope': slope
+    }
+```
+
+#### 14.4.4 到達月数予測（FR-023-3）
+
+**複合金利モデル**：
+
+```python
+import math
+
+def calculate_months_to_fi(
+    current_assets: float,
+    target_assets: float,
+    monthly_rate: float
+) -> int | None:
+    """
+    到達月数を計算（複合金利モデル）
+
+    Formula:
+        months = log(target / current) / log(1 + rate)
+
+    Args:
+        current_assets: 現在の純資産
+        target_assets: 目標資産額
+        monthly_rate: 月利（小数、例：0.02 = 2%）
+
+    Returns:
+        到達月数（月） or None（到達不可能）
+    """
+    if current_assets >= target_assets:
+        return 0  # 既に達成
+
+    if monthly_rate <= 0:
+        return None  # 増加率がゼロ以下は到達不可能
+
+    try:
+        months = math.log(target_assets / current_assets) / math.log(1 + monthly_rate)
+        return int(math.ceil(months))
+    except (ValueError, ZeroDivisionError):
+        return None
+```
+
+#### 14.4.5 シナリオ別予測（FR-023-4）
+
+```python
+def calculate_scenarios(
+    current_assets: float,
+    target_assets: float,
+    monthly_rates: list[float]
+) -> dict:
+    """
+    3つのシナリオで到達予測
+
+    Args:
+        current_assets: 現在の純資産
+        target_assets: 目標資産額
+        monthly_rates: 直近12ヶ月の月利リスト
+
+    Returns:
+        {
+            'pessimistic': {months, rate, date},
+            'neutral': {months, rate, date},
+            'optimistic': {months, rate, date}
+        }
+    """
+    from datetime import datetime, timedelta
+    from dateutil.relativedelta import relativedelta
+
+    # 悲観シナリオ：最小月利
+    pessimistic_rate = min(monthly_rates)
+
+    # 中立シナリオ：移動平均
+    neutral_rate = np.mean(monthly_rates[-3:])  # 直近3ヶ月平均
+
+    # 楽観シナリオ：最大月利
+    optimistic_rate = max(monthly_rates)
+
+    scenarios = {}
+    for scenario_name, rate in [
+        ('pessimistic', pessimistic_rate),
+        ('neutral', neutral_rate),
+        ('optimistic', optimistic_rate)
+    ]:
+        months = calculate_months_to_fi(current_assets, target_assets, rate)
+
+        if months is not None:
+            target_date = datetime.now() + relativedelta(months=months)
+            scenarios[scenario_name] = {
+                'months': months,
+                'rate': rate,
+                'date': target_date.strftime('%Y年%m月')
+            }
+        else:
+            scenarios[scenario_name] = {
+                'months': None,
+                'rate': rate,
+                'date': '到達不可能'
+            }
+
+    return scenarios
+```
+
+---
+
+### 14.5 REST API設計（FR-023-7）
+
+#### 14.5.1 エンドポイント一覧
+
+| メソッド | パス | 概要 | 主なパラメータ |
+|---------|-----|------|--------------|
+| GET | `/api/financial-independence/status` | 現在の到達率と進捗情報 | `period_months` (default: 12) |
+| GET | `/api/financial-independence/projections` | シナリオ別到達予測 | `period_months`, `scenario` |
+| GET | `/api/financial-independence/expense-breakdown` | 定常・臨時支出の分離結果 | `period_months` |
+| POST | `/api/financial-independence/update-expense-classification` | 定常・臨時分類の更新 | `category`, `classification` |
+
+#### 14.5.2 APIスキーマ定義
+
+**GET /api/financial-independence/status**
+
+レスポンス例：
+
+```json
+{
+  "current_assets": 5000000,
+  "target_assets": 7500000,
+  "progress_rate": 66.67,
+  "annual_expense": 3000000,
+  "months_to_fi": {
+    "pessimistic": 48,
+    "neutral": 36,
+    "optimistic": 24
+  },
+  "monthly_growth_rate": 0.015,
+  "trend": "stable",
+  "calculation_date": "2025-11-05"
+}
+```
+
+**GET /api/financial-independence/projections**
+
+レスポンス例：
+
+```json
+{
+  "scenarios": [
+    {
+      "name": "pessimistic",
+      "monthly_rate": 0.005,
+      "months_to_fi": 48,
+      "target_date": "2029年11月",
+      "annual_increase": 300000
+    },
+    {
+      "name": "neutral",
+      "monthly_rate": 0.015,
+      "months_to_fi": 36,
+      "target_date": "2028年11月",
+      "annual_increase": 900000
+    },
+    {
+      "name": "optimistic",
+      "monthly_rate": 0.025,
+      "months_to_fi": 24,
+      "target_date": "2027年11月",
+      "annual_increase": 1500000
+    }
+  ]
+}
+```
+
+**GET /api/financial-independence/expense-breakdown**
+
+レスポンス例：
+
+```json
+{
+  "period": "2024-11 to 2025-10",
+  "classifications": [
+    {
+      "category": "食費",
+      "classification": "regular",
+      "monthly_average": 50000,
+      "confidence": 0.92,
+      "manual_override": false
+    },
+    {
+      "category": "旅行費",
+      "classification": "irregular",
+      "monthly_average": 15000,
+      "confidence": 0.85,
+      "manual_override": false
+    }
+  ],
+  "regular_total": 200000,
+  "irregular_total": 50000
+}
+```
+
+---
+
+### 14.6 MCP Tools設計（FR-023-9）
+
+#### 14.6.1 ツール一覧
+
+| ツール名 | 概要 | 入力 | 出力形式 |
+|---------|------|------|---------|
+| `get_financial_independence_status` | 現在の到達率と進捗 | `period_months` (opt) | 日本語説明文 + 数値データ |
+| `analyze_expense_patterns` | 定常・臨時支出分析 | `period_months` (opt) | カテゴリ別分類 + 削減候補 |
+| `project_financial_independence_date` | 到達予測とシナリオ比較 | `additional_savings` (opt) | シナリオ別到達予定日 |
+| `suggest_improvement_actions` | 改善提案 | `focus_area` (opt) | 優先度付きアクション |
+| `compare_scenarios` | 複数シナリオ比較 | `scenarios` (list) | 効果比較表 |
+
+#### 14.6.2 ツール実装例
+
+**get_financial_independence_status**
+
+```python
+@mcp.tool()
+def get_financial_independence_status(period_months: int = 12) -> str:
+    """
+    経済的自由への現在の到達率と進捗状況を取得
+
+    Args:
+        period_months: 分析対象月数（デフォルト：12ヶ月）
+
+    Returns:
+        日本語での進捗説明と数値データ
+    """
+    analyzer = FinancialIndependenceAnalyzer()
+    status = analyzer.get_status(period_months)
+
+    # 自然言語レスポンス生成
+    response = f"""
+## 経済的自由への進捗状況
+
+### 現状
+- **現在の純資産**: {status['current_assets']:,}円
+- **目標資産額**: {status['target_assets']:,}円
+- **到達率**: {status['progress_rate']:.1f}%
+
+### 到達予測
+- **中立シナリオ**: あと{status['months_to_fi']['neutral']}ヶ月（{status['target_date']['neutral']}）
+- **悲観シナリオ**: あと{status['months_to_fi']['pessimistic']}ヶ月
+- **楽観シナリオ**: あと{status['months_to_fi']['optimistic']}ヶ月
+
+### トレンド
+現在の資産増加ペースは**{status['trend_ja']}**です。
+月利: {status['monthly_rate']*100:.2f}%
+
+---
+*計算基準: 直近{period_months}ヶ月のデータ*
+    """
+    return response
+```
+
+**analyze_expense_patterns**
+
+```python
+@mcp.tool()
+def analyze_expense_patterns(
+    period_months: int = 12,
+    category: str | None = None
+) -> str:
+    """
+    定常・臨時支出のパターン分析と削減候補提案
+
+    Args:
+        period_months: 分析対象月数
+        category: 特定カテゴリ（省略時は全体分析）
+
+    Returns:
+        カテゴリ別分類結果と削減ポテンシャル
+    """
+    classifier = ExpenseClassifier()
+    breakdown = classifier.analyze(period_months, category)
+
+    response = f"""
+## 支出パターン分析
+
+### 定常支出（毎月発生）
+{_format_category_table(breakdown['regular'])}
+
+**定常支出合計**: {breakdown['regular_total']:,}円/月
+
+### 臨時支出（不定期）
+{_format_category_table(breakdown['irregular'])}
+
+**臨時支出合計**: {breakdown['irregular_total']:,}円/月
+
+### 削減候補
+{_format_reduction_suggestions(breakdown['reduction_potential'])}
+
+---
+*分析期間: {breakdown['period']}*
+    """
+    return response
+```
+
+---
+
+### 14.7 Webダッシュボード設計（FR-023-8）
+
+#### 14.7.1 UIレイアウト
+
+```
+┌────────────────────────────────────────────────────┐
+│  [ナビゲーション]                                   │
+├────────────────────────────────────────────────────┤
+│  経済的自由への進捗                                 │
+│                                                    │
+│  ┌──────────────┐  ┌──────────────┐              │
+│  │ 進捗率       │  │ 到達予定日    │              │
+│  │ ████░░ 67%   │  │ 2028年11月   │              │
+│  │              │  │ (36ヶ月後)   │              │
+│  └──────────────┘  └──────────────┘              │
+│                                                    │
+│  [資産推移グラフ]                                   │
+│  ┌────────────────────────────────────────────┐   │
+│  │                                            │   │
+│  │  (折れ線: 資産額、棒: 月間増加額)          │   │
+│  │                                            │   │
+│  └────────────────────────────────────────────┘   │
+│                                                    │
+│  [シナリオ別到達予測]                              │
+│  ┌────────────────────────────────────────────┐   │
+│  │ 悲観  [████████████████████] 48ヶ月        │   │
+│  │ 中立  [████████████] 36ヶ月                │   │
+│  │ 楽観  [████████] 24ヶ月                    │   │
+│  └────────────────────────────────────────────┘   │
+│                                                    │
+│  [定常・臨時支出内訳]                              │
+│  ┌────────────────────────────────────────────┐   │
+│  │ カテゴリ | 分類   | 月平均  | [編集]       │   │
+│  │ 食費     | 定常   | 50,000円 | [✓]         │   │
+│  │ 旅行費   | 臨時   | 15,000円 | [変更]      │   │
+│  └────────────────────────────────────────────┘   │
+│                                                    │
+│  [パラメータ設定]                                   │
+│  分析期間: [12ヶ月▾]  年支出額: [カスタム設定]     │
+│  [再計算]                                          │
+└────────────────────────────────────────────────────┘
+```
+
+#### 14.7.2 主要コンポーネント
+
+**HTML構造**（`frontend/financial-independence.html`）：
+
+```html
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>経済的自由への進捗 | 家計簿分析</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/financial-independence.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+</head>
+<body>
+    <nav class="main-nav">
+        <a href="index.html">📊 月次分析</a>
+        <a href="assets.html">💰 資産管理</a>
+        <a href="financial-independence.html" class="active">🎯 経済的自由</a>
+        <a href="mcp-tools.html">🔧 MCPツール</a>
+    </nav>
+
+    <main class="fi-container">
+        <h1>🎯 経済的自由への進捗</h1>
+
+        <!-- 進捗インジケータ -->
+        <section class="progress-section">
+            <div class="stat-card">
+                <h3>現在の到達率</h3>
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <p id="progress-percentage" class="stat-value">---%</p>
+                <p class="stat-detail">
+                    <span id="current-assets">---</span> /
+                    <span id="target-assets">---</span>
+                </p>
+            </div>
+
+            <div class="stat-card">
+                <h3>到達予定日（中立）</h3>
+                <p id="target-date-neutral" class="stat-value">----年--月</p>
+                <p id="months-remaining" class="stat-detail">あと--ヶ月</p>
+            </div>
+        </section>
+
+        <!-- 資産推移グラフ -->
+        <section class="chart-section">
+            <h2>資産推移とトレンド</h2>
+            <canvas id="asset-trend-chart"></canvas>
+        </section>
+
+        <!-- シナリオ別予測 -->
+        <section class="scenarios-section">
+            <h2>シナリオ別到達予測</h2>
+            <canvas id="scenarios-chart"></canvas>
+            <div id="scenarios-table" class="scenarios-table"></div>
+        </section>
+
+        <!-- 定常・臨時支出内訳 -->
+        <section class="expense-breakdown-section">
+            <h2>定常・臨時支出の内訳</h2>
+            <table id="expense-classification-table" class="data-table">
+                <thead>
+                    <tr>
+                        <th>カテゴリ</th>
+                        <th>分類</th>
+                        <th>月平均</th>
+                        <th>信頼度</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <!-- パラメータ設定 -->
+        <section class="settings-section">
+            <h2>分析パラメータ</h2>
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <label for="period-months">分析対象期間</label>
+                    <select id="period-months">
+                        <option value="6">直近6ヶ月</option>
+                        <option value="12" selected>直近12ヶ月</option>
+                        <option value="24">直近24ヶ月</option>
+                        <option value="36">直近36ヶ月</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label for="custom-annual-expense">年支出額（カスタム）</label>
+                    <input type="number" id="custom-annual-expense"
+                           placeholder="自動計算（空白）">
+                </div>
+                <button id="recalculate-btn" class="btn-primary">再計算</button>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/financial-independence.js"></script>
+</body>
+</html>
+```
+
+**JavaScriptロジック**（`frontend/js/financial-independence.js`）：
+
+```javascript
+class FinancialIndependenceManager {
+    constructor() {
+        this.apiBaseUrl = 'http://localhost:8000/api';
+        this.charts = {};
+        this.init();
+    }
+
+    async init() {
+        await this.loadData();
+        this.setupEventListeners();
+    }
+
+    async loadData(periodMonths = 12) {
+        try {
+            // 進捗データ取得
+            const statusResponse = await fetch(
+                `${this.apiBaseUrl}/financial-independence/status?period_months=${periodMonths}`
+            );
+            const statusData = await statusResponse.json();
+
+            // シナリオ予測取得
+            const projectionsResponse = await fetch(
+                `${this.apiBaseUrl}/financial-independence/projections?period_months=${periodMonths}`
+            );
+            const projectionsData = await projectionsResponse.json();
+
+            // 支出分類取得
+            const expenseResponse = await fetch(
+                `${this.apiBaseUrl}/financial-independence/expense-breakdown?period_months=${periodMonths}`
+            );
+            const expenseData = await expenseResponse.json();
+
+            // UI更新
+            this.updateProgressIndicators(statusData);
+            this.renderAssetTrendChart(statusData.asset_history);
+            this.renderScenariosChart(projectionsData.scenarios);
+            this.renderExpenseClassificationTable(expenseData.classifications);
+
+        } catch (error) {
+            console.error('データ取得エラー:', error);
+            this.showError('データの読み込みに失敗しました');
+        }
+    }
+
+    updateProgressIndicators(data) {
+        // 進捗率
+        document.getElementById('progress-percentage').textContent =
+            `${data.progress_rate.toFixed(1)}%`;
+        document.getElementById('progress-fill').style.width =
+            `${data.progress_rate}%`;
+
+        // 資産額
+        document.getElementById('current-assets').textContent =
+            this.formatCurrency(data.current_assets);
+        document.getElementById('target-assets').textContent =
+            this.formatCurrency(data.target_assets);
+
+        // 到達予定日
+        const neutral = data.months_to_fi.neutral;
+        document.getElementById('target-date-neutral').textContent =
+            data.target_date_neutral;
+        document.getElementById('months-remaining').textContent =
+            `あと${neutral}ヶ月`;
+    }
+
+    renderAssetTrendChart(assetHistory) {
+        const ctx = document.getElementById('asset-trend-chart');
+
+        if (this.charts.assetTrend) {
+            this.charts.assetTrend.destroy();
+        }
+
+        this.charts.assetTrend = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: assetHistory.map(d => d.month),
+                datasets: [{
+                    label: '総資産額',
+                    data: assetHistory.map(d => d.total_assets),
+                    borderColor: 'rgb(75, 192, 192)',
+                    yAxisID: 'y'
+                }, {
+                    label: '月間増加額',
+                    data: assetHistory.map(d => d.monthly_increase),
+                    type: 'bar',
+                    backgroundColor: 'rgba(153, 102, 255, 0.5)',
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        type: 'linear',
+                        position: 'left',
+                        title: { display: true, text: '総資産額（円）' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        position: 'right',
+                        title: { display: true, text: '月間増加額（円）' },
+                        grid: { drawOnChartArea: false }
+                    }
+                }
+            }
+        });
+    }
+
+    renderScenariosChart(scenarios) {
+        const ctx = document.getElementById('scenarios-chart');
+
+        if (this.charts.scenarios) {
+            this.charts.scenarios.destroy();
+        }
+
+        this.charts.scenarios = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['悲観', '中立', '楽観'],
+                datasets: [{
+                    label: '到達月数',
+                    data: [
+                        scenarios.find(s => s.name === 'pessimistic').months_to_fi,
+                        scenarios.find(s => s.name === 'neutral').months_to_fi,
+                        scenarios.find(s => s.name === 'optimistic').months_to_fi
+                    ],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(75, 192, 192, 0.7)'
+                    ]
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '到達までの月数（シナリオ別）'
+                    }
+                }
+            }
+        });
+
+        // テーブル表示
+        this.renderScenariosTable(scenarios);
+    }
+
+    renderScenariosTable(scenarios) {
+        const tableHtml = `
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>シナリオ</th>
+                        <th>月利</th>
+                        <th>到達月数</th>
+                        <th>到達予定日</th>
+                        <th>年間増加額</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${scenarios.map(s => `
+                        <tr>
+                            <td>${this.getScenarioLabel(s.name)}</td>
+                            <td>${(s.monthly_rate * 100).toFixed(2)}%</td>
+                            <td>${s.months_to_fi}ヶ月</td>
+                            <td>${s.target_date}</td>
+                            <td>${this.formatCurrency(s.annual_increase)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+        document.getElementById('scenarios-table').innerHTML = tableHtml;
+    }
+
+    renderExpenseClassificationTable(classifications) {
+        const tbody = document.querySelector('#expense-classification-table tbody');
+        tbody.innerHTML = classifications.map(c => `
+            <tr>
+                <td>${c.category}</td>
+                <td>
+                    <span class="badge badge-${c.classification}">
+                        ${c.classification === 'regular' ? '定常' : '臨時'}
+                    </span>
+                </td>
+                <td>${this.formatCurrency(c.monthly_average)}</td>
+                <td>${(c.confidence * 100).toFixed(0)}%</td>
+                <td>
+                    <button class="btn-small"
+                            onclick="fiManager.toggleClassification('${c.category}')">
+                        変更
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async toggleClassification(category) {
+        // カテゴリの分類を切り替え
+        const newClassification = confirm('定常支出に変更しますか？（キャンセル=臨時）')
+            ? 'regular' : 'irregular';
+
+        try {
+            const response = await fetch(
+                `${this.apiBaseUrl}/financial-independence/update-expense-classification`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ category, classification: newClassification })
+                }
+            );
+
+            if (response.ok) {
+                await this.loadData();
+                alert('分類を更新しました');
+            }
+        } catch (error) {
+            console.error('更新エラー:', error);
+            alert('更新に失敗しました');
+        }
+    }
+
+    setupEventListeners() {
+        document.getElementById('recalculate-btn').addEventListener('click', () => {
+            const periodMonths = parseInt(document.getElementById('period-months').value);
+            this.loadData(periodMonths);
+        });
+    }
+
+    formatCurrency(amount) {
+        return new Intl.NumberFormat('ja-JP', {
+            style: 'currency',
+            currency: 'JPY',
+            minimumFractionDigits: 0
+        }).format(amount);
+    }
+
+    getScenarioLabel(name) {
+        const labels = {
+            'pessimistic': '悲観',
+            'neutral': '中立',
+            'optimistic': '楽観'
+        };
+        return labels[name] || name;
+    }
+
+    showError(message) {
+        alert(`エラー: ${message}`);
+    }
+}
+
+// 初期化
+const fiManager = new FinancialIndependenceManager();
+```
+
+---
+
+### 14.8 非機能要件への対応
+
+| NFR | 対応方法 |
+|-----|---------|
+| **NFR-025**: 到達率計算5秒以内 | キャッシュテーブル活用、pandas最適化（vectorized操作）、非同期処理 |
+| **NFR-026**: 定常・臨時分離10秒以内 | 月別集計の事前計算、カテゴリ数上限（100程度想定） |
+| **NFR-027**: ダッシュボード3秒以内 | Chart.js軽量化、Progressive Loading、API並列リクエスト |
+
+---
+
+### 14.9 テスト戦略
+
+#### 14.9.1 ユニットテスト
+
+```python
+# tests/test_financial_independence_analyzer.py
+def test_calculate_fire_target():
+    expenses = pd.Series([200000] * 12)
+    target = calculate_fire_target(expenses)
+    assert target == 200000 * 12 * 25  # 60,000,000
+
+def test_classify_expenses():
+    # 定常：毎月50,000円
+    # 臨時：3ヶ月だけ100,000円
+    df = create_test_expense_data()
+    classifications = classify_expenses(df)
+    assert classifications['食費'] == 'regular'
+    assert classifications['旅行費'] == 'irregular'
+
+def test_calculate_months_to_fi():
+    months = calculate_months_to_fi(
+        current_assets=5000000,
+        target_assets=7500000,
+        monthly_rate=0.02
+    )
+    assert 20 <= months <= 30  # おおよそ25ヶ月
+```
+
+#### 14.9.2 統合テスト
+
+```python
+# tests/test_fi_api.py
+async def test_get_status_endpoint(client):
+    response = await client.get("/api/financial-independence/status")
+    assert response.status_code == 200
+    data = response.json()
+    assert 'current_assets' in data
+    assert 'target_assets' in data
+    assert 'progress_rate' in data
+```
+
+#### 14.9.3 E2Eテスト
+
+- Webダッシュボードの表示確認
+- パラメータ変更後の再計算
+- 定常・臨時分類の切り替え
+
+---
+
+### 14.10 変更履歴更新
+
+## 15. 変更履歴
 
 | 日付       | バージョン | 概要                                                 |
 | ---------- | ---------- | ---------------------------------------------------- |
@@ -2363,7 +3395,8 @@ app.include_router(assets_routes.router, prefix="/api")
 | 2025-10-30 | 0.4.0      | 重複検出・解決機能設計を追加（FR-009対応）           |
 | 2025-11-01 | 0.5.0      | Webアプリケーション設計を追加（FR-018対応）          |
 | 2025-11-02 | 0.6.0      | MCP ツール実行フロントエンド設計を追加（FR-021対応） |
-| 2025-11-04 | 0.7.0      | 資産推移分析機能設計を追加（FR-022対応）             |
+| 2025-11-04 | 0.6.1      | 資産推移分析機能設計を追加（FR-022対応）             |
+| **2025-11-05** | **0.7.0** | **経済的自由到達率可視化機能設計を追加（FR-023対応）** |
 
 ---
 

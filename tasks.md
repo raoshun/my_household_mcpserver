@@ -1796,11 +1796,226 @@ a97f251 - feat(frontend): Implement asset management page (TASK-1109, 1110)
 
 ---
 
+## フェーズ12: 経済的自由到達率分析（FIRE進捗追跡）
+
+**対象要件**: FR-023（9つのサブ要件 FR-023-1〜FR-023-9）  
+**優先度**: 🔴 高（資産管理機能の最終仕上げ）  
+**バージョン**: design.md v0.7.0, requirements.md v1.3 に対応
+
+**概要**: ユーザーが経済的自由（FIRE）への到達度を可視化し、改善アクションを提案する機能
+
+---
+
+### フェーズ12 タスク一覧
+
+#### 12.1 バックエンド基盤構築（Week 1）
+
+- [ ] **TASK-1201**: 分析モジュール骨組みと依存関係整備（1.5d）
+  - [ ] `backend/src/household_mcp/analysis/financial_independence.py` 新設：`FinancialIndependenceAnalyzer` クラス
+  - [ ] `backend/src/household_mcp/analysis/expense_classifier.py` 新設：`ExpenseClassifier` クラス（IQR式分類）
+  - [ ] `backend/src/household_mcp/analysis/fire_calculator.py` 新設：`FIRECalculator` クラス
+  - [ ] `backend/src/household_mcp/analysis/trend_statistics.py` 新設：`TrendStatistics` クラス
+  - [ ] requirements.txt に scipy/pandas/numpy が含まれることを確認（TS-031）
+  - **対応**: FR-023-1, FR-023-3, NFR-025, NFR-026
+
+- [ ] **TASK-1202**: データベース拡張（新テーブル追加）（0.75d）
+  - [ ] SQLite スキーマにテーブル追加：`expense_classification`（カテゴリ分類と信頼度スコア）
+  - [ ] SQLite スキーマにテーブル追加：`fi_progress_cache`（月次 FIRE 進捗スナップショット）
+  - [ ] マイグレーションスクリプト作成（`backend/scripts/migrate_fi_tables.py`）
+  - [ ] 既存データ構造との互換性確認
+  - **対応**: FR-023-2, FR-023-4, NFR-026
+
+#### 12.2 バックエンド分析ロジック実装（Week 1-2）
+
+- [ ] **TASK-1203**: 支出分類アルゴリズム実装（定常 vs 臨時）（1.5d）
+  - [ ] `ExpenseClassifier.classify_by_iqr()`: 四分位範囲法による分類
+  - [ ] `ExpenseClassifier.classify_by_occurrence()`: 出現頻度率に基づく分類
+  - [ ] `ExpenseClassifier.classify_by_cv()`: 変動係数に基づく分類
+  - [ ] 複合スコアリング機構（3つのメトリクスを統合）
+  - [ ] 信頼度スコア（0.0-1.0）の算出
+  - [ ] エッジケース処理（データ不足 < 12ヶ月）
+  - **対応**: FR-023-5, TS-031
+
+- [ ] **TASK-1204**: FIRE ターゲット計算実装（0.25d）
+  - [ ] `FIRECalculator.calculate_fire_target()`: 年間支出 × 25 の計算
+  - [ ] 入力検証（年間支出 > 0）
+  - [ ] 結果のキャッシュ機構
+  - **対応**: FR-023-1
+
+- [ ] **TASK-1205**: 資産成長率と月数計算実装（1.0d）
+  - [ ] `TrendStatistics.calculate_monthly_growth_rate()`: pct_change() + 3ヶ月 MA + 回帰分析
+  - [ ] `TrendStatistics.calculate_months_to_fi()`: 指数モデルで目標到達月数を計算
+  - [ ] エッジケース処理（成長率 ≤ 0、既に達成）
+  - [ ] 結果のキャッシュ機構
+  - **対応**: FR-023-2, FR-023-3
+
+- [ ] **TASK-1206**: シナリオ分析実装（1.0d）
+  - [ ] `FinancialIndependenceAnalyzer.calculate_scenarios()`: 3つの基本シナリオ（悲観/中立/楽観）
+  - [ ] `FinancialIndependenceAnalyzer.calculate_custom_scenarios()`: ユーザー定義シナリオ（最大5個）
+  - [ ] シナリオパラメータ（成長率、支出削減率など）の管理
+  - [ ] 複数シナリオの並列計算
+  - **対応**: FR-023-4, TS-034, TS-035
+
+- [ ] **TASK-1207**: 改善提案アクション生成実装（1.0d）
+  - [ ] `FinancialIndependenceAnalyzer.suggest_improvement_actions()`: 優先度付きアクション抽出
+  - [ ] 支出削減機会の分類（エリア別）
+  - [ ] 投資利回り改善の提案
+  - [ ] アクションのインパクト推定
+  - **対応**: FR-023-9, TS-037
+
+#### 12.3 REST API エンドポイント実装（Week 2）
+
+- [ ] **TASK-1208**: 4つの REST API エンドポイント実装（1.0d）
+  - [ ] `GET /api/financial-independence/status?period_months=12`
+    - 現在の FIRE 進捗、月間成長率、トレンド情報を返却
+    - JSON: {fire_percentage, target_amount, current_assets, monthly_growth_rate, months_to_fi, ...}
+  - [ ] `GET /api/financial-independence/projections?period_months=12`
+    - シナリオ別予測（悲観/中立/楽観）
+  - [ ] `GET /api/financial-independence/expense-breakdown?period_months=12`
+    - 定常支出 vs 臨時支出の分類結果
+  - [ ] `POST /api/financial-independence/update-expense-classification`
+    - ユーザー定義での分類上書き
+  - [ ] レスポンス時間が 5 秒以内（NFR-025）
+  - **対応**: FR-023-6, FR-023-7, NFR-025, TS-032, TS-033
+
+- [ ] **TASK-1209**: HTTP ルーティング統合（0.5d）
+  - [ ] `backend/src/household_mcp/web/routes/financial_independence.py` 新設
+  - [ ] FastAPI ルーター登録
+  - [ ] 既存ルート統合確認
+  - **対応**: FR-023-7
+
+#### 12.4 MCP ツール実装（Week 2-3）
+
+- [ ] **TASK-1210**: 5つの MCP ツール実装（1.5d）
+  - [ ] `get_financial_independence_status`: 進捗確認（conversational）
+  - [ ] `analyze_expense_patterns`: 支出パターン分析
+  - [ ] `project_financial_independence_date`: "あと月△万円貯蓄できれば何年短縮？"に回答
+  - [ ] `suggest_improvement_actions`: 優先度付きアクション提案
+  - [ ] `compare_scenarios`: 複数シナリオの影響比較
+  - [ ] ファイル: `backend/src/household_mcp/tools/financial_independence_tools.py`
+  - **対応**: FR-023-8, FR-023-9, TS-034, TS-035, TS-036, TS-037, TS-038
+
+- [ ] **TASK-1211**: MCP ツール登録と統合（0.5d）
+  - [ ] `backend/src/household_mcp/server.py` に 5 つのツール登録
+  - [ ] 既存ツールとの共存確認
+  - [ ] 説明文（日本語）設定
+  - **対応**: FR-023-8
+
+#### 12.5 Web UI 実装（Week 3）
+
+- [ ] **TASK-1212**: Web ダッシュボード HTML/CSS/JS 実装（2.0d）
+  - [ ] `frontend/financial-independence.html` 新設
+    - FIRE 進捗インジケーター（% 表示 + 目標到達日）
+    - 資産推移グラフ（Chart.js、二軸）
+    - シナリオ比較グラフ（横棒）
+    - 支出分類テーブル
+    - パラメータ設定パネル
+  - [ ] `frontend/js/financial-independence.js` 新設：`FinancialIndependenceManager` クラス
+  - [ ] `frontend/css/financial-independence.css` 新設：レスポンシブデザイン
+  - [ ] `frontend/index.html` に navigation link 追加
+  - [ ] Chart.js 4.4.0 統合確認
+  - [ ] UI レスポンス時間 3 秒以内（NFR-027）
+  - **対応**: FR-023-6, FR-023-8, NFR-027, TS-032, TS-033
+
+- [ ] **TASK-1213**: ダッシュボード連携テスト（0.5d）
+  - [ ] Web UI から API への通信確認
+  - [ ] グラフレンダリング確認
+  - [ ] パラメータ変更時の自動更新
+  - [ ] エラーハンドリング
+  - **対応**: FR-023-6, TS-032, TS-033
+
+#### 12.6 テスト実装（Week 3-4）
+
+- [ ] **TASK-1214**: 単体テスト実装（1.5d）
+  - [ ] `tests/unit/analysis/test_financial_independence.py` 新設
+    - `ExpenseClassifier` テスト（IQR 分類、エッジケース）
+    - `FIRECalculator` テスト（計算式、ゼロ値）
+    - `TrendStatistics` テスト（成長率計算）
+  - [ ] カバレッジ目標 ≥ 85%
+  - **対応**: TS-031
+
+- [ ] **TASK-1215**: MCP ツール機能テスト（1.25d）
+  - [ ] `tests/integration/test_fi_tools.py` 新設
+    - 5つのツール入出力確認
+    - 日本語エラーメッセージ検証（TS-040）
+    - コンテキスト保持テスト（TS-039）
+  - **対応**: TS-034, TS-035, TS-036, TS-037, TS-038, TS-039, TS-040
+
+- [ ] **TASK-1216**: REST API エンドポイント統合テスト（1.0d）
+  - [ ] `tests/integration/test_fi_api.py` 新設
+    - 4つのエンドポイント通常系テスト
+    - エラーケーステスト
+    - JSON スキーマ検証
+    - パフォーマンステスト（5s 以内）
+  - **対応**: TS-032, TS-033
+
+- [ ] **TASK-1217**: Web UI エンドツーエンド（E2E）テスト（0.75d）
+  - [ ] `tests/e2e/test_fi_dashboard.py` 新設
+    - ダッシュボード初期ロード
+    - グラフレンダリング確認
+    - パラメータ変更と再計算
+    - モバイル/レスポンシブテスト
+  - **対応**: TS-032, TS-033
+
+- [ ] **TASK-1218**: 品質ゲート検査（0.5d）
+  - [ ] 全テスト PASS（TS-031〜TS-040）
+  - [ ] コード品質スキャン（ruff lint/format, bandit）
+  - [ ] カバレッジレポート生成（≥ 85%）
+  - [ ] All Checks タスク実行
+  - **対応**: FR-023, NFR-025, NFR-026, NFR-027
+
+#### 12.7 ドキュメント・CI/CD（Week 4）
+
+- [ ] **TASK-1219**: ドキュメント更新（1.0d）
+  - [ ] `design.md` section 14 の実装状況更新
+  - [ ] `README.md` に FR-023 機能説明を追加
+  - [ ] API ドキュメント（OpenAPI 形式）
+  - [ ] MCP ツール ドキュメント
+  - [ ] ユーザーガイド（Web ダッシュボード操作）
+  - **対応**: FR-023
+
+- [ ] **TASK-1220**: CI/CD パイプライン更新（0.5d）
+  - [ ] 新モジュール（`household_mcp/analysis/`, `household_mcp/web/routes/`）をテスト対象に追加
+  - [ ] GitHub Actions ワークフロー更新
+  - [ ] コードカバレッジレポートに新モジュール反映
+  - **対応**: FR-023
+
+---
+
+### フェーズ12 工数見積
+
+| タスク ID         | 見積 | 優先度 | 状態   | 対応FR |
+| :---------------- | :--- | :----- | :----- | :----- |
+| TASK-1201         | 1.5d | 🔴高   | 未開始 | FR-023-1,3 |
+| TASK-1202         | 0.75d | 🔴高  | 未開始 | FR-023-2,4 |
+| TASK-1203         | 1.5d | 🔴高  | 未開始 | FR-023-5 |
+| TASK-1204         | 0.25d | 🟡中  | 未開始 | FR-023-1 |
+| TASK-1205         | 1.0d | 🔴高  | 未開始 | FR-023-2,3 |
+| TASK-1206         | 1.0d | 🔴高  | 未開始 | FR-023-4 |
+| TASK-1207         | 1.0d | 🔴高  | 未開始 | FR-023-9 |
+| TASK-1208         | 1.0d | 🔴高  | 未開始 | FR-023-6,7 |
+| TASK-1209         | 0.5d | 🟡中  | 未開始 | FR-023-7 |
+| TASK-1210         | 1.5d | 🔴高  | 未開始 | FR-023-8,9 |
+| TASK-1211         | 0.5d | 🟡中  | 未開始 | FR-023-8 |
+| TASK-1212         | 2.0d | 🔴高  | 未開始 | FR-023-6,8 |
+| TASK-1213         | 0.5d | 🟡中  | 未開始 | FR-023-6 |
+| TASK-1214         | 1.5d | 🔴高  | 未開始 | TS-031 |
+| TASK-1215         | 1.25d | 🔴高 | 未開始 | TS-034~038 |
+| TASK-1216         | 1.0d | 🔴高  | 未開始 | TS-032,033 |
+| TASK-1217         | 0.75d | 🟡中 | 未開始 | TS-032,033 |
+| TASK-1218         | 0.5d | 🔴高  | 未開始 | 品質確認 |
+| TASK-1219         | 1.0d | 🟡中  | 未開始 | ドキュメント |
+| TASK-1220         | 0.5d | 🟡中  | 未開始 | CI/CD |
+| **フェーズ12 合計** | **20.0d** | **-** | **計画中** | **FR-023** |
+
+---
+
 ## 工数見積（全フェーズ）
 
 - フェーズ0〜6: 約 17.5 人日
 - フェーズ10: 約 7.0 人日
 - フェーズ11（資産推移分析）: 約 13.5 人日
-- **全体**: 約 38.0 人日
+- フェーズ12（FIRE進捗分析）: 約 20.0 人日
+- **全体**: 約 58.0 人日
 
 ---
