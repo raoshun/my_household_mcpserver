@@ -10,8 +10,9 @@ Combines functionality from both server.py files into a single entry point.
 import argparse
 import os
 import warnings
+from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, cast
 
 import pandas as pd
 
@@ -33,6 +34,20 @@ from household_mcp.exceptions import DataSourceError
 from household_mcp.tools import duplicate_tools
 from household_mcp.tools.enhanced_tools import enhanced_monthly_summary
 from household_mcp.tools.trend_tool import category_trend_summary, get_category_trend
+
+# Financial independence MCP tools (optional)
+try:
+    from household_mcp.tools.financial_independence_tools import (
+        analyze_expense_patterns,
+        compare_scenarios,
+        get_financial_independence_status,
+        project_financial_independence_date,
+        suggest_improvement_actions,
+    )
+
+    HAS_FI_TOOLS = True
+except ImportError:
+    HAS_FI_TOOLS = False
 
 # Import HTTP server if streaming extras are available
 try:
@@ -715,11 +730,138 @@ def tool_get_duplicate_stats() -> dict[str, Any]:
         return {"success": False, "error": f"統計情報の取得に失敗しました: {e!s}"}
 
 
+# Register Financial Independence tools if available
+if HAS_FI_TOOLS:
+
+    @mcp.tool("get_financial_independence_status")
+    def fi_get_status(period_months: int = 12) -> dict[str, Any]:
+        """
+        Check current FIRE progress.
+
+        Returns progress rate, months to FIRE, and growth metrics.
+
+        Args:
+            period_months: Analysis period in months
+
+        Returns:
+            FIRE progress information with Japanese text
+
+        """
+        try:
+            return cast(
+                dict[str, Any],
+                get_financial_independence_status(period_months=period_months),
+            )
+        except Exception as e:
+            return {"success": False, "error": f"FIRE進度取得失敗: {e!s}"}
+
+    @mcp.tool("analyze_expense_patterns")
+    def fi_analyze_expenses(
+        period_months: int = 12,
+    ) -> dict[str, Any]:
+        """
+        Analyze spending patterns (regular vs irregular).
+
+        Args:
+            period_months: Analysis period in months
+
+        Returns:
+            Classified expenses with confidence scores
+
+        """
+        try:
+            return cast(
+                dict[str, Any], analyze_expense_patterns(period_months=period_months)
+            )
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"支出分析失敗: {e!s}",
+            }
+
+    @mcp.tool("project_financial_independence_date")
+    def fi_project_date(
+        additional_savings_per_month: float = 0.0,
+        custom_growth_rate: float | None = None,
+    ) -> dict[str, Any]:
+        """
+        Project FIRE achievement date with additional savings.
+
+        Args:
+            additional_savings_per_month: Monthly additional savings
+            custom_growth_rate: Custom growth rate override
+
+        Returns:
+            Achievement date projection and time savings
+
+        """
+        try:
+            return cast(
+                dict[str, Any],
+                (
+                    project_financial_independence_date(
+                        additional_savings_per_month=(additional_savings_per_month),
+                        custom_growth_rate=custom_growth_rate,
+                    )
+                ),
+            )
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"達成日予測失敗: {e!s}",
+            }
+
+    @mcp.tool("suggest_improvement_actions")
+    def fi_suggest_improvements(
+        annual_expense: float = 1000000,
+    ) -> dict[str, Any]:
+        """
+        Suggest prioritized improvement actions toward FIRE.
+
+        Args:
+            annual_expense: Annual expense amount
+
+        Returns:
+            Prioritized improvement suggestions with impact
+
+        """
+        try:
+            return cast(
+                dict[str, Any],
+                suggest_improvement_actions(annual_expense=annual_expense),
+            )
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"改善提案失敗: {e!s}",
+            }
+
+    @mcp.tool("compare_financial_scenarios")
+    def fi_compare_scenarios(
+        scenario_configs: dict[str, float] | None = None,
+    ) -> dict[str, Any]:
+        """
+        Compare multiple financial growth scenarios.
+
+        Args:
+            scenario_configs: Custom scenario configuration
+
+        Returns:
+            Scenario comparison with optimal selection
+
+        """
+        try:
+            return cast(
+                dict[str, Any], compare_scenarios(scenario_configs=scenario_configs)
+            )
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"シナリオ比較失敗: {e!s}",
+            }
+
+
 # Expose an async helper to list tools for smoke tests
-from collections.abc import Sequence
-from typing import (
-    NamedTuple,
-)
 
 
 class _SimpleTool(NamedTuple):
@@ -750,6 +892,17 @@ async def list_tools() -> Sequence[Any]:
         "restore_duplicate",
         "get_duplicate_stats",
     ]
+    # Add FI tools if available
+    if HAS_FI_TOOLS:
+        tool_names.extend(
+            [
+                "get_financial_independence_status",
+                "analyze_expense_patterns",
+                "project_financial_independence_date",
+                "suggest_improvement_actions",
+                "compare_financial_scenarios",
+            ]
+        )
     return [_SimpleTool(name=n) for n in tool_names]
 
 
