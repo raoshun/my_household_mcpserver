@@ -36,10 +36,14 @@ class FIRECalculator:
         if annual_expense <= 0:
             raise ValueError(f"年支出額は正の数である必要があります: {annual_expense}")
 
-        multiplier = custom_multiplier or FIRECalculator.FIRE_MULTIPLIER
-
-        if multiplier <= 0:
-            raise ValueError(f"倍率は正の数である必要があります: {multiplier}")
+        if custom_multiplier is not None:
+            if custom_multiplier <= 0:
+                raise ValueError(
+                    f"倍率は正の数である必要があります: {custom_multiplier}"
+                )
+            multiplier = custom_multiplier
+        else:
+            multiplier = FIRECalculator.FIRE_MULTIPLIER
 
         return annual_expense * multiplier
 
