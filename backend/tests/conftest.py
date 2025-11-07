@@ -152,3 +152,14 @@ def _reset_streaming_global_cache_between_tests() -> None:
     except Exception:
         # Streaming extras not installed; nothing to reset
         pass
+
+
+@pytest.fixture
+def app():
+    """FastAPI app fixture for integration tests."""
+    try:
+        from household_mcp.web.http_server import create_http_app
+
+        return create_http_app()
+    except ImportError as e:
+        pytest.skip(f"Web extras not available: {e}")
