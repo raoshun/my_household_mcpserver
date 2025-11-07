@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel
 
 from household_mcp.analysis import FinancialIndependenceAnalyzer
 
@@ -235,4 +236,102 @@ async def update_expense_classification(
         raise HTTPException(
             status_code=400,
             detail=f"分類更新エラー: {e!s}",
+        ) from e
+
+
+# Asset management endpoints
+
+
+class AssetRecord(BaseModel):
+    """資産レコードのデータ構造"""
+
+    year: int
+    month: int
+    asset_type: str
+    amount: float
+
+
+@router.post("/add-asset")
+async def add_asset(asset: AssetRecord) -> dict[str, Any]:
+    """
+    資産レコードを追加
+
+    Args:
+        asset: AssetRecord (year, month, asset_type, amount)
+
+    Returns:
+        追加結果
+
+    """
+    try:
+        if asset.month < 1 or asset.month > 12:
+            raise ValueError("月は1-12である必要があります")
+        if asset.amount < 0:
+            raise ValueError("金額は0以上である必要があります")
+
+        valid_types = ["cash", "stocks", "funds", "realestate", "pension"]
+        if asset.asset_type not in valid_types:
+            raise ValueError(f"資産種別は {valid_types} のいずれかである必要があります")
+
+        # TODO: データベースに保存
+        # ここではダミー処理
+
+        return {
+            "status": "success",
+            "message": f"{asset.year}年{asset.month}月の{asset.asset_type}を記録しました",
+            "asset_type": asset.asset_type,
+            "amount": asset.amount,
+            "record_date": f"{asset.year}-{asset.month:02d}",
+        }
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        ) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"資産追加エラー: {e!s}",
+        ) from e
+
+
+@router.delete("/delete-asset")
+async def delete_asset(asset: AssetRecord) -> dict[str, Any]:
+    """
+    資産レコードを削除
+
+    Args:
+        asset: AssetRecord (year, month, asset_type)
+
+    Returns:
+        削除結果
+
+    """
+    try:
+        if asset.month < 1 or asset.month > 12:
+            raise ValueError("月は1-12である必要があります")
+
+        valid_types = ["cash", "stocks", "funds", "realestate", "pension"]
+        if asset.asset_type not in valid_types:
+            raise ValueError(f"資産種別は {valid_types} のいずれかである必要があります")
+
+        # TODO: データベースから削除
+        # ここではダミー処理
+
+        return {
+            "status": "success",
+            "message": f"{asset.year}年{asset.month}月の{asset.asset_type}を削除しました",
+            "record_date": f"{asset.year}-{asset.month:02d}",
+        }
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        ) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"資産削除エラー: {e!s}",
         ) from e
