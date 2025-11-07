@@ -2085,7 +2085,7 @@ a97f251 - feat(frontend): Implement asset management page (TASK-1109, 1110)
 | TASK-1304 | 資産CRUD API実装               | 1.0d     | 🔴高    | ✅ 完了   | FR-024-4     |
 | TASK-1305 | 互換性レイヤー実装             | 0.75d    | 🟡中    | ✅ 完了   | NFR-028-032  |
 | TASK-1306 | DBクエリ最適化                 | 0.5d     | 🟡中    | ✅ 完了   | FR-024-5     |
-| TASK-1307 | トランザクション・ロールバック | 0.75d    | 🔴高    | ⏳ 未着手 | FR-024-6     |
+| TASK-1307 | トランザクション・ロールバック | 0.75d    | 🔴高    | ✅ 完了   | FR-024-6     |
 | TASK-1308 | テスト＆品質ゲート             | 1.5d     | 🔴高    | ⏳ 未着手 | TS-050       |
 | TASK-1309 | ドキュメント更新               | 0.75d    | 🟡中    | ⏳ 未着手 | ドキュメント |
 | **合計**  | **-**                          | **9.5d** | **-**  | **-**    | **FR-024**   |
@@ -2149,10 +2149,13 @@ a97f251 - feat(frontend): Implement asset management page (TASK-1109, 1110)
   - ✅ ユニットテスト 7 個実装（7 PASS, 100%）
   - **対応**: FR-024-5
 
-- [ ] **TASK-1307**: トランザクション・ロールバック（0.75d）
-  - SQLAlchemy Session 管理
-  - try-except-rollback パターン実装
-  - リトライ機構（max 3回、100ms間隔）
+- [x] **TASK-1307**: トランザクション・ロールバック（0.75d）
+  - ✅ TransactionManager: Session スコープ管理実装
+  - ✅ RetryConfig: リトライ設定（最大 3 回、100ms 間隔）
+  - ✅ session_scope: 自動コミット/ロールバック
+  - ✅ execute_with_retry: IntegrityError/OperationalError リトライ対応
+  - ✅ 指数バックオフ機構実装
+  - ✅ ユニットテスト 13 個実装（13 PASS, 100%）
   - **対応**: FR-024-6
 
 - [ ] **TASK-1308**: テスト＆品質ゲート（1.5d）
@@ -2180,9 +2183,11 @@ a97f251 - feat(frontend): Implement asset management page (TASK-1109, 1110)
 - ✅ TASK-1304: 資産 CRUD API（1.0d）
 - ✅ TASK-1305: 互換性レイヤー実装（0.75d）
 - ✅ TASK-1306: DB クエリ最適化（0.5d）
+- ✅ TASK-1307: トランザクション・ロールバック（0.75d）
 
 **残件**:
 
-- ⏳ TASK-1307: トランザクション・ロールバック（0.75d）
+- ⏳ TASK-1308: テスト＆品質ゲート（1.5d）
+- ⏳ TASK-1309: ドキュメント更新（0.75d）
 - ⏳ TASK-1308: テスト＆品質ゲート（1.5d）
 - ⏳ TASK-1309: ドキュメント更新（0.75d）
