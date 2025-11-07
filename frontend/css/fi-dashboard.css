@@ -455,7 +455,182 @@ input[type="text"]:focus {
         height: 24px;
     }
 
-    .suggestion-item {
-        padding: 12px;
+/* Navigation Bar Styling */
+.main-nav {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: var(--card-bg);
+    border-bottom: 2px solid var(--border-color);
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+}
+
+.main-nav a {
+    padding: 8px 15px;
+    text-decoration: none;
+    color: var(--text-color);
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    font-size: 0.95em;
+    white-space: nowrap;
+}
+
+.main-nav a:hover {
+    background-color: var(--bg-color);
+    color: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+.main-nav a.active {
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: bold;
+}
+
+.main-nav .config-btn {
+    margin-left: auto;
+    padding: 8px 15px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.main-nav .config-btn:hover {
+    background-color: var(--secondary-color);
+    color: white;
+    border-color: var(--secondary-color);
+}
+
+/* Asset Input Section */
+.asset-input-section {
+    margin-top: 30px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 0.95em;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 1em;
+    font-family: inherit;
+    transition: border-color 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 4px rgba(46, 125, 50, 0.2);
+}
+
+/* Asset Result Messages */
+.asset-result,
+.simulation-result {
+    margin-top: 15px;
+    padding: 12px 15px;
+    background-color: #e8f5e9;
+    border-left: 4px solid var(--success-color);
+    border-radius: 4px;
+    color: #2e7d32;
+    font-weight: 500;
+}
+
+.asset-result p,
+.simulation-result p {
+    margin: 5px 0;
+}
+
+.asset-result {
+    display: none;
+}
+
+.simulation-result {
+    display: none;
+}
+
+/* Button Styling */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-right: 10px;
+    margin-top: 10px;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #1b5e20;
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background-color: var(--text-light);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #616161;
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
+}
+
+.btn:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow);
+}
+
+@media (max-width: 768px) {
+    .main-nav {
+        gap: 10px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .main-nav a {
+        text-align: center;
+        flex: 1;
+    }
+
+    .main-nav .config-btn {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .form-group {
+        margin-bottom: 12px;
+    }
+
+    .btn {
+        margin-right: 5px;
+        padding: 8px 15px;
+        font-size: 0.9em;
     }
 }
