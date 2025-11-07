@@ -503,8 +503,145 @@ function showError(message) {
     }, 5000);
 }
 
+/**
+ * Initialize asset input form
+ */
+function initAssetInputForm() {
+    // Populate year select
+    const yearSelect = document.getElementById('assetYear');
+    const monthSelect = document.getElementById('assetMonth');
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+
+    // Add years (current year to 3 years back)
+    for (let i = currentYear; i >= currentYear - 3; i--) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = `${i}年`;
+        yearSelect.appendChild(option);
+    }
+
+    // Add months
+    for (let i = 1; i <= 12; i++) {
+        const option = document.createElement('option');
+        option.value = String(i).padStart(2, '0');
+        option.textContent = `${i}月`;
+        monthSelect.appendChild(option);
+    }
+
+    // Set current month as default
+    yearSelect.value = currentYear;
+    monthSelect.value = String(now.getMonth() + 1).padStart(2, '0');
+}
+
+/**
+ * Save asset record to server
+ */
+async function saveAssetRecord() {
+    const year = document.getElementById('assetYear').value;
+    const month = document.getElementById('assetMonth').value;
+    const assetType = document.getElementById('assetType').value;
+    const amount = parseFloat(document.getElementById('assetAmount').value);
+
+    if (!amount || amount <= 0) {
+        showError('金額を正しく入力してください');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/financial-independence/add-asset`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                year: parseInt(year),
+                month: parseInt(month),
+                asset_type: assetType,
+                amount: amount,
+            }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'エラーが発生しました');
+        }
+
+        const result = await response.json();
+
+        // Show success message
+        const resultDiv = document.getElementById('assetResult');
+        const messageDiv = document.getElementById('assetMessage');
+        messageDiv.textContent = `✅ 資産を記録しました（${result.asset_type}）`;
+        resultDiv.style.display = 'block';
+
+        // Clear form
+        document.getElementById('assetAmount').value = '';
+
+        // Refresh dashboard after 1 second
+        setTimeout(() => {
+            refreshDashboard();
+        }, 1000);
+
+    } catch (error) {
+        console.error('Error saving asset:', error);
+        showError(`資産の記録に失敗しました: ${error.message}`);
+    }
+}
+
+/**
+ * Delete asset record from server
+ */
+async function deleteAssetRecord() {
+    const year = document.getElementById('assetYear').value;
+    const month = document.getElementById('assetMonth').value;
+    const assetType = document.getElementById('assetType').value;
+
+    if (!confirm(`${year}年${month}月の${assetType}を削除してもよろしいですか？`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/financial-independence/delete-asset`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                year: parseInt(year),
+                month: parseInt(month),
+                asset_type: assetType,
+            }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'エラーが発生しました');
+        }
+
+        // Show success message
+        const resultDiv = document.getElementById('assetResult');
+        const messageDiv = document.getElementById('assetMessage');
+        messageDiv.textContent = `✅ 資産を削除しました`;
+        resultDiv.style.display = 'block';
+
+        // Refresh dashboard after 1 second
+        setTimeout(() => {
+            refreshDashboard();
+        }, 1000);
+
+    } catch (error) {
+        console.error('Error deleting asset:', error);
+        showError(`資産の削除に失敗しました: ${error.message}`);
+    }
+}
+
 // Initialize dashboard when page loads
-document.addEventListener('DOMContentLoaded', initDashboard);
+document.addEventListener('DOMContentLoaded', () => {
+    initAssetInputForm();
+    initDashboard();
+});
 
 // Refresh every 5 minutes
 setInterval(refreshDashboard, 5 * 60 * 1000);
