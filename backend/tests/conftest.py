@@ -158,7 +158,13 @@ def _reset_streaming_global_cache_between_tests() -> None:
 def app():
     """FastAPI app fixture for integration tests."""
     try:
+        from household_mcp.database.manager import DatabaseManager
         from household_mcp.web.http_server import create_http_app
+
+        # Initialize database for API tests
+        db_manager = DatabaseManager()
+        db_manager.drop_all_tables()
+        db_manager.initialize_database()
 
         return create_http_app()
     except ImportError as e:
