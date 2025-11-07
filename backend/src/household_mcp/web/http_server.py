@@ -1324,12 +1324,18 @@ def create_http_app(
 
     # Include FIRE financial independence routes
     try:
-        from household_mcp.web.routes import fi_router, transactions_router
+        from household_mcp.web.routes import (
+            assets_router,
+            fi_router,
+            transactions_router,
+        )
 
         app.include_router(fi_router)
         app.include_router(transactions_router)
+        app.include_router(assets_router)
         logger.info("Included financial independence routes")
         logger.info("Included transaction CRUD routes")
+        logger.info("Included asset CRUD routes")
     except ImportError as e:
         logger.warning(f"Could not import routes: {e}")
 

@@ -93,12 +93,8 @@ async def create_transaction(
 
 @router.get("/list", response_model=list[TransactionResponse])
 async def list_transactions(
-    start_date: datetime | None = Query(  # noqa: B008
-        None, description="開始日"
-    ),
-    end_date: datetime | None = Query(  # noqa: B008
-        None, description="終了日"
-    ),
+    start_date: datetime | None = Query(None, description="開始日"),  # noqa: B008
+    end_date: datetime | None = Query(None, description="終了日"),  # noqa: B008
     category_major: str | None = Query(None, description="大カテゴリフィルタ"),
     limit: int = Query(100, ge=1, le=1000, description="件数上限"),
     offset: int = Query(0, ge=0, description="オフセット"),

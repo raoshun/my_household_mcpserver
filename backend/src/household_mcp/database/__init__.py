@@ -14,6 +14,8 @@ from __future__ import annotations
 from typing import Any
 
 __all__ = [
+    "AssetClass",
+    "AssetRecord",
     "Base",
     "CSVImporter",
     "DatabaseManager",
@@ -39,6 +41,12 @@ def __getattr__(name: str) -> Any:  # pragma: no cover - import-time behavior
 
             mapping = {"Base": _Base, "DuplicateCheck": _Dup, "Transaction": _Txn}
             return mapping[name]
+        if name in {"AssetClass", "AssetRecord"}:
+            from .models import AssetClass as _AC
+            from .models import AssetRecord as _AR
+
+            mapping = {"AssetClass": _AC, "AssetRecord": _AR}
+            return mapping[name]
         if name == "CSVImporter":
             from .csv_importer import CSVImporter as _CSVImporter
 
@@ -54,7 +62,7 @@ def __getattr__(name: str) -> Any:  # pragma: no cover - import-time behavior
             return getattr(_qh, name)
     except Exception as e:
         raise ImportError(
-            "Database features are not available. Install with '.[db]' or '.[full]'"
+            "Database features are not available. " "Install with '.[db]' or '.[full]'"
         ) from e
 
     raise AttributeError(name)

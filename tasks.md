@@ -2117,11 +2117,15 @@ a97f251 - feat(frontend): Implement asset management page (TASK-1109, 1110)
   - ✅ ユニットテスト 8 個実装（100% PASS）
   - **対応**: FR-024-3
 
-- [ ] **TASK-1304**: 資産 CRUD API（1.0d）
-  - POST /api/assets/create
-  - GET /api/assets/list （種別別フィルタ）
-  - PUT /api/assets/{id}
-  - DELETE /api/assets/{id}
+- [x] **TASK-1304**: 資産 CRUD API（1.0d）
+  - ✅ GET /api/assets/classes エンドポイント実装
+  - ✅ POST /api/assets/records/create エンドポイント実装
+  - ✅ GET /api/assets/records エンドポイント実装（フィルタ対応）
+  - ✅ GET /api/assets/records/{id} エンドポイント実装
+  - ✅ PUT /api/assets/records/{id} エンドポイント実装
+  - ✅ DELETE /api/assets/records/{id} エンドポイント実装（論理削除）
+  - ✅ Pydantic スキーマ実装
+  - ✅ ユニットテスト 10 個実装（9 PASS, 1 SKIP）
   - **対応**: FR-024-4
 
 - [ ] **TASK-1305**: 互換性レイヤー実装（0.75d）
@@ -2156,4 +2160,4 @@ a97f251 - feat(frontend): Implement asset management page (TASK-1109, 1110)
 
 ### 13.4 進捗状況
 
-フェーズ 13 実装中: 3.75d / 9.5d = **39% 完了** ✅
+フェーズ 13 実装中: 4.75d / 9.5d = **50% 完了** ✅
