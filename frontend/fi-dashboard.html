@@ -12,6 +12,14 @@
         <header>
             <h1>🎯 FIRE進捗ダッシュボード</h1>
             <p class="subtitle">経済的自由への道のり</p>
+            <nav class="main-nav">
+                <a href="index.html">📊 メイン画面</a>
+                <a href="assets.html">💰 資産管理</a>
+                <a href="fi-dashboard.html" class="active">🔥 FIRE進捗</a>
+                <a href="mcp-tools.html">🔧 MCPツール実行</a>
+                <a href="duplicates.html">重複検出</a>
+                <button id="api-config-btn" class="config-btn" title="API サーバー設定" onclick="showApiConfigModal()">⚙️ API設定</button>
+            </nav>
         </header>
 
         <main>
@@ -140,6 +148,58 @@
                         <div id="simulationResult" class="simulation-result" style="display: none;">
                             <p>FIRE達成が <strong id="yearsSaved">0.5</strong> 年短縮されます</p>
                             <p>新しいFIRE達成予定日: <strong id="newFIDate">4.5年後</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 資産入力セクション -->
+            <section class="asset-input-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>💰 資産情報の登録・更新</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="assetYear">年:</label>
+                            <select id="assetYear">
+                                <!-- Dynamically populated -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="assetMonth">月:</label>
+                            <select id="assetMonth">
+                                <!-- Dynamically populated -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="assetType">資産種別:</label>
+                            <select id="assetType">
+                                <option value="cash">現金</option>
+                                <option value="stocks">株式</option>
+                                <option value="funds">投信</option>
+                                <option value="realestate">不動産</option>
+                                <option value="pension">年金</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="assetAmount">金額（円）:</label>
+                            <input
+                                type="number"
+                                id="assetAmount"
+                                placeholder="1000000"
+                                min="0"
+                                step="100000"
+                            >
+                        </div>
+                        <button class="btn btn-primary" onclick="saveAssetRecord()">
+                            資産を記録
+                        </button>
+                        <button class="btn btn-secondary" onclick="deleteAssetRecord()">
+                            削除
+                        </button>
+                        <div id="assetResult" class="asset-result" style="display: none;">
+                            <p id="assetMessage"></p>
                         </div>
                     </div>
                 </div>
