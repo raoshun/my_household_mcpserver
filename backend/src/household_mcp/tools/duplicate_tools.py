@@ -59,20 +59,26 @@ def detect_duplicates(
             "success": False,
             "error": "Database features are not available. Install with '.[db]' or '.[full]'.",
         }
-    db_manager = _get_db_manager()
-    with db_manager.session_scope() as session:
-        options = DetectionOptions(
-            date_tolerance_days=date_tolerance_days,
-            amount_tolerance_abs=amount_tolerance_abs,
-            amount_tolerance_pct=amount_tolerance_pct,
-            min_similarity_score=min_similarity_score,
-        )
-        service = DuplicateService(session)
-        count = service.detect_and_save_candidates(options)
+    try:
+        db_manager = _get_db_manager()
+        with db_manager.session_scope() as session:
+            options = DetectionOptions(
+                date_tolerance_days=date_tolerance_days,
+                amount_tolerance_abs=amount_tolerance_abs,
+                amount_tolerance_pct=amount_tolerance_pct,
+                min_similarity_score=min_similarity_score,
+            )
+            service = DuplicateService(session)
+            count = service.detect_and_save_candidates(options)
+            return {
+                "success": True,
+                "detected_count": count,
+                "message": f"{count}件の重複候補を検出しました",
+            }
+    except Exception as e:
         return {
-            "success": True,
-            "detected_count": count,
-            "message": f"{count}件の重複候補を検出しました",
+            "success": False,
+            "error": f"重複検出中にエラーが発生しました: {e!s}",
         }
 
 
@@ -83,11 +89,21 @@ def get_duplicate_candidates(limit: int = 10) -> dict[str, Any]:
             "success": False,
             "error": "Database features are not available. Install with '.[db]' or '.[full]'.",
         }
-    db_manager = _get_db_manager()
-    with db_manager.session_scope() as session:
-        service = DuplicateService(session)
-        candidates = service.get_pending_candidates(limit)
-        return {"success": True, "count": len(candidates), "candidates": candidates}
+    try:
+        db_manager = _get_db_manager()
+        with db_manager.session_scope() as session:
+            service = DuplicateService(session)
+            candidates = service.get_pending_candidates(limit)
+            return {
+                "success": True,
+                "count": len(candidates),
+                "candidates": candidates,
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"候補取得中にエラーが発生しました: {e!s}",
+        }
 
 
 def get_duplicate_candidate_detail(check_id: int) -> dict[str, Any]:
@@ -97,16 +113,22 @@ def get_duplicate_candidate_detail(check_id: int) -> dict[str, Any]:
             "success": False,
             "message": "Database features are not available. Install with '.[db]' or '.[full]'.",
         }
-    db_manager = _get_db_manager()
-    with db_manager.session_scope() as session:
-        service = DuplicateService(session)
-        detail = service.get_candidate_detail(check_id)
-        if detail is None:
-            return {
-                "success": False,
-                "message": f"チェックID {check_id} が見つかりません",
-            }
-        return {"success": True, "detail": detail}
+    try:
+        db_manager = _get_db_manager()
+        with db_manager.session_scope() as session:
+            service = DuplicateService(session)
+            detail = service.get_candidate_detail(check_id)
+            if detail is None:
+                return {
+                    "success": False,
+                    "message": f"チェックID {check_id} が見つかりません",
+                }
+            return {"success": True, "detail": detail}
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"詳細取得中にエラーが発生しました: {e!s}",
+        }
 
 
 def confirm_duplicate(
@@ -118,11 +140,17 @@ def confirm_duplicate(
             "success": False,
             "error": "Database features are not available. Install with '.[db]' or '.[full]'.",
         }
-    db_manager = _get_db_manager()
-    with db_manager.session_scope() as session:
-        service = DuplicateService(session)
-        result: dict[str, Any] = service.confirm_duplicate(check_id, decision)
-        return result
+    try:
+        db_manager = _get_db_manager()
+        with db_manager.session_scope() as session:
+            service = DuplicateService(session)
+            result: dict[str, Any] = service.confirm_duplicate(check_id, decision)
+            return result
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"判定記録中にエラーが発生しました: {e!s}",
+        }
 
 
 def restore_duplicate(transaction_id: int) -> dict[str, Any]:
@@ -132,11 +160,17 @@ def restore_duplicate(transaction_id: int) -> dict[str, Any]:
             "success": False,
             "error": "Database features are not available. Install with '.[db]' or '.[full]'.",
         }
-    db_manager = _get_db_manager()
-    with db_manager.session_scope() as session:
-        service = DuplicateService(session)
-        result: dict[str, Any] = service.restore_duplicate(transaction_id)
-        return result
+    try:
+        db_manager = _get_db_manager()
+        with db_manager.session_scope() as session:
+            service = DuplicateService(session)
+            result: dict[str, Any] = service.restore_duplicate(transaction_id)
+            return result
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"復元中にエラーが発生しました: {e!s}",
+        }
 
 
 def get_duplicate_stats() -> dict[str, Any]:
@@ -146,8 +180,14 @@ def get_duplicate_stats() -> dict[str, Any]:
             "success": False,
             "error": "Database features are not available. Install with '.[db]' or '.[full]'.",
         }
-    db_manager = _get_db_manager()
-    with db_manager.session_scope() as session:
-        service = DuplicateService(session)
-        stats = service.get_stats()
-        return {"success": True, "stats": stats}
+    try:
+        db_manager = _get_db_manager()
+        with db_manager.session_scope() as session:
+            service = DuplicateService(session)
+            stats = service.get_stats()
+            return {"success": True, "stats": stats}
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"統計取得中にエラーが発生しました: {e!s}",
+        }
