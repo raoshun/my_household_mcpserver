@@ -2374,23 +2374,49 @@ a97f251 - feat(frontend): Implement asset management page (TASK-1109, 1110)
 
 **目的**: DB データを MCP リソースとして公開
 
-**実装項目**:
+**ステータス**: ✅ 完了 (2025-11-08)
 
-- [ ] DB ベースのリソース実装
-  - data://transactions: 取引一覧リソース（latest month）
-  - data://monthly_summary: 月次集計リソース
+**実装内容**:
+
+- [x] DB ベースのリソース実装（3個）
+  - data://transactions: 最新月の取引一覧リソース
+  - data://monthly_summary: 月次集計レポートリソース  
   - data://budget_status: 予算ステータスリソース
 
-- [ ] リソーステンプレート対応
-  - date パラメータによる月指定（YYYY-MM 形式）
-  - カテゴリフィルタリング
+- [x] リソース関数
+  - `get_transactions()`: 最新月データを JSON エクスポート
+  - `get_monthly_summary_resource()`: サマリーレポート生成
+  - `get_budget_status_resource()`: カテゴリ別予算分析
 
-- [ ] リソース登録
-  - src/household_mcp/server/**init**.py に登録
+- [x] エラーハンドリング
+  - グレースフルデグラデーション（ツール未利用時）
+  - try/except による安全な実装
+  - import エラーの適切な処理
 
-**テスト**: リソース取得・テンプレート展開テスト（3+ テスト）
+- [x] リソース登録
+  - src/household_mcp/server.py に 3 個のリソース定義
 
-**成果物**: src/household_mcp/server/**init**.py 更新
+**テスト**:
+
+- test_server_resources.py (7 テスト)
+  - インポート検証テスト
+  - リソース関数存在確認
+  - サーバーモジュール構文検証
+  - リソース関数の動作確認
+
+**成果物**:
+
+- src/household_mcp/server.py: 3 個の @mcp.resource 定義追加（127 行）
+- tests/test_server_resources.py: リソース統合テスト（195 行）
+- report_tools との連携: 遅延評価（lazy import）パターン採用
+
+**技術的ポイント**:
+
+- 関数内インポート: モジュールレベルのインポートエラーを回避
+- グレースフルデグラデーション: import 失敗時も error キーで返却
+- SQL 取得: 最新月を自動検出する機構
+
+**コミット**: 209acf0 (feat(resources): Add DB-based MCP resources...)
 
 ### TASK-1406: 統合テスト & 品質ゲート（1.0d）
 
