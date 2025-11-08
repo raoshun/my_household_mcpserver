@@ -324,3 +324,43 @@ class FIProgressCache(Base):
             f"progress_rate={self.progress_rate}, "
             f"months_to_fi={self.months_to_fi})>"
         )
+
+
+class Budget(Base):
+    """予算管理テーブル."""
+
+    __tablename__ = "budgets"
+
+    # Primary key
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # 予算期間
+    year = Column(Integer, nullable=False, index=True)
+    month = Column(Integer, nullable=False, index=True)
+
+    # カテゴリ
+    category_major = Column(String(100), nullable=False, index=True)
+    category_minor = Column(String(100))
+
+    # 予算額
+    amount = Column(Numeric(12, 2), nullable=False)
+
+    # メタ情報
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+    # テーブル制約
+    __table_args__ = (
+        Index("idx_budget_period", "year", "month"),
+        Index("idx_budget_category", "category_major", "category_minor"),
+    )
+
+    def __repr__(self) -> str:
+        """文字列表現."""
+        return (
+            f"<Budget(id={self.id}, "
+            f"year={self.year}, "
+            f"month={self.month}, "
+            f"category={self.category_major}, "
+            f"amount={self.amount})>"
+        )
