@@ -2306,28 +2306,44 @@ a97f251 - feat(frontend): Implement asset management page (TASK-1109, 1110)
 
 **実装項目**:
 
-- [ ] Budget モデル実装（DB テーブル）
-  - user_id, category_major, category_minor, year, month, amount
+- [x] Budget モデル実装（DB テーブル）
+  - year, month, category_major, category_minor, amount
   - created_at, updated_at タイムスタンプ
+  - ユニークインデックス：year, month, category
 
-- [ ] set_budget ツール: 月次予算の設定
+- [x] set_budget ツール: 月次予算の設定
   - カテゴリ別予算の設定/更新
-  - バリデーション（金額チェック）
+  - 金額バリデーション（非負数チェック）
 
-- [ ] get_budget_status ツール: 現在の達成率・差異・警告
+- [x] get_budget_status ツール: 達成率・差異・警告
   - 実績 vs 予算の比較
   - 達成率（%）の計算
   - 超過時の警告フラグ
 
-- [ ] compare_budget_actual ツール: 実績との比較表
+- [x] get_budget_summary ツール: 月次予算サマリー
+  - 全カテゴリの集計
+  - 合計予算・実績・達成率
+
+- [x] compare_budget_actual ツール: 実績との比較表
   - 予算額、実績額、差異、達成率をテーブル形式で返す
 
-**テスト**: 予算設定・取得・計算テスト（6+ テスト）
+**テスト**: ✅ 5 個のテストケース (100% 成功)
+
+- test_set_budget_create
+- test_set_budget_update
+- test_get_budget_status
+- test_get_budget_summary
+- test_compare_budget_actual
 
 **成果物**:
 
 - src/household_mcp/database/models.py: Budget テーブル追加
-- src/household_mcp/tools/budget_tools.py
+- src/household_mcp/tools/budget_tools.py (265行)
+- tests/test_budget_tools.py (166行)
+
+**コミット**: `5c1478b` - feat(tools,models): Add budget management tools (TASK-1403)
+
+**ステータス**: ✅ 完了 (2025-11-08)
 
 ### TASK-1404: レポート出力ツール（1.0d）
 
