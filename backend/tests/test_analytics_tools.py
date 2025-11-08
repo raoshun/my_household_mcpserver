@@ -37,9 +37,7 @@ class TestAnalyticsTools:
             for year, month in months_data:
                 base_date = datetime(year, month, 1)
                 # Unique offset per month
-                month_offset = sum(
-                    1 for y, m in months_data if (y, m) < (year, month)
-                )
+                month_offset = sum(1 for y, m in months_data if (y, m) < (year, month))
 
                 # 食費（支出）- 月ごとに変動
                 if month == 10:

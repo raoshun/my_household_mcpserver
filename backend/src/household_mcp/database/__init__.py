@@ -17,6 +17,7 @@ __all__ = [
     "AssetClass",
     "AssetRecord",
     "Base",
+    "Budget",
     "CSVImporter",
     "DatabaseManager",
     "DuplicateCheck",
@@ -34,12 +35,18 @@ def __getattr__(name: str) -> Any:  # pragma: no cover - import-time behavior
             from .manager import DatabaseManager as _DatabaseManager
 
             return _DatabaseManager
-        if name in {"Base", "DuplicateCheck", "Transaction"}:
+        if name in {"Base", "Budget", "DuplicateCheck", "Transaction"}:
             from .models import Base as _Base
+            from .models import Budget as _Budget
             from .models import DuplicateCheck as _Dup
             from .models import Transaction as _Txn
 
-            mapping = {"Base": _Base, "DuplicateCheck": _Dup, "Transaction": _Txn}
+            mapping = {
+                "Base": _Base,
+                "Budget": _Budget,
+                "DuplicateCheck": _Dup,
+                "Transaction": _Txn,
+            }
             return mapping[name]
         if name in {"AssetClass", "AssetRecord"}:
             from .models import AssetClass as _AC
