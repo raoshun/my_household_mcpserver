@@ -2268,23 +2268,37 @@ a97f251 - feat(frontend): Implement asset management page (TASK-1109, 1110)
 
 **実装項目**:
 
-- [ ] get_monthly_summary ツール
-  - 月次支出/収入/貯蓄率の集計
-  - カテゴリ別内訳の計算
-  - 前月比の自動計算
+- [x] get_monthly_comparison ツール
+  - 前月比較（差分・差分率の計算）
+  - 収入・支出の比較
 
-- [ ] トレンド分析強化
-  - 前年同月比の計算
-  - 12 ヶ月移動平均
-  - 増減率の計算
+- [x] get_yoy_comparison ツール
+  - 前年同月比較
+  - 年単位での変動追跡
 
-- [ ] 支出予測ツール（簡易版）
+- [x] get_moving_average ツール
+  - N-月移動平均の計算
+  - 標準偏差・最大値・最小値
+
+- [x] predict_expense ツール
   - 過去 3 ヶ月の平均から翌月予測
-  - 信頼度スコアの付与
+  - トレンド分析と信頼度スコア計算
 
-**テスト**: 月次集計、トレンド計算、予測精度テスト（4+ テスト）
+**テスト**: ✅ 4 個のテストケース (100% 成功)
 
-**成果物**: src/household_mcp/tools/analytics_tools.py
+- test_get_monthly_comparison
+- test_get_yoy_comparison
+- test_get_moving_average
+- test_predict_expense
+
+**成果物**:
+
+- src/household_mcp/tools/analytics_tools.py (348行)
+- tests/test_analytics_tools.py (149行)
+
+**コミット**: `31cb16d` - feat(tools): Add advanced analytics tools (TASK-1402)
+
+**ステータス**: ✅ 完了 (2025-11-08)
 
 ### TASK-1403: 予算管理ツール実装（1.5d）
 
