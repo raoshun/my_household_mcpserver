@@ -275,10 +275,9 @@ class FinancialIndependenceAnalyzer:
                         "description": (
                             f"現在のペースでは、FIRE達成に約"
                             f"{months_to_fi:.0f}ヶ月（"
-                            f"{months_to_fi/12:.1f}年）必要です。"
+                            f"{months_to_fi / 12:.1f}年）必要です。"
                         ),
-                        "impact": "支出を10%削減できれば、達成期間は"
-                        "約1年短縮されます",
+                        "impact": "支出を10%削減できれば、達成期間は約1年短縮されます",
                     }
                 )
 
@@ -300,7 +299,7 @@ class FinancialIndependenceAnalyzer:
                         f"{', '.join(irregular_categories[:3])}"
                         f"{'ほか' if len(irregular_categories) > 3 else ''}"
                     ),
-                    "impact": "不定期支出の20%削減で、月間支出を" "平均1%削減できます",
+                    "impact": "不定期支出の20%削減で、月間支出を平均1%削減できます",
                 }
             )
 

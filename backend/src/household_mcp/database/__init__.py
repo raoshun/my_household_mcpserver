@@ -69,7 +69,7 @@ def __getattr__(name: str) -> Any:  # pragma: no cover - import-time behavior
             return getattr(_qh, name)
     except Exception as e:
         raise ImportError(
-            "Database features are not available. " "Install with '.[db]' or '.[full]'"
+            "Database features are not available. Install with '.[db]' or '.[full]'"
         ) from e
 
     raise AttributeError(name)

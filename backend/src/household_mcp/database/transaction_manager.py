@@ -205,8 +205,7 @@ class TransactionManager:
                     time.sleep(wait_ms / 1000.0)
                 else:
                     logger.error(
-                        f"全リトライが失敗しました "
-                        f"({config.max_retries + 1}回): {e}"
+                        f"全リトライが失敗しました ({config.max_retries + 1}回): {e}"
                     )
         raise TransactionError(
             f"トランザクション実行失敗: {last_error}"

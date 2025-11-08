@@ -216,8 +216,7 @@ class SQLiteBackend(DataLoaderBackend):
 
             if not transactions:
                 msg = (
-                    f"指定条件に該当するデータがありません "
-                    f"(year={year}, month={month})"
+                    f"指定条件に該当するデータがありません (year={year}, month={month})"
                 )
                 raise DataSourceError(msg)
 

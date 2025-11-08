@@ -375,7 +375,7 @@ def submit_asset_record(
     return {
         "status": "success",
         "message": (
-            f"{year}年{month}月の{asset_type}を記録しました" f"（金額: ¥{amount:,.0f}）"
+            f"{year}年{month}月の{asset_type}を記録しました（金額: ¥{amount:,.0f}）"
         ),
         "record": {
             "year": year,
@@ -384,6 +384,6 @@ def submit_asset_record(
             "amount": amount,
         },
         "next_steps": (
-            "資産情報はダッシュボードに反映されます。" "FIRE進度が更新されました。"
+            "資産情報はダッシュボードに反映されます。FIRE進度が更新されました。"
         ),
     }

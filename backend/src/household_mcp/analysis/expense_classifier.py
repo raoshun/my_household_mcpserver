@@ -111,7 +111,7 @@ class ExpenseClassifier:
             "occurrences": occurrences,
             "months": months,
             "interpretation": (
-                f"対象{months}ヶ月中{occurrences}ヶ月に発生（{occurrence_rate*100:.1f}%）"
+                f"対象{months}ヶ月中{occurrences}ヶ月に発生（{occurrence_rate * 100:.1f}%）"
             ),
         }
 

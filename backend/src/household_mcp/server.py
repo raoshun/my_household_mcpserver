@@ -35,6 +35,10 @@ from household_mcp.tools import duplicate_tools
 from household_mcp.tools.enhanced_tools import enhanced_monthly_summary
 from household_mcp.tools.trend_tool import category_trend_summary, get_category_trend
 
+# Report tools (DB-based)
+# Report tools are imported on-demand in resource functions (TASK-1405)
+HAS_REPORT_TOOLS = True  # Assume available; gracefully degrade on import error
+
 # Financial independence MCP tools (optional)
 try:
     from household_mcp.tools.financial_independence_tools import (
@@ -258,6 +262,112 @@ def get_category_trend_summary() -> dict[str, Any]:
         return dict(result)
     except DataSourceError:
         return {"summary": {}}
+
+
+# DB-based resources (TASK-1405)
+# Latest month transactions resource
+@mcp.resource(
+    "data://transactions",
+    mime_type="text/event-stream" if is_streamable else None,
+)
+def get_transactions() -> dict[str, Any]:
+    """Get transactions for the latest available month from database."""
+    if not HAS_REPORT_TOOLS:
+        return {"error": "Report tools not available"}
+    try:
+        from household_mcp.database.models import Transaction
+        from household_mcp.tools.report_tools import export_transactions
+
+        db_manager = _get_db_manager()
+        session = db_manager.get_session()
+        try:
+            # Get latest month
+            query = (
+                session.query(Transaction.date)
+                .order_by(Transaction.date.desc())
+                .first()
+            )
+            if not query:
+                return {"transactions": [], "period": "No data"}
+            latest_date = query[0]
+            year, month = latest_date.year, latest_date.month
+            # Use export_transactions to get month data
+            result = export_transactions(year, month, format="json")
+            return {"transactions": result}
+        finally:
+            session.close()
+    except Exception as e:
+        return {"error": f"Failed to get transactions: {e!s}"}
+
+
+# Monthly summary resource
+@mcp.resource(
+    "data://monthly_summary",
+    mime_type="text/event-stream" if is_streamable else None,
+)
+def get_monthly_summary_resource() -> dict[str, Any]:
+    """Get monthly summary report (income, expense, savings) for latest month."""
+    if not HAS_REPORT_TOOLS:
+        return {"error": "Report tools not available"}
+    try:
+        from household_mcp.database.models import Transaction
+        from household_mcp.tools.report_tools import generate_report
+
+        db_manager = _get_db_manager()
+        session = db_manager.get_session()
+        try:
+            # Get latest month
+            query = (
+                session.query(Transaction.date)
+                .order_by(Transaction.date.desc())
+                .first()
+            )
+            if not query:
+                return {"summary": None}
+            latest_date = query[0]
+            year, month = latest_date.year, latest_date.month
+            # Use generate_report to get summary
+            result = generate_report(year, month, "summary")
+            return {"summary": result}
+        finally:
+            session.close()
+    except Exception as e:
+        return {"error": f"Failed to get summary: {e!s}"}
+
+
+# Budget status resource
+@mcp.resource(
+    "data://budget_status",
+    mime_type="text/event-stream" if is_streamable else None,
+)
+def get_budget_status_resource() -> dict[str, Any]:
+    """Get budget status (actual vs budget) for latest month."""
+    if not HAS_REPORT_TOOLS:
+        return {"error": "Report tools not available"}
+    try:
+        from household_mcp.database.models import Transaction
+        from household_mcp.tools.report_tools import generate_report
+
+        db_manager = _get_db_manager()
+        session = db_manager.get_session()
+        try:
+            # Get latest month
+            query = (
+                session.query(Transaction.date)
+                .order_by(Transaction.date.desc())
+                .first()
+            )
+            if not query:
+                return {"budget_status": None}
+            latest_date = query[0]
+            year, month = latest_date.year, latest_date.month
+            # Use generate_report to get category breakdown
+            result = generate_report(year, month, "category")
+            return {"budget_status": result}
+        finally:
+            session.close()
+    except Exception as e:
+        return {"error": f"Failed to get budget status: {e!s}"}
 
 
 @mcp.tool("get_category_trend")
