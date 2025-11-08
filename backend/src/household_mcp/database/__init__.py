@@ -14,18 +14,18 @@ from __future__ import annotations
 from typing import Any
 
 __all__ = [
-    "AssetClass",
-    "AssetRecord",
-    "Base",
-    "Budget",
-    "CSVImporter",
-    "DatabaseManager",
-    "DuplicateCheck",
-    "Transaction",
-    "get_active_transactions",
-    "get_category_breakdown",
-    "get_duplicate_impact_report",
-    "get_monthly_summary",
+    "AssetClass",  # type: ignore[reportUnsupportedDunderAll]
+    "AssetRecord",  # type: ignore[reportUnsupportedDunderAll]
+    "Base",  # type: ignore[reportUnsupportedDunderAll]
+    "Budget",  # type: ignore[reportUnsupportedDunderAll]
+    "CSVImporter",  # type: ignore[reportUnsupportedDunderAll]
+    "DatabaseManager",  # type: ignore[reportUnsupportedDunderAll]
+    "DuplicateCheck",  # type: ignore[reportUnsupportedDunderAll]
+    "Transaction",  # type: ignore[reportUnsupportedDunderAll]
+    "get_active_transactions",  # type: ignore[reportUnsupportedDunderAll]
+    "get_category_breakdown",  # type: ignore[reportUnsupportedDunderAll]
+    "get_duplicate_impact_report",  # type: ignore[reportUnsupportedDunderAll]
+    "get_monthly_summary",  # type: ignore[reportUnsupportedDunderAll]
 ]
 
 

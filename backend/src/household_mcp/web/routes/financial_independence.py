@@ -107,7 +107,7 @@ async def get_financial_independence_projections(
         # TODO: 実際のデータソースから取得
         current_assets = 5000000
         annual_expense = 1000000
-        asset_history = [5000000 + (i * 50000) for i in range(period_months)]
+        asset_history = [float(5000000 + (i * 50000)) for i in range(period_months)]
 
         scenarios = analyzer.calculate_scenarios(
             current_assets=current_assets,
@@ -164,9 +164,9 @@ async def get_expense_breakdown(
     try:
         # TODO: 実際のデータソースから取得
         category_history = {
-            "食費": [50000 + (i * 100) for i in range(period_months)],
-            "交通費": [5000 if i % 2 == 0 else 0 for i in range(period_months)],
-            "医療費": [200000 if i == 5 else 0 for i in range(period_months)],
+            "食費": [float(50000 + (i * 100)) for i in range(period_months)],
+            "交通費": [float(5000 if i % 2 == 0 else 0) for i in range(period_months)],
+            "医療費": [float(200000 if i == 5 else 0) for i in range(period_months)],
         }
 
         classification_results = analyzer.classify_expenses(

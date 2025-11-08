@@ -17,13 +17,13 @@ from typing import Any
 import pandas as pd
 
 try:
-    import matplotlib
-    import matplotlib.font_manager as fm
-    import matplotlib.pyplot as plt
-    from matplotlib.axes import Axes
-    from matplotlib.figure import Figure
-    from matplotlib.text import Text
-    from matplotlib.ticker import FuncFormatter
+    import matplotlib  # type: ignore
+    import matplotlib.font_manager as fm  # type: ignore
+    import matplotlib.pyplot as plt  # type: ignore
+    from matplotlib.axes import Axes  # type: ignore
+    from matplotlib.figure import Figure  # type: ignore
+    from matplotlib.text import Text  # type: ignore
+    from matplotlib.ticker import FuncFormatter  # type: ignore
 
     HAS_VISUALIZATION_DEPS = True
 except ImportError:

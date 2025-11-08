@@ -10,14 +10,9 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-try:
-    from fastapi import FastAPI, HTTPException, Query
-    from fastapi.middleware.cors import CORSMiddleware
-    from fastapi.responses import StreamingResponse
-
-    HAS_FASTAPI = True
-except ImportError:
-    HAS_FASTAPI = False
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 
 from household_mcp.streaming import ImageStreamer
 from household_mcp.streaming.global_cache import ensure_global_cache, get_global_cache
@@ -45,15 +40,9 @@ def create_http_app(
         Configured FastAPI application
 
     Raises:
-        ImportError: If FastAPI is not installed
+        ImportError: If required dependencies are not installed
 
     """
-    if not HAS_FASTAPI:
-        raise ImportError(
-            "FastAPI is required for HTTP server. "
-            "Install with: pip install household-mcp-server[streaming]"
-        )
-
     app = FastAPI(
         title="Household Budget Chart Server",
         description="HTTP streaming server for household budget charts",
@@ -650,22 +639,26 @@ def create_http_app(
 
             # Filter expenses only (negative amounts)
             expense_df = combined_df[combined_df["金額（円）"] < 0].copy()
-            expense_df["金額（円）"] = expense_df["金額（円）"].abs()
+            expense_df["金額（円）"] = expense_df["金額（円）"].abs()  # type: ignore
 
             # Find top N categories by total expense
             category_totals = (
                 expense_df.groupby("大項目")["金額（円）"]
                 .sum()
-                .sort_values(ascending=False)
+                .sort_values(ascending=False)  # type: ignore
             )
             top_categories = category_totals.head(top_n).index.tolist()
 
             # Filter to top categories
-            top_expense_df = expense_df[expense_df["大項目"].isin(top_categories)]
+            top_expense_df = expense_df[
+                expense_df["大項目"].isin(top_categories)  # type: ignore
+            ]
 
             # Aggregate by category and month
             category_monthly = (
-                top_expense_df.groupby(["大項目", "year_month"])["金額（円）"]
+                top_expense_df.groupby(["大項目", "year_month"])[  # type: ignore
+                    "金額（円）"
+                ]
                 .sum()
                 .reset_index()
             )
@@ -682,13 +675,10 @@ def create_http_app(
             # Convert to list of dicts for easier frontend consumption
             data = []
             for month in months:
-                month_data = {"year_month": month}
+                month_data: dict[str, Any] = {"year_month": month}
                 for category in categories:
-                    month_data[category] = (
-                        round(float(pivot_data.loc[month, category]), 2)
-                        if category in pivot_data.columns
-                        else 0.0
-                    )
+                    value = pivot_data.loc[month, category]
+                    month_data[str(category)] = round(float(value), 2)
                 data.append(month_data)
 
             return {

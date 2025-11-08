@@ -86,7 +86,7 @@ class TrendStatistics:
         y = np.array(asset_values)
 
         # 線形回帰実行
-        slope, intercept, r_value, p_value, _std_err = stats.linregress(x, y)
+        slope, _intercept, r_value, _p_value, _std_err = stats.linregress(x, y)
 
         # 成長率に変換
         # 初月資産を基準に計算
