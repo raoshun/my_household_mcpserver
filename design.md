@@ -1,14 +1,12 @@
 # 家計簿分析 MCP サーバー設計書
 
-- **バージョン**: 0.8.0（フェーズ13: DB統合設計）
+- **バージョン**: 0.9.0（フェーズ15: 高度な分析機能設計）
 - **更新日**: 2025-11-08
 - **作成者**: GitHub Copilot (AI assistant)
-- **対象要件**: [requirements.md](./requirements.md) v1.4 に記載の FR-001〜FR-024、NFR-001〜NFR-032
+- **対象要件**: [requirements.md](./requirements.md) v1.5 に記載の FR-025〜FR-030、NFR-033〜NFR-036
 - **実装状況**:
-  - FR-001〜FR-003, FR-018（Webアプリ）, FR-022（資産管理）, FR-023（FIRE分析）: 実装済み
-  - FR-024（DB統合）: 設計フェーズ ← 本ドキュメントで追加
-  - FR-004〜FR-006（画像生成・ストリーミング）: 部分実装（基盤のみ）
-  - FR-007〜FR-017: 計画中（Node.js/TS版）
+  - Phase 14 完了: テスト 48/48 PASSED (100%), カバレッジ 76%, パフォーマンス < 500ms ✅
+  - Phase 15 計画中: FIRE計算エンジン、シナリオ分析、パターン検出、MCP統合
 
 ---
 
@@ -27,6 +25,149 @@
                                       │  CSV データ / ローカルFS │
                                       └────────────────────────┘
 ```
+
+## Phase 15 - 高度な分析機能（詳細設計）
+
+以下は `design_phase15.md` から統合した Phase 15 の詳細設計です。
+
+### 概要
+
+Phase 14 の完了を受け、Phase 15 では次の 3 つの高度な分析ツールを実装します。
+
+1. FIRE 計算エンジン（金融独立予測）
+2. シナリオ分析（支出削減・収入増加の比較）
+3. 支出パターン分析（定期・変動・異常支出の分類、季節性/トレンド検出）
+
+これらは MCP リソースと HTTP API として公開し、統合テストで品質を検証します。
+
+---
+
+### 1. FIRE 計算エンジン（設計要約）
+
+- モジュール: `src/household_mcp/analysis/fire_calculator.py`
+- 主要機能: `calculate_fire_index(...)` による複利・インフレ考慮のシミュレーション
+- 出力: 到達予定年月、月次資産推移、複数シナリオ（悲観/中立/楽観）
+
+計算の要点:
+
+- 月利 = (1 + 年利)^(1/12) - 1
+- 資産推移を月単位で計算し、目標資産到達を検出
+
+返却型（要約）:
+
+```python
+class FireCalculationResult:
+    scenario: str
+    target_assets: Decimal
+    months_to_fire: int
+    target_year_month: str
+    asset_timeline: List[Dict]
+```
+
+---
+
+### 2. シナリオ分析（設計要約）
+
+- モジュール: `src/household_mcp/analysis/scenario_simulator.py`
+- クラス: `ScenarioSimulator`（複数シナリオのシミュレーション・比較・推奨）
+- 主要出力: 各シナリオの新しい月貯蓄、短縮月数、ROI（効果/難易度）
+
+主要型（抜粋）:
+
+```python
+class ScenarioConfig:
+    name: str
+    type: ScenarioType
+    category: Optional[str]
+    reduction_pct: Optional[Decimal]
+    income_increase: Optional[Decimal]
+
+class ScenarioResult:
+    scenario_name: str
+    new_monthly_savings: Decimal
+    months_to_fire: int
+    months_saved: int
+    difficulty_score: int
+    roi_score: Decimal
+```
+
+---
+
+### 3. 支出パターン分析（設計要約）
+
+- モジュール: `src/household_mcp/analysis/expense_pattern_analyzer.py`
+- 主要機能: `classify_expenses`, `detect_seasonality`, `calculate_trend`
+- 分類ルール（簡略）:
+  - 定期支出: 3 か月以上・変動率小
+  - 変動支出: 平均 ± 2σ の範囲
+  - 異常支出: 平均 + 2σ を超える低頻度の出費
+
+返却型（抜粋）:
+
+```python
+class ExpenseClassification:
+    recurring: List[ExpenseRecord]
+    variable: List[ExpenseRecord]
+    anomalies: List[ExpenseRecord]
+
+class SeasonalityResult:
+    monthly_indices: Dict[int, Decimal]
+    peak_month: int
+    trough_month: int
+
+class TrendResult:
+    slope: Decimal
+    r_squared: Decimal
+    trend_direction: str
+```
+
+---
+
+### MCP リソース & HTTP API 拡張（要約）
+
+追加リソース（server.py）:
+
+- `data://financial_independence` → FIRE 計算結果
+- `data://scenarios` → シナリオ分析結果
+- `data://expense_patterns` → 支出パターン分析
+
+追加ツール（MCP tool）:
+
+- `calculate_fire_index(...)`
+- `simulate_scenarios(...)`
+- `analyze_spending_patterns()`
+
+HTTP API エンドポイント（FastAPI）:
+
+- `GET /api/v1/financial-independence`
+- `POST /api/v1/scenarios`
+- `GET /api/v1/spending-patterns`
+
+---
+
+### 実装スケジュール（要約）
+
+| タスク    |               内容 |  日数 |     テスト |
+| --------- | -----------------: | ----: | ---------: |
+| TASK-1501 |  FIRE 計算エンジン |  1.0d |       5 件 |
+| TASK-1502 | シナリオ分析ツール |  1.0d |       4 件 |
+| TASK-1503 | パターン分析ツール | 1.25d |       6 件 |
+| TASK-1504 |       MCP/API 統合 | 0.75d | API テスト |
+| TASK-1505 |      E2E・品質検証 |  1.0d |     15+ 件 |
+
+品質目標: 新規コード 80% 以上、API レスポンス < 1s など
+
+---
+
+### リスクと対策（抜粋）
+
+- 複利計算の精度: テストケースで検証
+- シナリオの組合せ爆発: 最大 5 シナリオに制限
+- パターン分析のノイズ: 最低 3 か月以上のデータを要求
+
+---
+
+※ このセクションは `design_phase15.md` の内容を `design.md` に統合したものです。
 
 - サーバーは `fastmcp.FastMCP` を利用し、LLM クライアントと標準入出力経由で通信する。
 - データソースは `data/` 配下の家計簿 CSV ファイルとSQLiteデータベース（全てローカル）。外部ネットワーク通信は行わない。
