@@ -2351,19 +2351,24 @@ a97f251 - feat(frontend): Implement asset management page (TASK-1109, 1110)
 
 **実装項目**:
 
-- [ ] generate_report ツール
+- [x] generate_report ツール
   - CSV/JSON レポート生成
   - 指定期間・カテゴリでのフィルタリング
   - メタ情報の自動付与（生成日時、フィルタ条件等）
 
-- [ ] export_transactions ツール
+- [x] export_transactions ツール
   - 取引データの CSV エクスポート
   - フィルタ機能（日付範囲、カテゴリ等）
   - 複数形式対応（CSV, JSON）
 
-**テスト**: レポート形式の正確性テスト（4+ テスト）
+**テスト**: レポート形式の正確性テスト（11/11 テスト PASSED）
 
-**成果物**: src/household_mcp/tools/report_tools.py
+**成果物**:
+
+- src/household_mcp/tools/report_tools.py (437 lines)
+- tests/test_report_tools.py (239 lines)
+
+**ステータス**: ✅ 完了 (2025-11-08)
 
 ### TASK-1405: リソース統合（DB リソース）（1.0d）
 
