@@ -2932,7 +2932,7 @@ backend/src/household_mcp/visualization/
      - chartテスト: 10/10 PASS ✅
      - 全体: 327 passed, 15 failed (asset統合テスト: 無関係)
      - カバレッジ: 56.81% (優先3: 57%, visualization依存追加により若干低下)
-   - ✅ Git コミット: (次のコミットで記録)
+   - ✅ Git コミット: f631bcb "[TASK-1603-4] Split chart_generator.py into specialized generators"
 
 6. ✅ **検証 & テスト** [完了 2025-11-10]
 
