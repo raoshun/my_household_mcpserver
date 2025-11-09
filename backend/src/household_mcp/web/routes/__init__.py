@@ -1,5 +1,13 @@
 """REST API routes"""
 
+from household_mcp.web.errors import (
+    raise_bad_request,
+    raise_forbidden,
+    raise_internal_error,
+    raise_not_found,
+    raise_unauthorized,
+)
+
 from .assets import router as assets_router
 from .chart_routes import create_chart_router
 from .core_routes import create_core_router
@@ -17,5 +25,10 @@ __all__ = [
     "create_monthly_router",
     "create_trend_router",
     "fi_router",
+    "raise_bad_request",
+    "raise_forbidden",
+    "raise_internal_error",
+    "raise_not_found",
+    "raise_unauthorized",
     "transactions_router",
 ]

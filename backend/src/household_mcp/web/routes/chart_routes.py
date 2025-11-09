@@ -5,8 +5,10 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
+
+from household_mcp.web.errors import raise_not_found
 
 logger = logging.getLogger(__name__)
 
@@ -48,8 +50,7 @@ def create_chart_router(chart_cache: Any, image_streamer: Any) -> APIRouter:
         image_data = chart_cache.get(chart_id)
         if image_data is None:
             logger.warning(f"Chart not found: {chart_id}")
-            raise HTTPException(status_code=404, detail=f"Chart '{chart_id}' not found")
-
+            raise_not_found(f"Chart '{chart_id}' not found")
         # Stream the image
         logger.info(f"Streaming chart: {chart_id} ({len(image_data)} bytes)")
         return image_streamer.create_response(
@@ -77,7 +78,7 @@ def create_chart_router(chart_cache: Any, image_streamer: Any) -> APIRouter:
         """
         image_data = chart_cache.get(chart_id)
         if image_data is None:
-            raise HTTPException(status_code=404, detail=f"Chart '{chart_id}' not found")
+            raise_not_found(f"Chart '{chart_id}' not found")
 
         return {
             "chart_id": chart_id,
