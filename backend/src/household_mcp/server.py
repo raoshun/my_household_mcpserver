@@ -11,10 +11,7 @@ import argparse
 import os
 import warnings
 from collections.abc import Sequence
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, cast
-
-import pandas as pd
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
@@ -29,11 +26,14 @@ else:
 
 from fastmcp import FastMCP
 
+# Import resource functions
+from household_mcp import resources
+from household_mcp.budget_analyzer import BudgetAnalyzer
 from household_mcp.dataloader import HouseholdDataLoader
 from household_mcp.exceptions import DataSourceError
 from household_mcp.tools import duplicate_tools
 from household_mcp.tools.enhanced_tools import enhanced_monthly_summary
-from household_mcp.tools.trend_tool import category_trend_summary, get_category_trend
+from household_mcp.tools.trend_tool import get_category_trend
 
 # Report tools (DB-based)
 # Report tools are imported on-demand in resource functions (TASK-1405)
@@ -138,24 +138,68 @@ def _get_db_manager() -> "DatabaseManager":
 is_streamable = "streamable-http" in args.transport
 
 
+# Register resource functions from resources module
 @mcp.resource(
     "data://category_hierarchy",
     mime_type="text/event-stream" if is_streamable else None,
 )
 def get_category_hierarchy() -> dict[str, list[str]]:
-    """
-    家計簿のカテゴリの階層構造を取得する関数。
+    """家計簿のカテゴリの階層構造を取得する関数。"""
+    return resources.get_category_hierarchy()
 
-    Returns:
-        dict[str, list[str]]: カテゴリの階層構造(大項目: [中項目1, 中項目2, ...])を表す辞書
 
-    """
-    try:
-        result = _get_data_loader().category_hierarchy(year=2025, month=7)
-        return dict(result)  # 明示的キャスト
-    except DataSourceError:
-        # データ未配置時は空で返す
-        return {}
+@mcp.resource(
+    "data://available_months",
+    mime_type="text/event-stream" if is_streamable else None,
+)
+def get_available_months() -> list[dict[str, int]]:
+    """利用可能な月のリストを CSV ファイルから動的に検出して返す。"""
+    return resources.get_available_months()
+
+
+@mcp.resource(
+    "data://household_categories",
+    mime_type="text/event-stream" if is_streamable else None,
+)
+def get_household_categories() -> dict[str, list[str]]:
+    """家計簿のカテゴリ一覧を取得する関数。"""
+    return resources.get_household_categories()
+
+
+@mcp.resource(
+    "data://category_trend_summary",
+    mime_type="text/event-stream" if is_streamable else None,
+)
+def get_category_trend_summary() -> dict[str, Any]:
+    """トレンド分析用のカテゴリ集計結果を返す。"""
+    return resources.get_category_trend_summary()
+
+
+@mcp.resource(
+    "data://transactions",
+    mime_type="text/event-stream" if is_streamable else None,
+)
+def get_transactions() -> dict[str, Any]:
+    """Get transactions for the latest available month from database."""
+    return resources.get_transactions()
+
+
+@mcp.resource(
+    "data://monthly_summary",
+    mime_type="text/event-stream" if is_streamable else None,
+)
+def get_monthly_summary_resource() -> dict[str, Any]:
+    """Get monthly summary report for latest month."""
+    return resources.get_monthly_summary_resource()
+
+
+@mcp.resource(
+    "data://budget_status",
+    mime_type="text/event-stream" if is_streamable else None,
+)
+def get_budget_status_resource() -> dict[str, Any]:
+    """Get budget status (actual vs budget) for latest month."""
+    return resources.get_budget_status_resource()
 
 
 # 家計簿から指定した年月の収支を取得するツール
@@ -218,158 +262,6 @@ def get_monthly_household(
         return []
 
 
-@mcp.resource(
-    "data://available_months", mime_type="text/event-stream" if is_streamable else None
-)
-def get_available_months() -> list[dict[str, int]]:
-    """利用可能な月のリストを CSV ファイルから動的に検出して返す。"""
-
-    try:
-        months = list(_get_data_loader().iter_available_months())
-        return [{"year": year, "month": month} for year, month in months]
-    except DataSourceError:
-        return []
-
-
-@mcp.resource(
-    "data://household_categories",
-    mime_type="text/event-stream" if is_streamable else None,
-)
-def get_household_categories() -> dict[str, list[str]]:
-    """
-    家計簿のカテゴリ一覧を取得する関数。
-
-    Returns:
-        dict[str, list[str]]: カテゴリの階層構造(大項目: [中項目1, 中項目2, ...])を表す辞書
-
-    """
-    try:
-        result = _get_data_loader().category_hierarchy(year=2025, month=7)
-        return dict(result)
-    except DataSourceError:
-        return {}
-
-
-@mcp.resource(
-    "data://category_trend_summary",
-    mime_type="text/event-stream" if is_streamable else None,
-)
-def get_category_trend_summary() -> dict[str, Any]:
-    """トレンド分析用のカテゴリ集計結果を返す。"""
-
-    try:
-        result = category_trend_summary(src_dir=_data_dir())
-        return dict(result)
-    except DataSourceError:
-        return {"summary": {}}
-
-
-# DB-based resources (TASK-1405)
-# Latest month transactions resource
-@mcp.resource(
-    "data://transactions",
-    mime_type="text/event-stream" if is_streamable else None,
-)
-def get_transactions() -> dict[str, Any]:
-    """Get transactions for the latest available month from database."""
-    if not HAS_REPORT_TOOLS:
-        return {"error": "Report tools not available"}
-    try:
-        from household_mcp.database.models import Transaction
-        from household_mcp.tools.report_tools import export_transactions
-
-        db_manager = _get_db_manager()
-        session = db_manager.get_session()
-        try:
-            # Get latest month
-            query = (
-                session.query(Transaction.date)
-                .order_by(Transaction.date.desc())
-                .first()
-            )
-            if not query:
-                return {"transactions": [], "period": "No data"}
-            latest_date = query[0]
-            year, month = latest_date.year, latest_date.month
-            # Use export_transactions to get month data
-            result = export_transactions(year, month, format="json")
-            return {"transactions": result}
-        finally:
-            session.close()
-    except Exception as e:
-        return {"error": f"Failed to get transactions: {e!s}"}
-
-
-# Monthly summary resource
-@mcp.resource(
-    "data://monthly_summary",
-    mime_type="text/event-stream" if is_streamable else None,
-)
-def get_monthly_summary_resource() -> dict[str, Any]:
-    """Get monthly summary report (income, expense, savings) for latest month."""
-    if not HAS_REPORT_TOOLS:
-        return {"error": "Report tools not available"}
-    try:
-        from household_mcp.database.models import Transaction
-        from household_mcp.tools.report_tools import generate_report
-
-        db_manager = _get_db_manager()
-        session = db_manager.get_session()
-        try:
-            # Get latest month
-            query = (
-                session.query(Transaction.date)
-                .order_by(Transaction.date.desc())
-                .first()
-            )
-            if not query:
-                return {"summary": None}
-            latest_date = query[0]
-            year, month = latest_date.year, latest_date.month
-            # Use generate_report to get summary
-            result = generate_report(year, month, "summary")
-            return {"summary": result}
-        finally:
-            session.close()
-    except Exception as e:
-        return {"error": f"Failed to get summary: {e!s}"}
-
-
-# Budget status resource
-@mcp.resource(
-    "data://budget_status",
-    mime_type="text/event-stream" if is_streamable else None,
-)
-def get_budget_status_resource() -> dict[str, Any]:
-    """Get budget status (actual vs budget) for latest month."""
-    if not HAS_REPORT_TOOLS:
-        return {"error": "Report tools not available"}
-    try:
-        from household_mcp.database.models import Transaction
-        from household_mcp.tools.report_tools import generate_report
-
-        db_manager = _get_db_manager()
-        session = db_manager.get_session()
-        try:
-            # Get latest month
-            query = (
-                session.query(Transaction.date)
-                .order_by(Transaction.date.desc())
-                .first()
-            )
-            if not query:
-                return {"budget_status": None}
-            latest_date = query[0]
-            year, month = latest_date.year, latest_date.month
-            # Use generate_report to get category breakdown
-            result = generate_report(year, month, "category")
-            return {"budget_status": result}
-        finally:
-            session.close()
-    except Exception as e:
-        return {"error": f"Failed to get budget status: {e!s}"}
-
-
 @mcp.tool("get_category_trend")
 def run_get_category_trend(
     category: str | None = None,
@@ -430,85 +322,7 @@ def run_get_category_trend(
         return {"trend": {}}
 
 
-# MoneyForwardのCSV列名マッピング（BudgetAnalyzer用）
-COLUMNS_MAP = {
-    0: "calc_target",
-    1: "date",
-    2: "description",
-    3: "amount",
-    4: "institution",
-    5: "major_category",
-    6: "minor_category",
-    7: "memo",
-    8: "transfer",
-    9: "id",
-}
-
-
-class BudgetAnalyzer:
-    """Analyzes budget data from a CSV file."""
-
-    def __init__(self, csv_path: Path, encoding: str = "shift_jis"):
-        """Initializes the BudgetAnalyzer with the specified CSV file path and encoding."""
-        self.csv_path = csv_path
-        self.encoding = encoding
-        self.df = pd.DataFrame(columns=list(COLUMNS_MAP.values()))
-
-    def load_data(self) -> None:
-        """Loads budget data from the CSV file."""
-        try:
-            self.df = pd.read_csv(self.csv_path, encoding=self.encoding)
-            if len(self.df.columns) >= 10:
-                self.df.columns = list(COLUMNS_MAP.values())
-
-            self.df["date"] = pd.to_datetime(self.df["date"], errors="coerce")
-            self.df["amount"] = pd.to_numeric(self.df["amount"], errors="coerce")
-            self.df["calc_target"] = pd.to_numeric(
-                self.df["calc_target"], errors="coerce"
-            )
-            print(f"データ読み込み完了: {len(self.df)}件のレコード")
-
-        except (FileNotFoundError, pd.errors.ParserError, UnicodeDecodeError) as e:
-            print(f"データ読み込みエラー: {e}")
-            self.df = pd.DataFrame(columns=list(COLUMNS_MAP.values()))
-
-    def get_monthly_summary(self, year: int, month: int) -> dict[str, Any]:
-        """Returns a summary of the monthly budget data for the specified year and month."""
-        if self.df.empty:
-            return {"message": "No data available."}
-
-        mask = (self.df["date"].dt.year == year) & (self.df["date"].dt.month == month)
-        monthly_data = self.df[mask]
-
-        if monthly_data.empty:
-            return {"message": f"No data for {year}-{month:02d}."}
-
-        income_data = monthly_data[monthly_data["amount"] > 0]
-        expense_data = monthly_data[monthly_data["amount"] < 0]
-
-        total_income = income_data["amount"].sum()
-        total_expense = abs(expense_data["amount"].sum())
-        balance = total_income - total_expense
-
-        category_summary = (
-            expense_data.groupby("minor_category")["amount"]
-            .sum()
-            .abs()
-            .sort_values(ascending=False)
-        )
-
-        summary = {
-            "period": f"{year}-{month:02d}",
-            "total_income": int(total_income),
-            "total_expense": int(total_expense),
-            "balance": int(balance),
-            "expense_by_category": category_summary.to_dict(),
-            "transaction_count": len(monthly_data),
-        }
-        return summary
-
-
-# グローバルインスタンス
+# グローバルインスタンス (BudgetAnalyzer for legacy CSV support)
 analyzer: BudgetAnalyzer | None = None
 
 
