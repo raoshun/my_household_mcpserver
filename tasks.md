@@ -2859,7 +2859,8 @@ backend/src/household_mcp/visualization/
 ### 16.3 TASK-1603: ファイル分割実装（2.0d）
 
 **実施予定**: フェーズ16 week2-3
-**実績**: ✅ 完成! 2025-11-08
+**実績**: ✅ 進行中 (優先3完了) 2025-11-10
+**進捗**: 80% (優先1-3完了 / 優先4-5残)
 
 #### 実装手順
 
@@ -2898,35 +2899,56 @@ backend/src/household_mcp/visualization/
    - ✅ テストインポート更新
      - test_data_tools.py のパッチパスを修正
      - テスト成功: 32/32 PASS ✅
+   - ✅ Git コミット: 711f1bf "docs: TASK-1603 優先2 完了記録"
 
-4. ⏳ **優先3: server.py 分割** (後続フェーズ)
-   - ⏳ resources.py, tools_registry.py 新規作成
-   - ⏳ リソース定義をresources.py に移動
-   - ⏳ ツール登録をtools_registry.py に移動
-   - ⏳ server.py はコア定義のみ残す
+4. ✅ **優先3: server.py 分割** [完了 2025-11-10]
+   - ✅ resources.py 新規作成（199行）
+     - 7つの @mcp.resource 関数を移動
+     - get_category_hierarchy, get_available_months, get_household_categories
+     - get_category_trend_summary, get_transactions
+     - get_monthly_summary_resource, get_budget_status_resource
+   - ✅ budget_analyzer.py 新規作成（100行）
+     - BudgetAnalyzer クラスを移動（レガシーCSV分析用）
+     - COLUMNS_MAP 定義を移動
+   - ✅ server.py を 1212行 → 1028行に削減（184行削減, 15%減）
+   - ✅ テスト成功
+     - smokeテスト: 1/1 PASS ✅
+     - コアテスト: 323/323 PASS, カバレッジ 80.81% ✅
+     - インポート検証: resources, budget_analyzer 正常動作 ✅
+   - ✅ Git コミット: 95483a4 "refactor: TASK-1603 優先3完了"
 
-5. ⏳ **優先4: chart_generator.py 分割**
+5. ⏳ **優先4: chart_generator.py 分割** (後続フェーズ TASK-1607)
    - ⏳ pie_chart.py, bar_chart.py, line_chart.py 新規作成
    - ⏳ 各グラフ生成メソッドを専用ファイルに移動
    - ⏳ chart_generator.py を基本クラス + ファクトリーに改造
 
-6. ✅ **検証 & テスト** [完了 2025-11-08]
+6. ✅ **検証 & テスト** [完了 2025-11-10]
 
    ```bash
    cd backend && uv run pytest -xvs
    cd .. && uv run pre-commit run --all-files
-   git tag phase16-post-split
+   git tag phase16-post-split-priority3
    ```
 
-#### テスト条件（完了）
+#### テスト条件（優先3完了時点）
 
-- ✅ 全テスト成功率 ≥ 98%（207 passed, 20 skipped）
+- ✅ smokeテスト: 1/1 PASS
+- ✅ コアテスト: 323/323 PASS
+- ✅ カバレッジ: 80.81% (優先2: 82%, 優先3: 80%)
 - ✅ インポートエラー: 0
 - ✅ 性能低下: なし
-- ✅ カバレッジ維持: 56.7%（既存通り）
 - ✅ Ruff チェック: All checks passed!
-- ✅ Pylance: 0 errors, 0 warnings
-- ✅ コミット: 803c5d9 "feat: http_server.py router 統合完了"
+- ✅ Pylance: 0 critical errors
+- ✅ コミット: 95483a4 "refactor: TASK-1603 優先3完了"
+
+#### 成果サマリー（優先1-3）
+
+| 優先度 | ファイル          | 削減前 | 削減後 | 削減率 | 新規ファイル数 | 完了日     |
+| ------ | ----------------- | ------ | ------ | ------ | -------------- | ---------- |
+| 1      | http_server.py    | 617行  | 118行  | 81%    | 5              | 2025-11-08 |
+| 2      | data_tools.py     | 1261行 | 25行   | 98%    | 2              | 2025-11-10 |
+| 3      | server.py         | 1212行 | 1028行 | 15%    | 2              | 2025-11-10 |
+| **合計** | -              | **3090行** | **1171行** | **62%** | **9**       | -          |
 
 ---
 
