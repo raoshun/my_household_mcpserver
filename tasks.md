@@ -2917,10 +2917,22 @@ backend/src/household_mcp/visualization/
      - インポート検証: resources, budget_analyzer 正常動作 ✅
    - ✅ Git コミット: 95483a4 "refactor: TASK-1603 優先3完了"
 
-5. ⏳ **優先4: chart_generator.py 分割** (後続フェーズ TASK-1607)
-   - ⏳ pie_chart.py, bar_chart.py, line_chart.py 新規作成
-   - ⏳ 各グラフ生成メソッドを専用ファイルに移動
-   - ⏳ chart_generator.py を基本クラス + ファクトリーに改造
+5. ✅ **優先4: chart_generator.py 分割** [完了 2025-11-10]
+   - ✅ base.py: BaseChartGenerator 基底クラス (306行) 新規作成
+     - フォント検出、matplotlib設定、共通ヘルパーメソッド
+   - ✅ pie_chart.py: PieChartGenerator (162行) 新規作成
+     - `create_monthly_pie_chart`, `_prepare_pie_chart_data`, `_style_pie_labels`
+   - ✅ line_chart.py: LineChartGenerator (207行) 新規作成
+     - `create_category_trend_line`, `_prepare_trend_line_data`, `_configure_trend_axes`
+   - ✅ bar_chart.py: BarChartGenerator (184行) 新規作成
+     - `create_comparison_bar_chart`, `_render_bar_value_labels`, `_apply_currency_formatter`
+   - ✅ chart_generator.py: ファクトリークラスにリファクタリング (669→134行, 80%削減)
+     - 各専用generatorへの委譲パターンで後方互換性維持
+   - ✅ テスト結果:
+     - chartテスト: 10/10 PASS ✅
+     - 全体: 327 passed, 15 failed (asset統合テスト: 無関係)
+     - カバレッジ: 56.81% (優先3: 57%, visualization依存追加により若干低下)
+   - ✅ Git コミット: (次のコミットで記録)
 
 6. ✅ **検証 & テスト** [完了 2025-11-10]
 
@@ -2943,12 +2955,12 @@ backend/src/household_mcp/visualization/
 
 #### 成果サマリー（優先1-3）
 
-| 優先度 | ファイル          | 削減前 | 削減後 | 削減率 | 新規ファイル数 | 完了日     |
-| ------ | ----------------- | ------ | ------ | ------ | -------------- | ---------- |
-| 1      | http_server.py    | 617行  | 118行  | 81%    | 5              | 2025-11-08 |
-| 2      | data_tools.py     | 1261行 | 25行   | 98%    | 2              | 2025-11-10 |
-| 3      | server.py         | 1212行 | 1028行 | 15%    | 2              | 2025-11-10 |
-| **合計** | -              | **3090行** | **1171行** | **62%** | **9**       | -          |
+| 優先度   | ファイル       | 削減前     | 削減後     | 削減率  | 新規ファイル数 | 完了日     |
+| -------- | -------------- | ---------- | ---------- | ------- | -------------- | ---------- |
+| 1        | http_server.py | 617行      | 118行      | 81%     | 5              | 2025-11-08 |
+| 2        | data_tools.py  | 1261行     | 25行       | 98%     | 2              | 2025-11-10 |
+| 3        | server.py      | 1212行     | 1028行     | 15%     | 2              | 2025-11-10 |
+| **合計** | -              | **3090行** | **1171行** | **62%** | **9**          | -          |
 
 ---
 
