@@ -115,10 +115,23 @@ def populated_db(test_db):
     return session
 
 
+@pytest.fixture
+def mocked_db_session(populated_db, monkeypatch):
+    """Mock _get_session to return the test database."""
+    def mock_get_session():
+        return populated_db
+
+    monkeypatch.setattr(
+        "household_mcp.tools.report_tools._get_session",
+        mock_get_session,
+    )
+    return populated_db
+
+
 class TestPhase14Integration:
     """TASK-1406: Phase 14 Integration Tests."""
 
-    def test_export_transactions_basic(self, populated_db):
+    def test_export_transactions_basic(self, mocked_db_session):
         """Test basic transaction export functionality."""
         result = export_transactions(2024, 10, format="json")
         assert result is not None
@@ -128,7 +141,7 @@ class TestPhase14Integration:
         data = json.loads(result)
         assert isinstance(data, (dict, list))
 
-    def test_export_transactions_csv_format(self, populated_db):
+    def test_export_transactions_csv_format(self, mocked_db_session):
         """Test CSV export format."""
         result = export_transactions(2024, 10, format="csv")
         assert result is not None
@@ -137,7 +150,7 @@ class TestPhase14Integration:
             # CSV exports may be empty but shouldn't error
             assert isinstance(result, str)
 
-    def test_generate_report_all_types(self, populated_db):
+    def test_generate_report_all_types(self, mocked_db_session):
         """Test all report types generate successfully."""
         for report_type in ["summary", "detailed", "category"]:
             result = generate_report(2024, 10, report_type)
@@ -146,7 +159,7 @@ class TestPhase14Integration:
             data = json.loads(result)
             assert isinstance(data, dict)
 
-    def test_create_comprehensive_report(self, populated_db):
+    def test_create_comprehensive_report(self, mocked_db_session):
         """Test comprehensive report creation."""
         result = create_summary_report(2024, 10)
         assert result is not None
@@ -154,7 +167,7 @@ class TestPhase14Integration:
         # Should have multiple report sections
         assert len(data) > 0
 
-    def test_cross_month_consistency(self, populated_db):
+    def test_cross_month_consistency(self, mocked_db_session):
         """Test data consistency across multiple months."""
         # Get reports for different months
         report_9 = generate_report(2024, 9, "summary")
@@ -168,19 +181,21 @@ class TestPhase14Integration:
 
         assert all(isinstance(d, dict) for d in [data_9, data_10, data_11])
 
-    def test_category_filtering(self, populated_db):
+    def test_category_filtering(self, mocked_db_session):
         """Test category filtering in exports."""
-        result = export_transactions(2024, 10, category_major="食費", format="json")
+        result = export_transactions(
+            2024, 10, category_major="食費", format="json"
+        )
         assert result is not None
 
-    def test_empty_month_handling(self, populated_db):
+    def test_empty_month_handling(self, mocked_db_session):
         """Test graceful handling of months with no data."""
         # December has no data
         result = export_transactions(2024, 12, format="json")
         # Should return something (empty list or dict)
         assert result is not None
 
-    def test_performance_export_speed(self, populated_db):
+    def test_performance_export_speed(self, mocked_db_session):
         """Test export performance (target: < 500ms)."""
         start = time.time()
         result = export_transactions(2024, 10, format="json")
@@ -189,7 +204,7 @@ class TestPhase14Integration:
         assert elapsed < 0.5  # 500ms threshold
         assert result is not None
 
-    def test_performance_report_generation(self, populated_db):
+    def test_performance_report_generation(self, mocked_db_session):
         """Test report generation performance."""
         start = time.time()
         result = generate_report(2024, 10, "summary")
@@ -198,7 +213,7 @@ class TestPhase14Integration:
         assert elapsed < 0.5  # 500ms threshold
         assert result is not None
 
-    def test_comprehensive_summary_performance(self, populated_db):
+    def test_comprehensive_summary_performance(self, mocked_db_session):
         """Test comprehensive summary generation performance."""
         start = time.time()
         result = create_summary_report(2024, 10)
@@ -278,7 +293,7 @@ class TestPhase14QualityGates:
             assert func.__doc__ is not None
             assert len(func.__doc__) > 0
 
-    def test_no_unhandled_exceptions(self, populated_db):
+    def test_no_unhandled_exceptions(self, mocked_db_session):
         """Verify functions handle errors gracefully."""
         # Test with invalid inputs
         try:
@@ -289,7 +304,9 @@ class TestPhase14QualityGates:
             # Should either return gracefully or raise with message
             pass
 
-    def test_data_consistency_transactions_to_report(self, populated_db):
+    def test_data_consistency_transactions_to_report(
+        self, mocked_db_session
+    ):
         """Verify data consistency from transaction export to report."""
         export = export_transactions(2024, 10, format="json")
         report = generate_report(2024, 10, "summary")
