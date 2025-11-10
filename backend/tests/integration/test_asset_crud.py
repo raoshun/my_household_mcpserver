@@ -190,14 +190,10 @@ class TestAssetCRUD:
         # Should return 422 validation error or 400
         assert response.status_code in [400, 422]
 
-    def test_crud_workflow(
-        self, client: TestClient, sample_record_data: dict
-    ) -> None:
+    def test_crud_workflow(self, client: TestClient, sample_record_data: dict) -> None:
         """Test complete CRUD workflow."""
         # Create
-        resp_create = client.post(
-            "/api/assets/records/create", json=sample_record_data
-        )
+        resp_create = client.post("/api/assets/records/create", json=sample_record_data)
         assert resp_create.status_code == 201
         record_id = resp_create.json()["id"]
 
