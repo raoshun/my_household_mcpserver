@@ -71,8 +71,8 @@ class TestDashboardInitialization:
         page_desktop.wait_for_load_state("networkidle")
 
         # Check that main container exists
-        container = page_desktop.query_selector(".dashboard-container")
-        assert container is not None, "Dashboard container should be present"
+        container = page_desktop.query_selector(".container")
+        assert container is not None, "Container should be present"
 
         # Check page title
         title = page_desktop.title()
@@ -83,21 +83,21 @@ class TestDashboardInitialization:
         page_desktop.goto(f"{BASE_URL}/fi-dashboard.html")
         page_desktop.wait_for_load_state("networkidle")
 
-        # Check for status cards section
-        status_cards = page_desktop.query_selector("[id*='status']")
-        assert status_cards is not None, "Status cards section should exist"
+        # Check for status section with cards
+        status_section = page_desktop.query_selector(".status-section")
+        assert status_section is not None, "Status section should exist"
 
-        # Check for chart containers
-        charts_section = page_desktop.query_selector(".charts-section")
-        assert charts_section is not None, "Charts section should exist"
+        # Check for chart containers (projectionChart, expenseChart, scenarioChart)
+        projection_chart = page_desktop.query_selector("#projectionChart")
+        assert projection_chart is not None, "Projection chart should exist"
 
         # Check for suggestions list
-        suggestions = page_desktop.query_selector("[id*='suggestions']")
+        suggestions = page_desktop.query_selector("#suggestionsList")
         assert suggestions is not None, "Suggestions section should exist"
 
-        # Check for simulation form
-        form = page_desktop.query_selector("#simulationForm")
-        assert form is not None, "Simulation form should exist"
+        # Check for simulation form section
+        form_section = page_desktop.query_selector(".simulation-section")
+        assert form_section is not None, "Simulation form section should exist"
 
     def test_page_has_no_console_errors(self, page_desktop: Page) -> None:
         """Test that page loads without JavaScript errors."""
