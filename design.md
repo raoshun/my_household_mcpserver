@@ -2614,6 +2614,35 @@ CREATE TABLE IF NOT EXISTS fi_progress_cache (
 CREATE INDEX IF NOT EXISTS idx_fi_cache_date ON fi_progress_cache(calculation_date DESC);
 ```
 
+### 14.3.3 FIRE進捗スナップショットテーブル（FR-031）
+
+カテゴリ値のみを永続化し、`total` は読み出し時に再計算することでスナップショットとキャッシュの整合性を担保する。
+
+```sql
+CREATE TABLE IF NOT EXISTS fire_asset_snapshots (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    snapshot_date DATE NOT NULL UNIQUE,
+    cash_and_deposits INTEGER NOT NULL DEFAULT 0,
+    stocks_cash INTEGER NOT NULL DEFAULT 0,
+    stocks_margin INTEGER NOT NULL DEFAULT 0,
+    investment_trusts INTEGER NOT NULL DEFAULT 0,
+    pension INTEGER NOT NULL DEFAULT 0,
+    points INTEGER NOT NULL DEFAULT 0,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_fire_snapshot_date ON fire_asset_snapshots(snapshot_date);
+```
+
+- `snapshot_date` ごとに一意化し、再送では上書きとする。
+- 各カテゴリ値は整数（JPY）で保存し、未指定カテゴリには 0 を格納する。
+- `total` カラムは保持せず、`FinancialIndependenceAnalyzer` がカテゴリ列をすべて合算して `fi_progress_cache` を再計算およびダッシュボード・MCP 応答に渡す。
+- `register_fire_snapshot` はペイロードに `total` フィールドが含まれている場合に 400 を返し、クライアント側の合計を無視する。
+
+合計は `fire_asset_snapshots` から読み出したカテゴリ値を足し合わせて都度計算し、`fi_progress_cache` の更新・ログ表示・補完のベース値として利用する。
+
 ---
 
 ### 14.4 アルゴリズム設計

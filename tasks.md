@@ -288,6 +288,38 @@
 
 ---
 
+## フェーズ17: FIRE進捗スナップショット登録（FR-031）
+
+- **対象要件**: FR-031（`requirements.md`）／`設計仕様書.md` §12 参照
+- **目的**: スナップショット登録→補完→キャッシュ更新の一連を MCP/REST で扱えるようにし、FIRE ダッシュボードと API に正確な土台データを提供する
+- **優先度**: 🔴 高（FIRE 進捗を支えるデータパイプライン）
+
+- [ ] **TASK-1701**: スナップショット永続化スキーマとマイグレーション（0.75d）
+  - `fire_asset_snapshots` テーブル定義（カテゴリ7種、`total` カラムなし、`snapshot_date` + timestamps + unique 制約）
+  - `backend/src/household_mcp/database/models.py` に ORM モデルを追加
+  - `backend/scripts/migrate_fi_tables.py` に Create/Drop/Verify ロジックを追加
+  - `tests/test_migrations.py` 等にテーブル存在確認を追加
+
+- [ ] **TASK-1702**: 補完プロバイダー/線形補完インフラ（0.5d）
+  - `SnapshotInterpolator` 抽象クラス定義（`interpolate(snapshot_date, snapshots)`）
+  - デフォルト実装 `LinearSnapshotInterpolator`（前後2点のカテゴリ値、片側欠損時は直近値で補完）
+  - サービス構成でインジェクション可能にし、将来的なアルゴリズム差し替えを想定
+  - 単体テスト: 2点補完・片側補完・差し替え可否
+
+- [ ] **TASK-1703**: API/MCP 登録 + キャッシュ再計算（1.0d）
+  - `POST /api/financial-independence/snapshot` と `register_fire_snapshot` MCP Tool 実装
+  - 入力バリデーション（カテゴリホワイトリスト、非負、小数/整数、`total` との整合）
+  - `fire_asset_snapshots` 保存/更新、カテゴリ合計から `total` を計算して `fi_progress_cache` を再計算（`FinancialIndependenceAnalyzer` 経由）
+  - 400 エラー・成功レスポンス・ログ出力・API ドキュメント更新
+  - 単体/統合テスト: 正常、重複日付上書き、入力エラー、キャッシュ更新確認
+
+- [ ] **TASK-1704**: E2E & API テスト拡張（0.5d）
+  - `backend/tests/e2e/test_fi_dashboard.py` に登録→表示→補完を走らせるシナリオを追加
+  - API テスト `tests/integration/test_fire_snapshot_registration.py` を追加（登録 + 線形補完 + invalid 入力）
+  - `TS-041〜TS-044` に対応するテストケースをコード側でも補強
+
+**成果物**: DB マイグレーション、補完インフラ、登録 API/MCP、テスト・ドキュメント更新
+
 ## 進捗ログ
 
 | 日付       | 内容                                                                 |
@@ -3250,11 +3282,11 @@ backend/src/household_mcp/visualization/
 
 ### 📊 テスト統計 (before → after)
 
-| 指標 | 改善前 | 改善後 | 改善度 |
-| ---- | ------ | ------ | ------ |
-| PASS | 512 | 531 | +19 ✅ |
-| FAIL | 30 | 11 | -19 ✅ |
-| 成功率 | 94.4% | 97.9% | +3.5% |
+| 指標   | 改善前 | 改善後 | 改善度 |
+| ------ | ------ | ------ | ------ |
+| PASS   | 512    | 531    | +19 ✅  |
+| FAIL   | 30     | 11     | -19 ✅  |
+| 成功率 | 94.4%  | 97.9%  | +3.5%  |
 
 ### 🚀 残存テスト失敗 (11 failures - 優先度低)
 
