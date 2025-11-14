@@ -125,9 +125,7 @@ class TestAPIIntegration:
         page_desktop.wait_for_load_state("networkidle")
 
         # Wait for FIRE percentage value to load
-        status_value = page_desktop.wait_for_selector(
-            "#progressValue", timeout=5000
-        )
+        status_value = page_desktop.wait_for_selector("#progressValue", timeout=5000)
         assert status_value is not None
 
         # Check that numeric value is displayed
@@ -359,9 +357,7 @@ class TestEndToEndWorkflow:
         assert container is not None
 
         # Wait for data to be fetched and displayed
-        status_elem = page_desktop.wait_for_selector(
-            "#progressValue", timeout=5000
-        )
+        status_elem = page_desktop.wait_for_selector("#progressValue", timeout=5000)
         assert status_elem is not None
 
         # Interact with form
