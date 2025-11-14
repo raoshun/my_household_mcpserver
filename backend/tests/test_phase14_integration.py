@@ -118,6 +118,7 @@ def populated_db(test_db):
 @pytest.fixture
 def mocked_db_session(populated_db, monkeypatch):
     """Mock _get_session to return the test database."""
+
     def mock_get_session():
         return populated_db
 
@@ -183,9 +184,7 @@ class TestPhase14Integration:
 
     def test_category_filtering(self, mocked_db_session):
         """Test category filtering in exports."""
-        result = export_transactions(
-            2024, 10, category_major="食費", format="json"
-        )
+        result = export_transactions(2024, 10, category_major="食費", format="json")
         assert result is not None
 
     def test_empty_month_handling(self, mocked_db_session):
@@ -304,9 +303,7 @@ class TestPhase14QualityGates:
             # Should either return gracefully or raise with message
             pass
 
-    def test_data_consistency_transactions_to_report(
-        self, mocked_db_session
-    ):
+    def test_data_consistency_transactions_to_report(self, mocked_db_session):
         """Verify data consistency from transaction export to report."""
         export = export_transactions(2024, 10, format="json")
         report = generate_report(2024, 10, "summary")
