@@ -124,9 +124,9 @@ class TestAPIIntegration:
         page_desktop.goto(f"{BASE_URL}/fi-dashboard.html")
         page_desktop.wait_for_load_state("networkidle")
 
-        # Wait for API call and data binding
+        # Wait for FIRE percentage value to load
         status_value = page_desktop.wait_for_selector(
-            "[data-field='fire_percentage']", timeout=5000
+            "#progressValue", timeout=5000
         )
         assert status_value is not None
 
@@ -155,9 +155,9 @@ class TestAPIIntegration:
         page_desktop.goto(f"{BASE_URL}/fi-dashboard.html")
         page_desktop.wait_for_load_state("networkidle")
 
-        # Wait for projections chart
+        # Wait for projection chart (60 months forecast)
         projections_chart = page_desktop.wait_for_selector(
-            "#projectionsChart", timeout=5000
+            "#projectionChart", timeout=5000
         )
         assert projections_chart is not None
 
@@ -207,7 +207,7 @@ class TestChartRendering:
 
         time.sleep(1)
 
-        canvas = page_desktop.query_selector("#projectionsChart")
+        canvas = page_desktop.query_selector("#projectionChart")
         assert canvas is not None
 
         box = canvas.bounding_box()
@@ -282,7 +282,9 @@ class TestResponsiveDesign:
         page_desktop.wait_for_load_state("networkidle")
 
         # Check that desktop-specific layout exists
-        grid = page_desktop.query_selector(".dashboard-grid, .cards-container")
+        grid = page_desktop.query_selector(
+            ".dashboard-grid, .status-section, .container"
+        )
         assert grid is not None
 
         # Get layout info
@@ -297,7 +299,9 @@ class TestResponsiveDesign:
         page_tablet.wait_for_load_state("networkidle")
 
         # Check layout is responsive
-        grid = page_tablet.query_selector(".dashboard-grid, .cards-container")
+        grid = page_tablet.query_selector(
+            ".dashboard-grid, .status-section, .container"
+        )
         assert grid is not None
 
         # Tablet should have smaller width
@@ -311,7 +315,9 @@ class TestResponsiveDesign:
         page_mobile.wait_for_load_state("networkidle")
 
         # Check mobile layout exists
-        grid = page_mobile.query_selector(".dashboard-grid, .cards-container")
+        grid = page_mobile.query_selector(
+            ".dashboard-grid, .status-section, .container"
+        )
         assert grid is not None
 
         # Mobile should be narrow
@@ -325,7 +331,7 @@ class TestResponsiveDesign:
         page_mobile.wait_for_load_state("networkidle")
 
         # Get card positions
-        cards = page_mobile.query_selector_all(".status-card, .card, [class*='card']")
+        cards = page_mobile.query_selector_all(".card, [class*='metric-card']")
 
         if len(cards) >= 2:
             # Check that cards are stacked (different Y positions)
@@ -349,12 +355,12 @@ class TestEndToEndWorkflow:
         page_desktop.wait_for_load_state("networkidle")
 
         # Verify initial load
-        container = page_desktop.query_selector(".dashboard-container")
+        container = page_desktop.query_selector(".container")
         assert container is not None
 
         # Wait for data to be fetched and displayed
         status_elem = page_desktop.wait_for_selector(
-            "[data-field='fire_percentage']", timeout=5000
+            "#progressValue", timeout=5000
         )
         assert status_elem is not None
 
@@ -376,14 +382,14 @@ class TestEndToEndWorkflow:
         page_desktop.wait_for_load_state("networkidle")
 
         # Get initial data
-        initial_status = page_desktop.query_selector("[data-field='fire_percentage']")
-        initial_text = initial_status.text_content() if initial_status else None
+        initial_status = page_desktop.query_selector("#progressValue")
+        assert initial_status is not None
 
         # Wait for potential auto-refresh
         time.sleep(2)
 
         # Dashboard should still be functional
-        current_status = page_desktop.query_selector("[data-field='fire_percentage']")
+        current_status = page_desktop.query_selector("#progressValue")
         assert current_status is not None
 
 
@@ -395,7 +401,6 @@ class TestLoadingStates:
         page_desktop.goto(f"{BASE_URL}/fi-dashboard.html")
 
         # Don't wait for network - check for loading indicator
-        loading = page_desktop.query_selector(".loading, .spinner, [class*='loading']")
         # May or may not be visible depending on timing
         # Just check page is responsive
         assert page_desktop is not None
