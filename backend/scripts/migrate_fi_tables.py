@@ -124,6 +124,40 @@ def create_fi_progress_cache_table(conn: sqlite3.Connection) -> None:
     logger.info("✅ Created fi_progress_cache indexes")
 
 
+def create_fire_asset_snapshots_table(conn: sqlite3.Connection) -> None:
+    """FIRE資産スナップショットテーブルを作成"""
+
+    sql = """
+    CREATE TABLE IF NOT EXISTS fire_asset_snapshots (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        snapshot_date DATE NOT NULL UNIQUE,
+        cash_and_deposits INTEGER NOT NULL DEFAULT 0,
+        stocks_cash INTEGER NOT NULL DEFAULT 0,
+        stocks_margin INTEGER NOT NULL DEFAULT 0,
+        investment_trusts INTEGER NOT NULL DEFAULT 0,
+        pension INTEGER NOT NULL DEFAULT 0,
+        points INTEGER NOT NULL DEFAULT 0,
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+    """
+
+    cursor = conn.cursor()
+    cursor.execute(sql)
+    conn.commit()
+    logger.info("✅ Created fire_asset_snapshots table")
+
+    cursor.execute(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_fire_snapshot_date
+        ON fire_asset_snapshots(snapshot_date)
+        """
+    )
+    conn.commit()
+    logger.info("✅ Created fire_asset_snapshots index")
+
+
 def drop_expense_classification_table(conn: sqlite3.Connection) -> None:
     """支出分類テーブルを削除（ロールバック用）"""
     cursor = conn.cursor()
@@ -138,6 +172,15 @@ def drop_fi_progress_cache_table(conn: sqlite3.Connection) -> None:
     cursor.execute("DROP TABLE IF EXISTS fi_progress_cache")
     conn.commit()
     logger.info("⚠️  Dropped fi_progress_cache table")
+
+
+def drop_fire_asset_snapshots_table(conn: sqlite3.Connection) -> None:
+    """FIRE資産スナップショットテーブルを削除（ロールバック用）"""
+
+    cursor = conn.cursor()
+    cursor.execute("DROP TABLE IF EXISTS fire_asset_snapshots")
+    conn.commit()
+    logger.info("⚠️  Dropped fire_asset_snapshots table")
 
 
 def migrate_up(db_path: Path | None = None) -> None:
@@ -156,6 +199,7 @@ def migrate_up(db_path: Path | None = None) -> None:
         conn = sqlite3.connect(str(db_path))
         create_expense_classification_table(conn)
         create_fi_progress_cache_table(conn)
+        create_fire_asset_snapshots_table(conn)
         conn.close()
         logger.info("✅ Migration UP completed successfully")
     except sqlite3.Error as e:
@@ -178,6 +222,7 @@ def migrate_down(db_path: Path | None = None) -> None:
         conn = sqlite3.connect(str(db_path))
         drop_expense_classification_table(conn)
         drop_fi_progress_cache_table(conn)
+        drop_fire_asset_snapshots_table(conn)
         conn.close()
         logger.info("✅ Migration DOWN completed successfully")
     except sqlite3.Error as e:
@@ -192,7 +237,11 @@ def verify_migration(db_path: Path | None = None) -> dict[str, bool]:
 
     logger.info("Verifying migration: %s", db_path)
 
-    result = {"expense_classification": False, "fi_progress_cache": False}
+    result = {
+        "expense_classification": False,
+        "fi_progress_cache": False,
+        "fire_asset_snapshots": False,
+    }
 
     if not db_path.exists():
         logger.warning("Database file not found: %s", db_path)
@@ -217,6 +266,14 @@ def verify_migration(db_path: Path | None = None) -> dict[str, bool]:
         )
         cursor.execute(query2)
         result["fi_progress_cache"] = cursor.fetchone() is not None
+
+        # fire_asset_snapshotsテーブルの確認
+        query3 = (
+            "SELECT name FROM sqlite_master WHERE type='table' "
+            "AND name='fire_asset_snapshots'"
+        )
+        cursor.execute(query3)
+        result["fire_asset_snapshots"] = cursor.fetchone() is not None
 
         conn.close()
 

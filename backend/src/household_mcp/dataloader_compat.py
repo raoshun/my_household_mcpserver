@@ -421,8 +421,8 @@ class DataLoaderAdapter:
 
 
 __all__ = [
-    "CSVBackend",
-    "DataLoaderAdapter",
     "DataLoaderBackend",
+    "CSVBackend",
     "SQLiteBackend",
+    "DataLoaderAdapter",
 ]

@@ -11,6 +11,7 @@ import argparse
 import os
 import warnings
 from collections.abc import Sequence
+from datetime import date as dt_date
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, cast
 
 if TYPE_CHECKING:
@@ -320,6 +321,64 @@ def run_get_category_trend(
         return dict(result)
     except DataSourceError:
         return {"trend": {}}
+
+
+# --- FIRE Snapshot MCP Tool ---
+
+
+@mcp.tool("register_fire_snapshot")
+def mcp_register_fire_snapshot(
+    snapshot_date: str,
+    cash_and_deposits: int = 0,
+    stocks_cash: int = 0,
+    stocks_margin: int = 0,
+    investment_trusts: int = 0,
+    pension: int = 0,
+    points: int = 0,
+    notes: str | None = None,
+) -> dict[str, Any]:
+    """
+    Register a FIRE asset snapshot (upsert by date).
+
+    Args:
+        snapshot_date: "YYYY-MM-DD"
+        cash_and_deposits: 現金・預金
+        stocks_cash: 株式（現物）
+        stocks_margin: 株式（信用）
+        investment_trusts: 投資信託
+        pension: 年金
+        points: ポイント・マイル
+        notes: 備考
+
+    """
+    try:
+        y, m, d = (int(x) for x in snapshot_date.split("-"))
+        target = dt_date(y, m, d)
+    except Exception as e:
+        return {"success": False, "error": f"日付形式が不正です: {e!s}"}
+
+    try:
+        # 遅延インポート（依存の分離）
+        from household_mcp.services.fire_snapshot import (
+            FireSnapshotRequest,
+            FireSnapshotService,
+        )
+
+        service = FireSnapshotService(db_manager=_get_db_manager())
+        request = FireSnapshotRequest(
+            snapshot_date=target,
+            cash_and_deposits=cash_and_deposits,
+            stocks_cash=stocks_cash,
+            stocks_margin=stocks_margin,
+            investment_trusts=investment_trusts,
+            pension=pension,
+            points=points,
+            notes=notes,
+        )
+        result = service.register_snapshot(request)
+        return {"success": True, "data": result.model_dump()}
+    except Exception as e:
+        return {"success": False, "error": f"登録エラー: {e!s}"}
 
 
 # グローバルインスタンス (BudgetAnalyzer for legacy CSV support)

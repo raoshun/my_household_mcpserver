@@ -6,17 +6,32 @@ FIRE進捗追跡、シナリオ投影、支出分類、改善提案に関する�
 
 from __future__ import annotations
 
+from datetime import date as dt_date
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 from household_mcp.analysis import FinancialIndependenceAnalyzer
+from household_mcp.database.manager import DatabaseManager
+from household_mcp.services.fire_snapshot import (
+    FireSnapshotRequest,
+    FireSnapshotService,
+    SnapshotNotFoundError,
+)
 
 router = APIRouter(prefix="/api/financial-independence", tags=["FIRE"])
 
 # 分析器の初期化（シングルトン風）
 analyzer = FinancialIndependenceAnalyzer()
+
+
+def _get_snapshot_service() -> FireSnapshotService:
+    """FireSnapshotService を生成（DB初期化は冪等）。"""
+    db = DatabaseManager()
+    # 必要に応じてテーブル作成（冪等）
+    db.initialize_database()
+    return FireSnapshotService(db_manager=db)
 
 
 @router.get("/status")
@@ -26,6 +41,10 @@ async def get_financial_independence_status(
         ge=1,
         le=120,
         description="分析期間（月数、1-120ヶ月）",
+    ),
+    snapshot_date: str | None = Query(
+        None,
+        description="対象日（YYYY-MM-DD、省略時は最新）",
     ),
 ) -> dict[str, Any]:
     """
@@ -42,40 +61,45 @@ async def get_financial_independence_status(
 
     """
     try:
-        # TODO: 実際のデータソースから取得
-        # ここではダミーデータを使用
-        current_assets = 5000000
-        annual_expense = 1000000
-        asset_history = [5000000 + (i * 50000) for i in range(period_months)]
+        service = _get_snapshot_service()
+        target_date = None
+        if snapshot_date:
+            try:
+                year, month, day = (int(x) for x in snapshot_date.split("-"))
+                target_date = dt_date(year, month, day)
+            except Exception as exc:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(f"日付形式が不正です: {exc!s}"),
+                )
 
-        status = analyzer.get_status(
-            current_assets=current_assets,
-            target_assets=25000000,
-            annual_expense=annual_expense,
-            asset_history=asset_history,
+        result = service.get_status(
+            snapshot_date=target_date,
+            months=period_months,
         )
+        snapshot = result.get("snapshot", {})
+        fi = result.get("fi_progress", {})
+        growth_rate = fi.get("monthly_growth_rate")
 
         return {
-            "timestamp": None,
+            "timestamp": snapshot.get("snapshot_date"),
             "period_months": period_months,
-            "fire_percentage": status["progress_rate"],
-            "target_amount": status["fire_target"],
-            "current_assets": status["current_assets"],
-            "monthly_growth_rate": (
-                status["growth_analysis"]["monthly_growth_rate"]
-                if status["growth_analysis"]
-                else None
-            ),
-            "annual_growth_rate": (
-                status["growth_analysis"]["annual_growth_rate"]
-                if status["growth_analysis"]
-                else None
-            ),
-            "months_to_fi": status["months_to_fi"],
-            "is_achieved": status["is_achieved"],
-            "progress_details": status,
+            "fire_percentage": fi.get("progress_rate"),
+            "target_amount": fi.get("fire_target"),
+            "current_assets": fi.get("current_assets"),
+            "monthly_growth_rate": growth_rate,
+            "annual_growth_rate": None,  # 年率は未算出（必要なら変換）
+            "months_to_fi": fi.get("months_to_fi"),
+            "is_achieved": fi.get("is_achievable"),
+            "progress_details": {
+                "snapshot": snapshot,
+                "fi_progress": fi,
+                "history": result.get("history", []),
+            },
         }
 
+    except SnapshotNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -278,7 +302,9 @@ async def add_asset(asset: AssetRecord) -> dict[str, Any]:
 
         return {
             "status": "success",
-            "message": f"{asset.year}年{asset.month}月の{asset.asset_type}を記録しました",
+            "message": (
+                f"{asset.year}年{asset.month}月の{asset.asset_type}を記録しました"
+            ),
             "asset_type": asset.asset_type,
             "amount": asset.amount,
             "record_date": f"{asset.year}-{asset.month:02d}",
@@ -321,7 +347,9 @@ async def delete_asset(asset: AssetRecord) -> dict[str, Any]:
 
         return {
             "status": "success",
-            "message": f"{asset.year}年{asset.month}月の{asset.asset_type}を削除しました",
+            "message": (
+                f"{asset.year}年{asset.month}月の{asset.asset_type}を削除しました"
+            ),
             "record_date": f"{asset.year}-{asset.month:02d}",
         }
 
@@ -335,3 +363,54 @@ async def delete_asset(asset: AssetRecord) -> dict[str, Any]:
             status_code=500,
             detail=f"資産削除エラー: {e!s}",
         ) from e
+
+
+# --- FIRE Snapshot Endpoints ---
+
+
+@router.post("/snapshot")
+async def register_fire_snapshot(
+    request: FireSnapshotRequest,
+) -> dict[str, Any]:
+    """FIRE資産スナップショットを登録（同日付は上書き）。"""
+    try:
+        service = _get_snapshot_service()
+        result = service.register_snapshot(request)
+        return {"success": True, "data": result.model_dump()}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"登録エラー: {e!s}") from e
+
+
+@router.get("/snapshot")
+async def get_fire_snapshot(
+    snapshot_date: str | None = Query(
+        None, description="対象日（YYYY-MM-DD、省略時は最新）"
+    ),
+    allow_interpolation: bool = Query(
+        True, description="未登録日の場合に補完を許可するか"
+    ),
+) -> dict[str, Any]:
+    """指定日のスナップショットを取得（必要に応じて補完）。"""
+    try:
+        service = _get_snapshot_service()
+        target_date = None
+        if snapshot_date:
+            try:
+                y, m, d = (int(x) for x in snapshot_date.split("-"))
+                target_date = dt_date(y, m, d)
+            except Exception as exc:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(f"日付形式が不正です: {exc!s}"),
+                )
+
+        result = service.get_snapshot(
+            snapshot_date=target_date, allow_interpolation=allow_interpolation
+        )
+        return {"success": True, "data": result.model_dump()}
+    except SnapshotNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"取得エラー: {e!s}") from e

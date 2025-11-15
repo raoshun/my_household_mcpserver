@@ -1,10 +1,18 @@
 #!/usr/bin/env python
 """Database initialization and migration script for Phase 13."""
 
+import importlib
 import logging
 import sys
 
-from household_mcp.database import CSVImporter, DatabaseManager
+try:
+    database_module = importlib.import_module("household_mcp.database")
+    CSVImporter = database_module.CSVImporter
+    DatabaseManager = database_module.DatabaseManager
+except ImportError as exc:
+    raise ImportError(
+        "Database extras are required. Install with '.[db]' before running"
+    ) from exc
 
 # ログ設定
 logging.basicConfig(
@@ -42,6 +50,7 @@ def initialize_and_migrate() -> None:
         logger.info("  - AssetRecord（資産レコード）")
         logger.info("  - ExpenseClassification（支出分類）")
         logger.info("  - FIProgressCache（FIRE進捗スナップショット）")
+        logger.info("  - FireAssetSnapshot（FIRE資産スナップショット）")
 
         # Step 3: CSV マイグレーション
         logger.info("\nステップ 3: CSV → SQLite マイグレーション")

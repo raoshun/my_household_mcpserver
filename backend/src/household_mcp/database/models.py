@@ -4,6 +4,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     Column,
+    Date,
     DateTime,
     ForeignKey,
     Index,
@@ -43,7 +44,11 @@ class Transaction(Base):
 
     # 重複管理フィールド
     is_duplicate = Column(Integer, default=0, index=True)
-    duplicate_of = Column(Integer, ForeignKey("transactions.id"), nullable=True)
+    duplicate_of = Column(
+        Integer,
+        ForeignKey("transactions.id"),
+        nullable=True,
+    )
     duplicate_checked = Column(Integer, default=0)
     duplicate_checked_at = Column(DateTime, nullable=True)
 
@@ -56,7 +61,9 @@ class Transaction(Base):
         "Transaction", remote_side=[id], back_populates="duplicates"
     )
     duplicates = relationship(
-        "Transaction", back_populates="original_transaction", remote_side=[duplicate_of]
+        "Transaction",
+        back_populates="original_transaction",
+        remote_side=[duplicate_of],
     )
 
     duplicate_checks_as_1 = relationship(
@@ -94,8 +101,16 @@ class DuplicateCheck(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
 
     # 取引ID
-    transaction_id_1 = Column(Integer, ForeignKey("transactions.id"), nullable=False)
-    transaction_id_2 = Column(Integer, ForeignKey("transactions.id"), nullable=False)
+    transaction_id_1 = Column(
+        Integer,
+        ForeignKey("transactions.id"),
+        nullable=False,
+    )
+    transaction_id_2 = Column(
+        Integer,
+        ForeignKey("transactions.id"),
+        nullable=False,
+    )
 
     # 検出パラメータ
     detection_date_tolerance = Column(Integer, nullable=True)
@@ -125,7 +140,10 @@ class DuplicateCheck(Base):
     # テーブル制約
     __table_args__ = (
         Index(
-            "idx_transaction_pair", "transaction_id_1", "transaction_id_2", unique=True
+            "idx_transaction_pair",
+            "transaction_id_1",
+            "transaction_id_2",
+            unique=True,
         ),
         Index("idx_user_decision", "user_decision"),
     )
@@ -177,7 +195,11 @@ class AssetRecord(Base):
 
     # 資産データ
     record_date = Column(DateTime, nullable=False, index=True)
-    asset_class_id = Column(Integer, ForeignKey("assets_classes.id"), nullable=False)
+    asset_class_id = Column(
+        Integer,
+        ForeignKey("assets_classes.id"),
+        nullable=False,
+    )
     sub_asset_name = Column(String(255), nullable=False)
     amount = Column(Integer, nullable=False)  # JPY単位
     memo = Column(Text, nullable=True)
@@ -324,6 +346,30 @@ class FIProgressCache(Base):
             f"progress_rate={self.progress_rate}, "
             f"months_to_fi={self.months_to_fi})>"
         )
+
+
+class FireAssetSnapshot(Base):
+    """FIRE資産スナップショットテーブル."""
+
+    __tablename__ = "fire_asset_snapshots"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    snapshot_date = Column(Date, nullable=False, unique=True, index=True)
+    cash_and_deposits = Column(Integer, nullable=False, default=0)
+    stocks_cash = Column(Integer, nullable=False, default=0)
+    stocks_margin = Column(Integer, nullable=False, default=0)
+    investment_trusts = Column(Integer, nullable=False, default=0)
+    pension = Column(Integer, nullable=False, default=0)
+    points = Column(Integer, nullable=False, default=0)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+    __table_args__ = (Index("idx_fire_snapshot_date", "snapshot_date", unique=True),)
+
+    def __repr__(self) -> str:
+        """文字列表現."""
+        return f"<FireAssetSnapshot(id={self.id}, snapshot_date={self.snapshot_date})>"
 
 
 class Budget(Base):

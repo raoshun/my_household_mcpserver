@@ -43,8 +43,7 @@ class BaseChartGenerator:
         # Validate font_path if provided
         if font_path and not os.path.exists(font_path):
             warnings.warn(
-                f"Font path '{font_path}' does not exist. "
-                "Will attempt auto-detection.",
+                f"Font path '{font_path}' does not exist. Will attempt auto-detection.",
                 UserWarning,
                 stacklevel=2,
             )

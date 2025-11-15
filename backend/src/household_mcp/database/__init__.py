@@ -18,6 +18,7 @@ __all__ = [
     "AssetRecord",  # type: ignore[reportUnsupportedDunderAll]
     "Base",  # type: ignore[reportUnsupportedDunderAll]
     "Budget",  # type: ignore[reportUnsupportedDunderAll]
+    "FireAssetSnapshot",  # type: ignore[reportUnsupportedDunderAll]
     "CSVImporter",  # type: ignore[reportUnsupportedDunderAll]
     "DatabaseManager",  # type: ignore[reportUnsupportedDunderAll]
     "DuplicateCheck",  # type: ignore[reportUnsupportedDunderAll]
@@ -48,11 +49,16 @@ def __getattr__(name: str) -> Any:  # pragma: no cover - import-time behavior
                 "Transaction": _Txn,
             }
             return mapping[name]
-        if name in {"AssetClass", "AssetRecord"}:
+        if name in {"AssetClass", "AssetRecord", "FireAssetSnapshot"}:
             from .models import AssetClass as _AC
             from .models import AssetRecord as _AR
+            from .models import FireAssetSnapshot as _FS
 
-            mapping = {"AssetClass": _AC, "AssetRecord": _AR}
+            mapping = {
+                "AssetClass": _AC,
+                "AssetRecord": _AR,
+                "FireAssetSnapshot": _FS,
+            }
             return mapping[name]
         if name == "CSVImporter":
             from .csv_importer import CSVImporter as _CSVImporter

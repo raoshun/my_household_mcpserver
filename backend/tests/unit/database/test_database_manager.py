@@ -6,22 +6,31 @@ They are skipped automatically in environments without SQLAlchemy.
 
 import os
 import tempfile
-from datetime import datetime
+from datetime import date, datetime
 
 # Check if database dependencies are available
 try:
-    from household_mcp.database import DatabaseManager, DuplicateCheck, Transaction
+    from household_mcp.database import (
+        DatabaseManager,
+        DuplicateCheck,
+        FireAssetSnapshot,
+        Transaction,
+    )
 
     HAS_DB = True
 except ImportError:
     HAS_DB = False
     DatabaseManager = None
     DuplicateCheck = None
+    FireAssetSnapshot = None
     Transaction = None
 
 import pytest
 
-pytestmark = pytest.mark.skipif(not HAS_DB, reason="requires db extras (sqlalchemy)")
+pytestmark = pytest.mark.skipif(
+    not HAS_DB,
+    reason="requires db extras (sqlalchemy)",
+)
 
 
 def test_database_manager_initialization():  # type: ignore[no-untyped-def]
@@ -122,6 +131,39 @@ def test_duplicate_check_creation():  # type: ignore[no-untyped-def]
             assert result.user_decision == "duplicate"
             assert result.similarity_score is not None
             assert float(result.similarity_score) == 0.95
+
+        db_manager.close()
+
+
+def test_fire_asset_snapshot_persistence():  # type: ignore[no-untyped-def]
+    """FIRE資産スナップショットの永続化テスト."""
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        db_path = os.path.join(tmpdir, "test.db")
+        db_manager = DatabaseManager(db_path)
+        db_manager.initialize_database()
+
+        with db_manager.session_scope() as session:
+            snapshot = FireAssetSnapshot(
+                snapshot_date=date(2025, 1, 15),
+                cash_and_deposits=1000000,
+                stocks_cash=2000000,
+                investment_trusts=1500000,
+                pension=300000,
+                points=5000,
+                notes="unit-test",
+            )
+            session.add(snapshot)
+
+        with db_manager.session_scope() as session:
+            stored = (
+                session.query(FireAssetSnapshot)
+                .filter_by(snapshot_date=date(2025, 1, 15))
+                .first()
+            )
+            assert stored is not None
+            assert stored.cash_and_deposits == 1000000
+            assert stored.points == 5000
 
         db_manager.close()
 

@@ -312,6 +312,11 @@
   - `fire_asset_snapshots` 保存/更新、カテゴリ合計から `total` を計算して `fi_progress_cache` を再計算（`FinancialIndependenceAnalyzer` 経由）
   - 400 エラー・成功レスポンス・ログ出力・API ドキュメント更新
   - 単体/統合テスト: 正常、重複日付上書き、入力エラー、キャッシュ更新確認
+  - 進捗:
+    - [x] REST: `POST /api/financial-independence/snapshot` 実装
+    - [x] REST: `/api/financial-independence/status` を実データ連携に変更
+    - [x] MCP: `register_fire_snapshot` ツール実装
+    - [ ] テスト拡充・ドキュメント更新
 
 - [ ] **TASK-1704**: E2E & API テスト拡張（0.5d）
   - `backend/tests/e2e/test_fi_dashboard.py` に登録→表示→補完を走らせるシナリオを追加
@@ -330,6 +335,7 @@
 | 2025-11-11 | Phase 15インフラ整備完了（Docker再ビルド、API有効化、E2E部分修正）   |
 | 2025-11-11 | 単体テスト263件合格、Phase 15テスト83件合格、E2E11/21合格            |
 | 2025-11-11 | TASK-701-1: 資産CRUD統合テスト修正完了（13/13合格✅）                 |
+| 2025-11-15 | TASK-1703: REST/MCP結線（登録API・ステータス実データ化・MCPツール）完了  |
 
 ---
 

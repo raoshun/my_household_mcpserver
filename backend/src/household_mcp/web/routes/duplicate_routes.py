@@ -123,8 +123,7 @@ def create_duplicate_router() -> APIRouter:
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    "Invalid decision. Must be 'duplicate', 'not_duplicate', "
-                    "or 'skip'"
+                    "Invalid decision. Must be 'duplicate', 'not_duplicate', or 'skip'"
                 ),
             )
 
