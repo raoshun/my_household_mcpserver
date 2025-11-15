@@ -17,6 +17,7 @@ from household_mcp.analysis.financial_independence import FinancialIndependenceA
 from household_mcp.analysis.fire_calculator import FIRECalculator
 from household_mcp.database.manager import DatabaseManager
 from household_mcp.database.models import FIProgressCache, FireAssetSnapshot
+from household_mcp.dataloader import HouseholdDataLoader
 
 SNAPSHOT_CATEGORIES: tuple[str, ...] = (
     "cash_and_deposits",
@@ -144,6 +145,7 @@ class FireSnapshotService:
         *,
         interpolator: SnapshotInterpolator | None = None,
         analyzer: FinancialIndependenceAnalyzer | None = None,
+        data_loader: HouseholdDataLoader | None = None,
         history_window: int = 12,
         default_annual_expense: float = 1_200_000.0,
         withdrawal_rate: float = 0.04,
@@ -153,6 +155,7 @@ class FireSnapshotService:
         self.db_manager = db_manager
         self.interpolator = interpolator or LinearSnapshotInterpolator()
         self.analyzer = analyzer or FinancialIndependenceAnalyzer()
+        self.data_loader = data_loader
         self.history_window = history_window
         self.default_annual_expense = default_annual_expense
         self.withdrawal_rate = withdrawal_rate
@@ -433,7 +436,9 @@ class FireSnapshotService:
             float(self._sum_categories(point.values)) for point in history_points
         ]
         current_total = asset_history[-1]
-        annual_expense = self._estimate_annual_expense(asset_history)
+        annual_expense = self._estimate_annual_expense(
+            asset_history, snapshot_date=snapshot_date
+        )
 
         target_assets = FIRECalculator.calculate_fire_target(annual_expense)
         status = self.analyzer.get_status(
@@ -480,13 +485,119 @@ class FireSnapshotService:
 
         return cache
 
+    def _calculate_annual_expense_from_csv(
+        self,
+        snapshot_date: date,
+    ) -> float | None:
+        """
+        Calculate annual expense from CSV data with fallback logic.
+
+        Priority:
+        1. Use 12-month CSV data if available
+        2. Use 6-month data and annualize if 12-month unavailable
+        3. Return None if insufficient data (fallback to asset-based)
+
+        Args:
+            snapshot_date: Target date for calculation
+
+        Returns:
+            Annual expense in JPY, or None if insufficient data
+
+        """
+        if self.data_loader is None:
+            return None
+
+        try:
+            # Get all available months
+            available_months = list(self.data_loader.iter_available_months())
+            if not available_months:
+                return None
+
+            # Filter months <= snapshot_date
+            target_year = snapshot_date.year
+            target_month = snapshot_date.month
+            valid_months = [
+                (y, m)
+                for y, m in available_months
+                if (y, m) <= (target_year, target_month)
+            ]
+
+            if not valid_months:
+                return None
+
+            # Try 12-month calculation
+            if len(valid_months) >= 12:
+                recent_12 = valid_months[-12:]
+                df = self.data_loader.load_many(recent_12)
+                total_expense = abs(df["金額（円）"].sum())
+                if total_expense > 0:
+                    logger.info(
+                        "Annual expense calculated from 12-month CSV: ¥%s",
+                        f"{total_expense:,.0f}",
+                    )
+                    return float(total_expense)
+
+            # Try 6-month annualization
+            if len(valid_months) >= 6:
+                recent_6 = valid_months[-6:]
+                df = self.data_loader.load_many(recent_6)
+                six_month_expense = abs(df["金額（円）"].sum())
+                if six_month_expense > 0:
+                    annualized = six_month_expense * 2.0
+                    logger.info(
+                        "Annual expense annualized from 6-month CSV: ¥%s (6mo: ¥%s)",
+                        f"{annualized:,.0f}",
+                        f"{six_month_expense:,.0f}",
+                    )
+                    return float(annualized)
+
+            return None
+
+        except Exception as exc:
+            logger.warning(
+                "Failed to calculate annual expense from CSV: %s",
+                exc,
+                exc_info=True,
+            )
+            return None
+
     def _estimate_annual_expense(
         self,
         asset_history: Sequence[float],
+        snapshot_date: date | None = None,
     ) -> float:
+        """
+        Estimate annual expense with priority: CSV > asset-based > default.
+
+        Args:
+            asset_history: Historical asset values
+            snapshot_date: Target date for CSV calculation (optional)
+
+        Returns:
+            Estimated annual expense in JPY
+
+        """
+        # Priority 1: CSV-based calculation
+        if snapshot_date is not None:
+            csv_expense = self._calculate_annual_expense_from_csv(snapshot_date)
+            if csv_expense is not None:
+                return csv_expense
+
+        # Priority 2: Asset-based estimation (4% withdrawal rate)
         if asset_history:
             derived = asset_history[-1] * self.withdrawal_rate
-            return float(max(derived, 1.0))
+            if derived >= 1.0:
+                logger.info(
+                    "Annual expense estimated from assets (4%% rule): ¥%s",
+                    f"{derived:,.0f}",
+                )
+                return float(max(derived, 1.0))
+
+        # Priority 3: Default value
+        logger.info(
+            "Annual expense using default value: ¥%s",
+            f"{self.default_annual_expense:,.0f}",
+        )
         return float(self.default_annual_expense)
 
     def _cache_payload(self, cache: FIProgressCache) -> dict[str, Any]:

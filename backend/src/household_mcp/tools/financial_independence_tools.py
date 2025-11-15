@@ -6,6 +6,7 @@ from typing import Any
 
 from household_mcp.analysis import FinancialIndependenceAnalyzer
 from household_mcp.database.manager import DatabaseManager
+from household_mcp.dataloader import HouseholdDataLoader
 from household_mcp.services.fire_snapshot import FireSnapshotService
 
 # Legacy analyzer for backward compatibility
@@ -13,7 +14,8 @@ analyzer = FinancialIndependenceAnalyzer()
 
 # Database-backed service for real data access
 db_manager = DatabaseManager()
-fire_service = FireSnapshotService(db_manager)
+data_loader = HouseholdDataLoader()
+fire_service = FireSnapshotService(db_manager, data_loader=data_loader)
 
 
 def get_financial_independence_status(
@@ -396,3 +398,151 @@ def submit_asset_record(
             "資産情報はダッシュボードに反映されます。FIRE進度が更新されました。"
         ),
     }
+
+
+def get_annual_expense_breakdown(
+    year: int | None = None,
+) -> dict[str, Any]:
+    """
+    Get annual expense breakdown from household CSV data.
+
+    Returns monthly and category-level expense breakdown for the
+    specified year or most recent 12 months.
+
+    Args:
+        year: Target year (None = most recent 12 months)
+
+    Returns:
+        Annual expense breakdown with monthly and category totals
+
+    """
+    try:
+        # Get available months
+        available_months = list(data_loader.iter_available_months())
+        if not available_months:
+            return {
+                "status": "error",
+                "message": "利用可能な家計簿データがありません",
+            }
+
+        # Select target months
+        if year is not None:
+            target_months = [(y, m) for y, m in available_months if y == year]
+            period_label = f"{year}年"
+        else:
+            target_months = available_months[-12:]
+            period_label = "直近12ヶ月"
+
+        if not target_months:
+            return {
+                "status": "error",
+                "message": f"{period_label}のデータがありません",
+            }
+
+        # Load data
+        df = data_loader.load_many(target_months)
+        total_expense = abs(df["金額（円）"].sum())
+
+        # Monthly breakdown
+        monthly_data = []
+        monthly_groups = df.groupby("年月キー")
+        for month_key in sorted(str(k) for k in monthly_groups.groups.keys()):
+            group = monthly_groups.get_group(month_key)
+            monthly_total = abs(group["金額（円）"].sum())
+            monthly_data.append(
+                {
+                    "month": month_key,
+                    "amount": int(monthly_total),
+                }
+            )
+
+        # Category breakdown
+        category_data = []
+        category_groups = df.groupby("大項目")
+        for category_name in sorted(str(k) for k in category_groups.groups.keys()):
+            group = category_groups.get_group(category_name)
+            category_total = abs(group["金額（円）"].sum())
+            category_data.append(
+                {
+                    "category": str(category_name),
+                    "amount": int(category_total),
+                }
+            )
+
+        return {
+            "status": "success",
+            "message": f"{period_label}の年間支出: ¥{total_expense:,.0f}",
+            "period": period_label,
+            "total_annual_expense": int(total_expense),
+            "months_count": len(target_months),
+            "monthly_breakdown": monthly_data,
+            "category_breakdown": category_data,
+        }
+
+    except Exception as exc:
+        return {
+            "status": "error",
+            "message": f"データ取得エラー: {exc}",
+        }
+
+
+def compare_actual_vs_fire_target(
+    period_months: int = 12,
+) -> dict[str, Any]:
+    """
+    Compare actual spending vs FIRE target.
+
+    Compares actual household spending from CSV with FIRE target
+    calculated from 4% withdrawal rule.
+
+    Args:
+        period_months: Analysis period in months (default: 12)
+
+    Returns:
+        Comparison of actual vs FIRE-based spending
+
+    """
+    try:
+        # Get FIRE status (includes CSV-based calculation)
+        status_data = fire_service.get_status(snapshot_date=None, months=period_months)
+
+        fi_progress = status_data["fi_progress"]
+        annual_expense = fi_progress["annual_expense"]
+        current_assets = fi_progress["current_assets"]
+        fire_target = fi_progress["fire_target"]
+
+        # Get actual spending breakdown
+        breakdown = get_annual_expense_breakdown(year=None)
+
+        if breakdown["status"] == "error":
+            actual_expense = None
+            difference = None
+            ratio = None
+        else:
+            actual_expense = breakdown["total_annual_expense"]
+            difference = actual_expense - (current_assets * 0.04)
+            ratio = actual_expense / (current_assets * 0.04)
+
+        return {
+            "status": "success",
+            "message": (
+                f"実支出: ¥{actual_expense:,.0f} / "
+                f"FIRE目標支出: ¥{current_assets * 0.04:,.0f}"
+                if actual_expense
+                else "実支出データが取得できませんでした"
+            ),
+            "current_assets": int(current_assets),
+            "fire_target": int(fire_target),
+            "annual_expense_calculated": int(annual_expense),
+            "actual_annual_expense": actual_expense,
+            "fire_based_expense": int(current_assets * 0.04),
+            "difference": int(difference) if difference else None,
+            "expense_ratio": round(ratio, 2) if ratio else None,
+            "breakdown": breakdown if actual_expense else None,
+        }
+
+    except Exception as exc:
+        return {
+            "status": "error",
+            "message": f"比較エラー: {exc}",
+        }

@@ -44,7 +44,9 @@ HAS_REPORT_TOOLS = True  # Assume available; gracefully degrade on import error
 try:
     from household_mcp.tools.financial_independence_tools import (
         analyze_expense_patterns,
+        compare_actual_vs_fire_target,
         compare_scenarios,
+        get_annual_expense_breakdown,
         get_financial_independence_status,
         project_financial_independence_date,
         suggest_improvement_actions,
@@ -843,6 +845,62 @@ if HAS_FI_TOOLS:
                 "error": f"シナリオ比較失敗: {e!s}",
             }
 
+    @mcp.tool("get_annual_expense_breakdown")
+    def fi_get_annual_expense_breakdown(
+        year: int | None = None,
+    ) -> dict[str, Any]:
+        """
+        Get annual expense breakdown from household CSV data.
+
+        Returns monthly and category-level expense breakdown for the
+        specified year or most recent 12 months.
+
+        Args:
+            year: Target year (None = most recent 12 months)
+
+        Returns:
+            Annual expense breakdown with monthly and category totals
+
+        """
+        try:
+            return cast(
+                dict[str, Any],
+                get_annual_expense_breakdown(year=year),
+            )
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"年間支出取得失敗: {e!s}",
+            }
+
+    @mcp.tool("compare_actual_vs_fire_target")
+    def fi_compare_actual_vs_fire_target(
+        period_months: int = 12,
+    ) -> dict[str, Any]:
+        """
+        Compare actual spending vs FIRE target.
+
+        Compares actual household spending from CSV with FIRE target
+        calculated from 4% withdrawal rule.
+
+        Args:
+            period_months: Analysis period in months (default: 12)
+
+        Returns:
+            Comparison of actual vs FIRE-based spending
+
+        """
+        try:
+            return cast(
+                dict[str, Any],
+                compare_actual_vs_fire_target(period_months=period_months),
+            )
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"実支出比較失敗: {e!s}",
+            }
+
 
 # Phase 15: Advanced Analysis Tools (FIRE, Scenario, Pattern Analysis)
 
@@ -1044,6 +1102,8 @@ async def list_tools() -> Sequence[Any]:
                 "project_financial_independence_date",
                 "suggest_improvement_actions",
                 "compare_financial_scenarios",
+                "get_annual_expense_breakdown",
+                "compare_actual_vs_fire_target",
             ]
         )
     # Add Phase 15 advanced analysis tools
