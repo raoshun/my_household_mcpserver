@@ -1,0 +1,22 @@
+{
+  "salary": {
+    "category": "給与所得",
+    "large_keywords": ["給与"],
+    "medium_keywords": ["給与", "賞与", "ボーナス"]
+  },
+  "business": {
+    "category": "事業所得",
+    "large_keywords": ["事業収入"],
+    "medium_keywords": ["事業"]
+  },
+  "real_estate": {
+    "category": "不動産所得",
+    "large_keywords": ["不動産"],
+    "medium_keywords": ["家賃収入", "不動産収入"]
+  },
+  "dividend": {
+    "category": "配当・利子所得",
+    "large_keywords": ["金融収入"],
+    "medium_keywords": ["配当", "利子", "分配金"]
+  }
+}
