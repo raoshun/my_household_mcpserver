@@ -123,9 +123,7 @@ class TestCSVBasedFIRECalculation:
         from household_mcp.tools import financial_independence_tools
 
         data_loader = HouseholdDataLoader(src_dir=temp_csv_data)
-        monkeypatch.setattr(
-            financial_independence_tools, "data_loader", data_loader
-        )
+        monkeypatch.setattr(financial_independence_tools, "data_loader", data_loader)
 
         # Execute
         result = get_annual_expense_breakdown(year=2024)
@@ -162,12 +160,8 @@ class TestCSVBasedFIRECalculation:
             db_manager_with_snapshot, data_loader=data_loader
         )
 
-        monkeypatch.setattr(
-            financial_independence_tools, "data_loader", data_loader
-        )
-        monkeypatch.setattr(
-            financial_independence_tools, "fire_service", fire_service
-        )
+        monkeypatch.setattr(financial_independence_tools, "data_loader", data_loader)
+        monkeypatch.setattr(financial_independence_tools, "fire_service", fire_service)
 
         # Execute
         result = compare_actual_vs_fire_target(period_months=12)
@@ -193,9 +187,7 @@ class TestCSVBasedFIRECalculation:
     ) -> None:
         """Test FIRE calculation falls back to asset-based without CSV."""
         # Setup: No data_loader (CSV unavailable)
-        fire_service = FireSnapshotService(
-            db_manager_with_snapshot, data_loader=None
-        )
+        fire_service = FireSnapshotService(db_manager_with_snapshot, data_loader=None)
 
         # Execute
         status = fire_service.get_status(snapshot_date=None, months=12)
