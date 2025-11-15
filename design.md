@@ -2736,12 +2736,84 @@ def calculate_fire_target(
     if user_custom_annual_expense:
         annual_expense = user_custom_annual_expense
     else:
-        # 直近12ヶ月の平均月支出
-        avg_monthly = monthly_expenses.tail(12).mean()
-        annual_expense = avg_monthly * 12
+        # 家計簿CSVから実支出を算出（優先）
+        try:
+            annual_expense = _calculate_annual_expense_from_csv(
+                target_date=snapshot_date,
+                period_months=12,
+                fallback_months=6,
+            )
+        except DataSourceError:
+            # フォールバック: 資産額ベースの推定
+            annual_expense = current_assets * 0.04
 
     # FIRE基準: 年支出 × 25
     return annual_expense * 25
+
+
+def _calculate_annual_expense_from_csv(
+    target_date: date,
+    *,
+    period_months: int = 12,
+    fallback_months: int = 6,
+) -> float:
+    """
+    家計簿CSVから年間支出を算出（FR-023-1A）
+
+    Args:
+        target_date: スナップショット基準日
+        period_months: 理想的な集計期間（月数、デフォルト12ヶ月）
+        fallback_months: データ不足時の最小許容月数（デフォルト6ヶ月）
+
+    Returns:
+        推定年間支出額（円）
+
+    Raises:
+        DataSourceError: データが不足して算出不可能な場合
+    """
+    from household_mcp.dataloader import HouseholdDataLoader
+
+    loader = HouseholdDataLoader(src_dir="data")
+
+    # 期間決定: target_dateから遡ってperiod_months分
+    months = []
+    for i in range(period_months):
+        month_offset = i
+        year = target_date.year
+        month = target_date.month - month_offset
+        while month <= 0:
+            month += 12
+            year -= 1
+        months.append((year, month))
+
+    months.reverse()  # 古い順にソート
+
+    # データ収集
+    try:
+        df = loader.load_many(months)
+    except DataSourceError:
+        raise DataSourceError(f"CSVデータが不足: {len(months)}ヶ月分")
+
+    # 月別支出集計
+    df['年月'] = df['日付'].dt.to_period('M')
+    monthly_expenses = df.groupby('年月')['金額（円）'].sum().abs()
+
+    available_months = len(monthly_expenses)
+
+    if available_months >= period_months:
+        # 理想: 12ヶ月分のデータがある
+        annual_expense = monthly_expenses.sum()
+    elif available_months >= fallback_months:
+        # 代替: 6ヶ月以上のデータで年換算
+        average_monthly = monthly_expenses.mean()
+        annual_expense = average_monthly * 12
+    else:
+        # データ不足
+        raise DataSourceError(
+            f"年間支出算出に必要なデータが不足: {available_months}ヶ月 < {fallback_months}ヶ月"
+        )
+
+    return float(max(annual_expense, 1.0))
 ```
 
 #### 14.4.3 月利計算とトレンド分析（FR-023-2）

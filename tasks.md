@@ -343,12 +343,48 @@
     - [x] 統合テスト修正（test_fi_api.py）
   - **完了日**: 2025-11-15
 
-- [ ] **TASK-1704**: E2E & API テスト拡張（0.5d）
+- [ ] **TASK-1704**: 家計簿CSVベースの年間支出算出機能（1.5d）🆕
+  - **目的**: FIRE進捗計算で家計簿CSVの実支出を使用（FR-023-1A）
+  - **実装項目**:
+    - [ ] `FireSnapshotService._calculate_annual_expense_from_csv()` メソッド実装
+      - HouseholdDataLoaderとの連携
+      - 12ヶ月分のデータ集計ロジック
+      - データ不足時の代替ロジック（6ヶ月年換算、フォールバック）
+    - [ ] `FireSnapshotService._recalculate_fi_cache()` での統合
+      - CSV算出を優先、エラー時はフォールバック
+      - ログ出力（算出方法の記録）
+    - [ ] HouseholdDataLoaderの依存性注入
+      - コンストラクタで`data_loader`パラメータ追加
+      - 呼び出し側（REST API、MCPツール）で注入
+    - [ ] 新規MCPツール実装:
+      - [ ] `get_annual_expense_breakdown`: 年間支出の月別・カテゴリ別内訳
+      - [ ] `compare_actual_vs_fire_target`: 実支出とFIRE目標の比較
+    - [ ] 既存MCPツールの拡張:
+      - [ ] `get_financial_independence_status`: `use_csv_expense`パラメータ追加
+    - [ ] 単体テスト（15件）:
+      - CSV集計（12ヶ月データ）
+      - 部分データ（6ヶ月年換算）
+      - データ不足（< 6ヶ月）
+      - フォールバック動作
+      - 新規MCPツール
+    - [ ] 統合テスト（5件）:
+      - REST API経由のCSVベース支出算出
+      - MCP経由の対話シナリオ
+      - キャッシュ更新確認
+  - **完了基準**:
+    - ✅ 12ヶ月データがある場合、CSVから実支出が算出される
+    - ✅ データ不足時に適切にフォールバックする
+    - ✅ MCPツールで年間支出の詳細が取得できる
+    - ✅ FIRE進捗率が正確に計算される（資産額 ≠ 目標額となる）
+  - **依存**: TASK-1703完了
+  - **対応要件**: FR-023-1A
+
+- [ ] **TASK-1705**: E2E & API テスト拡張（0.5d）
   - `backend/tests/e2e/test_fi_dashboard.py` に登録→表示→補完を走らせるシナリオを追加
   - API テスト `tests/integration/test_fire_snapshot_registration.py` を追加（登録 + 線形補完 + invalid 入力）
   - `TS-041〜TS-044` に対応するテストケースをコード側でも補強
 
-**成果物**: DB マイグレーション、補完インフラ、登録 API/MCP、テスト・ドキュメント更新
+**成果物**: DB マイグレーション、補完インフラ、登録 API/MCP、CSV年間支出算出、テスト・ドキュメント更新
 
 ## 進捗ログ
 
