@@ -5,8 +5,15 @@ from __future__ import annotations
 from typing import Any
 
 from household_mcp.analysis import FinancialIndependenceAnalyzer
+from household_mcp.database.manager import DatabaseManager
+from household_mcp.services.fire_snapshot import FireSnapshotService
 
+# Legacy analyzer for backward compatibility
 analyzer = FinancialIndependenceAnalyzer()
+
+# Database-backed service for real data access
+db_manager = DatabaseManager()
+fire_service = FireSnapshotService(db_manager)
 
 
 def get_financial_independence_status(
@@ -25,34 +32,36 @@ def get_financial_independence_status(
         FIRE progress information with Japanese text
 
     """
-    current_assets = 5000000
-    annual_expense = 1000000
-    asset_history = [float(5000000 + (i * 50000)) for i in range(period_months)]
+    # データベースから実データを取得
+    status_data = fire_service.get_status(snapshot_date=None, months=period_months)
 
-    status = analyzer.get_status(
-        current_assets=current_assets,
-        target_assets=25000000,
-        annual_expense=annual_expense,
-        asset_history=asset_history,
-    )
+    snapshot = status_data["snapshot"]
+    fi_progress = status_data["fi_progress"]
+
+    current_assets = snapshot["total"]
+    annual_expense = fi_progress["annual_expense"]
+    progress_rate = fi_progress["progress_rate"]
+    fire_target = fi_progress["fire_target"]
+    monthly_growth_rate = fi_progress.get("monthly_growth_rate")
+    months_to_fi = fi_progress.get("months_to_fi")
 
     return {
-        "message": (f"あなたのFIRE進度は現在 {status['progress_rate']:.1f}% です"),
-        "progress_rate": status["progress_rate"],
-        "fire_target": status["fire_target"],
+        "message": (f"あなたのFIRE進度は現在 {progress_rate:.1f}% です"),
+        "progress_rate": progress_rate,
+        "fire_target": fire_target,
         "current_assets": current_assets,
         "annual_expense": annual_expense,
-        "monthly_growth_rate": (
-            status["growth_analysis"]["monthly_growth_rate"]
-            if status["growth_analysis"]
-            else None
-        ),
-        "months_to_fi": status["months_to_fi"],
+        "monthly_growth_rate": monthly_growth_rate,
+        "months_to_fi": months_to_fi,
         "years_to_fi": (
-            round(status["months_to_fi"] / 12, 1) if status["months_to_fi"] else None
+            round(months_to_fi / 12, 1)
+            if months_to_fi is not None and months_to_fi > 0
+            else (0.0 if months_to_fi == 0 else None)
         ),
-        "is_achieved": status["is_achieved"],
-        "details": status,
+        "is_achieved": fi_progress.get("is_achievable", False),
+        "snapshot_date": snapshot["snapshot_date"],
+        "is_interpolated": snapshot["is_interpolated"],
+        "details": status_data,
     }
 
 
@@ -366,8 +375,8 @@ def submit_asset_record(
             "message": f"資産種別は {valid_types} のいずれかである必要があります",
         }
 
-    # TODO: Save to database
-    # This would normally:
+    # NOTE: Database persistence not yet implemented
+    # Future implementation will:
     # 1. Save the asset record
     # 2. Recalculate FIRE progress
     # 3. Return updated metrics
