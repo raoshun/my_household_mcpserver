@@ -131,8 +131,8 @@ class IncomeAnalyzer:
 
         # 日付でフィルタリング
         income_records = income_records[
-            (income_records["日付"] >= start_date)
-            & (income_records["日付"] <= end_date)
+            (income_records["日付"] >= pd.Timestamp(start_date))
+            & (income_records["日付"] <= pd.Timestamp(end_date))
         ]
 
         return income_records
@@ -188,9 +188,9 @@ class IncomeAnalyzer:
         if month == 12:
             end_date = date(year, 12, 31)
         else:
-            next_month = date(year, month + 1, 1)
-            end_date = date(next_month.year, next_month.month, 1) - pd.Timedelta(days=1)
-            end_date = end_date.date()
+            next_month_start = date(year, month + 1, 1)
+            end_timestamp = pd.Timestamp(next_month_start) - pd.Timedelta(days=1)
+            end_date = end_timestamp.date()
 
         # 収入レコードを抽出
         income_records = self.extract_income_records(start_date, end_date)
