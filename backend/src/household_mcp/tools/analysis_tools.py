@@ -13,12 +13,8 @@ from ..analysis.enhanced_fire_simulator import (
     FIREType,
 )
 from ..analysis.income_analyzer import IncomeAnalyzer
-from ..analysis.real_estate_cashflow_analyzer import (
-    RealEstateCashflowAnalyzer,
-)
-from ..analysis.savings_rate_calculator import (
-    SavingsRateCalculator,
-)
+from ..analysis.real_estate_cashflow_analyzer import RealEstateCashflowAnalyzer
+from ..analysis.savings_rate_calculator import SavingsRateCalculator
 from ..dataloader import HouseholdDataLoader
 
 

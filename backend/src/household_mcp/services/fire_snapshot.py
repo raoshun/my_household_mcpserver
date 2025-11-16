@@ -510,6 +510,10 @@ class FireSnapshotService:
         try:
             # Get all available months
             available_months = list(self.data_loader.iter_available_months())
+            logger.debug(
+                "Available months from data_loader: %s",
+                available_months,
+            )
             if not available_months:
                 return None
 
@@ -521,6 +525,11 @@ class FireSnapshotService:
                 for y, m in available_months
                 if (y, m) <= (target_year, target_month)
             ]
+            logger.debug(
+                "Valid months for snapshot %s: %s",
+                snapshot_date,
+                valid_months,
+            )
 
             if not valid_months:
                 return None

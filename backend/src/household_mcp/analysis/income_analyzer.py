@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 
@@ -337,11 +338,10 @@ class IncomeAnalyzer:
         # 前年比を計算
         previous_period_change = self._calculate_previous_year_change(year)
 
-        # 月平均
-        months_with_data = income_records["日付"].dt.to_period("M").nunique()
+        # 月平均（年次は12ヶ月で平均化）
         average_monthly = (
-            (total_income / months_with_data).quantize(Decimal("0.01"))
-            if months_with_data > 0
+            (total_income / Decimal("12")).quantize(Decimal("0.01"))
+            if total_income > 0
             else Decimal("0")
         )
 
@@ -405,20 +405,47 @@ class IncomeAnalyzer:
 
         """
         try:
-            current_summary = self.get_annual_summary(year)
-            prev_summary = self.get_annual_summary(year - 1)
+            current_total = self._compute_annual_total(year)
+            prev_total = self._compute_annual_total(year - 1)
 
-            if prev_summary.total_income == 0:
+            if prev_total == 0:
                 return None
 
-            change = (
-                (current_summary.total_income - prev_summary.total_income)
-                / prev_summary.total_income
-                * 100
-            )
+            change = ((current_total - prev_total) / prev_total) * 100
             return change.quantize(Decimal("0.01"))
         except Exception:
             return None
+
+    def _compute_annual_total(self, year: int) -> Decimal:
+        """
+        年指定の総収入合計のみを計算（副作用なし、再帰回避用）
+
+        Args:
+            year: 年
+
+        Returns:
+            総収入（Decimal）。データがない場合は Decimal("0")。
+
+        """
+        start_date = date(year, 1, 1)
+        end_date = date(year, 12, 31)
+
+        income_records = self.extract_income_records(start_date, end_date)
+        if income_records.empty:
+            return Decimal("0")
+
+        income_records["income_category"] = income_records.apply(
+            self.classify_income, axis=1
+        )
+
+        total = Decimal("0")
+        for cat in IncomeCategory.all_categories():
+            cat_sum = income_records[income_records["income_category"] == cat][
+                "金額（円）"
+            ].sum()
+            total += Decimal(str(cat_sum))
+
+        return total
 
     def _load_category_rules(self) -> dict:
         """
@@ -544,14 +571,14 @@ class IncomeAnalyzer:
 
             if snapshot:
                 # 更新
-                snapshot.salary_income = salary
-                snapshot.business_income = business
-                snapshot.real_estate_income = real_estate
-                snapshot.dividend_income = dividend
-                snapshot.other_income = other
-                snapshot.total_income = total
-                snapshot.savings_rate = None  # 将来の拡張用
-                snapshot.updated_at = datetime.now()
+                snapshot.salary_income = salary  # type: ignore[assignment]
+                snapshot.business_income = business  # type: ignore[assignment]
+                snapshot.real_estate_income = real_estate  # type: ignore[assignment]
+                snapshot.dividend_income = dividend  # type: ignore[assignment]
+                snapshot.other_income = other  # type: ignore[assignment]
+                snapshot.total_income = total  # type: ignore[assignment]
+                snapshot.savings_rate = None  # type: ignore[assignment] 将来の拡張用
+                snapshot.updated_at = datetime.now()  # type: ignore[assignment]
             else:
                 # 新規挿入
                 snapshot = IncomeSnapshot(
@@ -583,15 +610,22 @@ class IncomeAnalyzer:
         """
         year, month = map(int, snapshot.snapshot_month.split("-"))
 
+        salary_val = cast(int, snapshot.salary_income)
+        business_val = cast(int, snapshot.business_income)
+        real_estate_val = cast(int, snapshot.real_estate_income)
+        dividend_val = cast(int, snapshot.dividend_income)
+        other_val = cast(int, snapshot.other_income)
+        total_val = cast(int, snapshot.total_income)
+
         category_breakdown = {
-            IncomeCategory.SALARY: Decimal(snapshot.salary_income),
-            IncomeCategory.BUSINESS: Decimal(snapshot.business_income),
-            IncomeCategory.REAL_ESTATE: Decimal(snapshot.real_estate_income),
-            IncomeCategory.DIVIDEND: Decimal(snapshot.dividend_income),
-            IncomeCategory.OTHER: Decimal(snapshot.other_income),
+            IncomeCategory.SALARY: Decimal(salary_val),
+            IncomeCategory.BUSINESS: Decimal(business_val),
+            IncomeCategory.REAL_ESTATE: Decimal(real_estate_val),
+            IncomeCategory.DIVIDEND: Decimal(dividend_val),
+            IncomeCategory.OTHER: Decimal(other_val),
         }
 
-        total = Decimal(snapshot.total_income)
+        total = Decimal(total_val)
 
         # 構成比率を計算
         category_ratios = {}

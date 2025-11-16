@@ -432,5 +432,9 @@ class TestRecalculateFICacheIntegration:
         # Execute: Call with snapshot_date
         fire_service._recalculate_fi_cache(mock_session, date(2024, 12, 31))
 
-        # Verify: CSV calculation should be called
+        # Verify: CSV calculation should be called and cache updated
+        # CSV-based expense calculation should be performed
         mock_data_loader.load_many.assert_called_once()
+        # And the FIRE calculator should be called with the CSV-based annual
+        # expense value (12 mo * 100k = 1,200,000)
+        mock_calculator_class.calculate_fire_target.assert_called_once_with(1_200_000.0)

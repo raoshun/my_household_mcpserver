@@ -265,6 +265,22 @@ async def test_image_streamer_large_image():
     assert chunk_count > 1  # Should be chunked
 
 
+def test_image_streamer_stream_bytes_sync():
+    """Test synchronous streaming iterator produces same chunks as async."""
+    from household_mcp.streaming.image_streamer import ImageStreamer
+
+    streamer = ImageStreamer(chunk_size=5)
+    test_data = b"0123456789"  # 10 bytes
+
+    # Collect chunks from sync generator
+    sync_chunks = list(streamer.stream_bytes_sync(test_data, delay_ms=0))
+
+    # Should be split into 2 chunks
+    assert len(sync_chunks) == 2
+    assert sync_chunks[0] == b"01234"
+    assert sync_chunks[1] == b"56789"
+
+
 def test_global_cache_singleton():
     """Test that global cache is properly initialized and accessible.
 

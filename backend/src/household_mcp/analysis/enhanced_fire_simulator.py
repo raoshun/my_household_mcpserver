@@ -34,10 +34,10 @@ class FIREScenario:
     fire_type: FIREType
     initial_assets: Decimal
     monthly_savings: Decimal
-    annual_expense: Decimal
-    annual_return_rate: Decimal
-    inflation_rate: Decimal
-    passive_income: Decimal
+    annual_expense: Decimal = Decimal("4000000")
+    annual_return_rate: Decimal = Decimal("0.05")
+    inflation_rate: Decimal = Decimal("0.02")
+    passive_income: Decimal = Decimal("0")
     part_time_income: Decimal | None = None
     side_income: Decimal | None = None
     expense_growth_rate: Decimal | None = None

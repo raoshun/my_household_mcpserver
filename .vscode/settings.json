@@ -49,5 +49,6 @@
         "copilot/oswe-vscode-secondary"
       ]
     }
-  }
+  },
+  "accessibility.openChatEditedFiles": false
 }

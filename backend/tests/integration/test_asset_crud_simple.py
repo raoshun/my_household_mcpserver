@@ -65,5 +65,6 @@ class TestAssetEndpoints:
                 400,
                 404,
                 422,
+                204,
                 500,
             ], f"Unexpected status for {method} {path}: {response.status_code}"

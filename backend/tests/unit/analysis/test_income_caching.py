@@ -5,10 +5,7 @@ from decimal import Decimal
 
 import pytest
 
-from household_mcp.analysis.income_analyzer import (
-    IncomeAnalyzer,
-    IncomeCategory,
-)
+from household_mcp.analysis.income_analyzer import IncomeAnalyzer, IncomeCategory
 from household_mcp.database.manager import DatabaseManager
 from household_mcp.database.models import IncomeSnapshot
 from household_mcp.dataloader import HouseholdDataLoader

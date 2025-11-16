@@ -57,6 +57,26 @@ class ImageStreamer:
             if delay_ms > 0:
                 await asyncio.sleep(delay_ms)
 
+    def stream_bytes_sync(self, image_data: bytes, delay_ms: float = 0.01):
+        """
+        Synchronous iterator version of stream_bytes.
+
+        This can be used from blocking contexts to avoid asyncio.run errors
+        when an event loop is already active.
+
+        Yields:
+            Chunks of image data as bytes.
+
+        """
+
+        import time
+
+        for i in range(0, len(image_data), self.chunk_size):
+            chunk = image_data[i : i + self.chunk_size]
+            yield chunk
+            if delay_ms > 0:
+                time.sleep(delay_ms)
+
     async def stream_from_buffer(
         self, buffer: io.BytesIO, delay_ms: float = 0.01
     ) -> AsyncGenerator[bytes, None]:
@@ -111,11 +131,20 @@ class ImageStreamer:
         if filename:
             headers["Content-Disposition"] = f'inline; filename="{filename}"'
 
-        return StreamingResponse(
-            self.stream_bytes(image_data),
-            media_type=media_type,
-            headers=headers,
-        )
+        # If an asyncio event loop is running, use the async generator.
+        # Otherwise fall back to a synchronous iterator to avoid event loop
+        # collisions.
+        # fall back to the synchronous iterator. This avoids calling
+        # ``asyncio.run`` from executing contexts that already have a loop.
+        try:
+            asyncio.get_running_loop()
+            # Running inside an event loop — use async generator
+            body = self.stream_bytes(image_data)
+        except RuntimeError:
+            # No running loop — use sync generator
+            body = self.stream_bytes_sync(image_data)
+
+        return StreamingResponse(body, media_type=media_type, headers=headers)
 
     @staticmethod
     def bytes_to_buffer(image_bytes: bytes) -> io.BytesIO:
