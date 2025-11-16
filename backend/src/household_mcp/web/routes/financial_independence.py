@@ -7,10 +7,11 @@ FIRE進捗追跡、シナリオ投影、支出分類、改善提案に関する�
 from __future__ import annotations
 
 from datetime import date as dt_date
+from decimal import Decimal
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from household_mcp.analysis import FinancialIndependenceAnalyzer
 from household_mcp.database.manager import DatabaseManager
@@ -18,6 +19,10 @@ from household_mcp.services.fire_snapshot import (
     FireSnapshotRequest,
     FireSnapshotService,
     SnapshotNotFoundError,
+)
+from household_mcp.tools.phase16_tools import (
+    simulate_fire_scenarios,
+    what_if_fire_simulation,
 )
 
 router = APIRouter(prefix="/api/financial-independence", tags=["FIRE"])
@@ -414,3 +419,83 @@ async def get_fire_snapshot(
         raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"取得エラー: {e!s}") from e
+
+
+# ==================== 強化FIREシミュレーション ====================
+
+
+class FIREScenarioRequest(BaseModel):
+    """FIREシナリオリクエスト."""
+
+    name: str = Field(..., description="シナリオ名")
+    current_assets: Decimal = Field(..., description="現在資産額（円）")
+    monthly_savings: Decimal = Field(..., description="月次貯蓄額（円）")
+    annual_expense: Decimal = Field(..., description="年間支出額（円）")
+    annual_return_rate: Decimal = Field(..., description="年利回り（小数）")
+    fire_type: str = Field(..., description="FIREタイプ（STANDARD/COAST/BARISTA/SIDE）")
+    inflation_rate: Decimal = Field(default=Decimal("0"), description="インフレ率")
+    passive_income: Decimal = Field(default=Decimal("0"), description="不労所得")
+    part_time_income: Decimal | None = Field(
+        default=None, description="パート収入（BARISTA）"
+    )
+    side_income: Decimal | None = Field(default=None, description="副業収入（SIDE）")
+
+
+class FIREScenariosRequest(BaseModel):
+    """複数シナリオ一括シミュレーションリクエスト."""
+
+    scenarios: list[FIREScenarioRequest] = Field(
+        ..., max_length=5, description="シナリオリスト（最大5件）"
+    )
+
+
+class WhatIfRequest(BaseModel):
+    """What-If分析リクエスト."""
+
+    base_scenario: FIREScenarioRequest = Field(..., description="ベースシナリオ")
+    changes: dict[str, Decimal] = Field(
+        ..., description="変更パラメータ（monthly_savings, annual_return_rate等）"
+    )
+
+
+@router.post("/scenarios")
+async def simulate_fire(request: FIREScenariosRequest) -> dict[str, Any]:
+    """
+    複数シナリオを一括シミュレーション.
+
+    Args:
+        request: シナリオリクエスト
+
+    Returns:
+        シミュレーション結果辞書
+
+    """
+    try:
+        scenarios = [s.model_dump() for s in request.scenarios]
+        return simulate_fire_scenarios(scenarios)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.post("/what-if")
+async def what_if_fire(request: WhatIfRequest) -> dict[str, Any]:
+    """
+    What-If分析を実行.
+
+    Args:
+        request: What-Ifリクエスト
+
+    Returns:
+        影響分析結果辞書
+
+    """
+    try:
+        base_scenario = request.base_scenario.model_dump()
+        changes = {k: v for k, v in request.changes.items()}
+        return what_if_fire_simulation(base_scenario, changes)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e

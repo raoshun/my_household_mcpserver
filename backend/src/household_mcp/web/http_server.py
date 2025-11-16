@@ -106,10 +106,14 @@ def create_http_app(
 
     # Include existing routers from routes module
     from household_mcp.web.routes import assets_router, fi_router, transactions_router
+    from household_mcp.web.routes.income_analysis_routes import (
+        router as income_analysis_router,
+    )
 
     app.include_router(assets_router)
     app.include_router(fi_router)
     app.include_router(transactions_router)
+    app.include_router(income_analysis_router)
 
     # Store cache and streamer as app state for external access
     app.state.chart_cache = chart_cache
