@@ -3399,17 +3399,38 @@ backend/src/household_mcp/visualization/
 
 ### Phase 3: 高度機能・統合（4-5日）
 
-- [ ] **TASK-2009**: What-Ifシミュレーション（1.0d）
-- [ ] **TASK-2010**: MCPツール実装（1.0d）
-- [ ] **TASK-2011**: REST API実装（0.75d）
-- [ ] **TASK-2012**: 統合テスト（1.0d）
+- [x] **TASK-2009**: What-Ifシミュレーション（1.0d）
+- [x] **TASK-2010**: MCPツール実装（1.0d）
+- [x] **TASK-2011**: REST API実装（0.75d）
+  - 完了日: 2025-11-17
+  - 実績: `/api/financial-independence/scenarios`, `/api/financial-independence/what-if` 実装完了
+  - annual_expense を必須とする修正（FIREScenario, tools, routes）を含む
+- [x] **TASK-2012**: 統合テスト（1.0d）
+  - 完了日: 2025-11-17
+  - 実績: `tests/integration/test_fire_scenarios_api.py` の 6 テスト全て PASSED
+    - うち what-if テストでは annual_expense と変更サマリ構造を検証
+  - ⚠️ 注意: プロジェクト全体のカバレッジは 18%（閾値 80% 未達）。次タスク TASK-2017 で計画。
 - [ ] **TASK-2013**: ドキュメント整備（0.75d）
+  - FR-035/036 を requirements.md, design.md に追記完了（2025-11-17）
+  - 残作業: README/examples/docs での analysis_tools 参照更新、What-If 例文追加
 
 ### Phase 4: データベース・インフラ（並行作業）
 
 - [ ] **TASK-2014**: income_snapshots テーブル作成（0.5d）
 - [ ] **TASK-2015**: キャッシング実装（0.5d）
 
-**合計**: 15タスク、11-14日（2-3週間）
+### Phase 5: メンテナンス・クリーンアップ（新規）
 
-詳細は design_phase16.md を参照。
+- [x] **TASK-2016**: 命名統一リファクタ（FR-035）（0.5d）
+  - 完了日: 2025-11-17
+  - phase16_tools.py 削除完了（互換性不要と判断）
+  - 全参照は analysis_tools に統一済み（ルータ/ツール/ドキュメント）
+  - lintエラー整理（long lines等）対応済み
+- [ ] **TASK-2017**: カバレッジ回復計画（FR-029）（1.5d）
+  - 選択肢A: 必須領域（analysis, tools, routes）への最小限テスト追加
+  - 選択肢B: fail_under を一時的に下げる + カバレッジ厳格ジョブを別途追加
+  - 目標: CI/CDで80%閾値を満たす OR 開発中は緩和して後から回復
+
+**合計**: 17タスク（TASK-2016/2017追加）、約13-16日
+
+詳細は design_phase16.md 参照。

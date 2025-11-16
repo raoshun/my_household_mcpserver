@@ -1,7 +1,7 @@
 # 家計簿分析 MCP サーバー設計書
 
 - **バージョン**: 1.0.0（フェーズ16: 収入分析・強化FIRE計算）
-- **更新日**: 2025-11-16
+- **更新日**: 2025-11-17
 - **作成者**: GitHub Copilot (AI assistant)
 - **対象要件**: [requirements.md](./requirements.md) v1.6 に記載の FR-032〜FR-034、NFR-037〜NFR-042
 - **実装状況**:
@@ -25,6 +25,19 @@
                                       │  CSV データ / ローカルFS │
                                       └────────────────────────┘
 ```
+
+### Phase 16 更新点（要約） — FR-035, FR-036
+
+- 公開ファサード: 分析系ツールは `household_mcp.tools.analysis_tools` に統一（FR-035）。
+  - 旧 `household_mcp.tools.phase16_tools` は削除済み（2025-11-17、後方互換性不要と判断）。
+  - Web ルータ/ツール登録は `analysis_tools` を参照。
+- FIRE What-If: `annual_expense` を第一級の入力として必須化（FR-036）。
+  - `FIREScenario` に `annual_expense: Decimal` を追加／必須。
+  - `EnhancedFIRESimulator.simulate_scenario` / `what_if_simulation` は `annual_expense` を `calculate_fire_target` に渡す。
+  - What-If の変更サマリ（before/after/impact）を返す最小限の構造を維持。
+  - Pydantic の API 入力モデルでも `annual_expense` を必須・>0 検証。
+
+---
 
 ## Phase 15 - 高度な分析機能（詳細設計）
 

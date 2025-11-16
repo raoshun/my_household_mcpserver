@@ -6,7 +6,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Path, Query
 
-from household_mcp.tools.phase16_tools import (
+from household_mcp.tools.analysis_tools import (
     generate_comprehensive_cashflow_report,
     get_annual_income_summary,
     get_income_summary,

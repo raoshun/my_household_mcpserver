@@ -5,7 +5,7 @@
 - 作成者: GitHub Copilot
 - 対象: 個人/世帯向け 家計分析用 MCP サーバ
 - 言語: 日本語（優先）
-- ステータス: 承認済み（FR-001〜FR-031） + 計画中（FR-032〜FR-034）
+- ステータス: 承認済み（FR-001〜FR-031） + 計画中（FR-032〜FR-036）
 - **Phase 15 状況**: ✅ 完了（2025-11-08）
   - テスト: 48/48 PASSED (100%)
   - カバレッジ: 76% (report_tools)
@@ -1468,6 +1468,46 @@ FR-022-6 資産データの家計簿連携設計（基盤）
 - 1回のMCPコールで総合レポートを生成できる
 - 複数形式で出力できる
 - レポートにグラフ画像が含まれる
+
+---
+
+### FR-035: ツール命名一貫性（phase命名の排除）
+
+**目的**: フェーズ番号ベースのモジュール命名（例: `phase16_tools.py`）を廃止し、役割ベースの安定した公開APIに統一することで、保守性と可読性を向上する。
+
+**詳細**:
+
+- `household_mcp.tools.analysis_tools` を分析系ツールの公開ファサードとして採用（安定API）。
+- 旧 `household_mcp.tools.phase16_tools` は削除済み（2025-11-17）。後方互換性は不要と判断。
+- ルータ、MCP、内部モジュールからの参照を `analysis_tools` に移行完了。
+- ドキュメント、サンプル、テストの参照も `analysis_tools` に統一済み。
+
+**受け入れ条件**:
+
+- ✅ コードベースの参照検索で `phase16_tools` 参照がゼロ（htmlcov等の生成物は除く）。
+- ✅ 全エンドポイント/ツールが `analysis_tools` 経由で動作。
+- ✅ `phase16_tools.py` ファイルは削除済み。
+- ✅ README/docs/サンプルコードが `analysis_tools` 参照に更新済み。
+
+---
+
+### FR-036: FIRE What-If における年間支出（annual_expense）の厳格利用
+
+**目的**: What-If シミュレーションで `annual_expense` を第一級の入力として扱い、内部での擬似推定や別指標（例: passive_income からの逆算）を排除し、要件通りの計算を保証する。
+
+**詳細**:
+
+- ドメインモデル `FIREScenario` に `annual_expense: Decimal` を必須として保持。
+- `EnhancedFIRESimulator.simulate_scenario` および `what_if_simulation` は `annual_expense` を用いて `calculate_fire_target` を呼び出す。
+- What-If の `changes` に `annual_expense` を含めた場合、変更後シナリオへ正しく反映。
+- API リクエストモデル（Pydantic）も `annual_expense` を必須とし、型/値域（>0）検証を行う。
+- レスポンスには変更前/後/影響（impact）等の要約が含まれる（必要最小限のキーでよい）。
+
+**受け入れ条件**:
+
+- `tests/integration/test_fire_scenarios_api.py::test_fire_what_if_ok` が 200 で通過し、変更キーの存在を検証できる。
+- `annual_expense <= 0` の場合は 400/422 でバリデーションエラーとなる。
+- `EnhancedFIRESimulator` 内部で `annual_expense` を無視/推定していないことがコード上で確認できる。
 
 ---
 

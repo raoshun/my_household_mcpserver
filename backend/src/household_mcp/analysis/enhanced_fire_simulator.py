@@ -34,6 +34,7 @@ class FIREScenario:
     fire_type: FIREType
     initial_assets: Decimal
     monthly_savings: Decimal
+    annual_expense: Decimal
     annual_return_rate: Decimal
     inflation_rate: Decimal
     passive_income: Decimal
@@ -187,11 +188,12 @@ class EnhancedFIRESimulator:
         # 目標資産額を計算
         target_assets = self.calculate_fire_target(
             fire_type=scenario.fire_type,
-            annual_expense=(scenario.passive_income * Decimal("25")),
-            # Note: ここでは簡易的に受動的収入をベースに支出を推定
+            annual_expense=scenario.annual_expense,
             passive_income=scenario.passive_income,
             part_time_income=scenario.part_time_income,
             side_income=scenario.side_income,
+            current_assets=scenario.initial_assets,
+            annual_return_rate=scenario.annual_return_rate,
         )
 
         # 月次シミュレーション
@@ -330,6 +332,7 @@ class EnhancedFIRESimulator:
             monthly_savings=changes.get(
                 "monthly_savings", base_scenario.monthly_savings
             ),
+            annual_expense=changes.get("annual_expense", base_scenario.annual_expense),
             annual_return_rate=changes.get(
                 "annual_return_rate", base_scenario.annual_return_rate
             ),

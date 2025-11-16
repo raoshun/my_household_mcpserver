@@ -20,7 +20,7 @@ from household_mcp.services.fire_snapshot import (
     FireSnapshotService,
     SnapshotNotFoundError,
 )
-from household_mcp.tools.phase16_tools import (
+from household_mcp.tools.analysis_tools import (
     simulate_fire_scenarios,
     what_if_fire_simulation,
 )
