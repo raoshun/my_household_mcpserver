@@ -6,13 +6,18 @@
 
 import json
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
 
 import pandas as pd
 
+from household_mcp.database.manager import DatabaseManager
+from household_mcp.database.models import IncomeSnapshot
 from household_mcp.dataloader import HouseholdDataLoader
+
+# NFR-040: キャッシュ有効期間（秒） - 1時間
+CACHE_TTL_SECONDS = 3600
 
 
 class IncomeCategory:
@@ -68,15 +73,21 @@ class IncomeSummary:
 class IncomeAnalyzer:
     """収入分析エンジン"""
 
-    def __init__(self, data_loader: HouseholdDataLoader):
+    def __init__(
+        self,
+        data_loader: HouseholdDataLoader,
+        db_manager: DatabaseManager | None = None,
+    ):
         """
         Initialize IncomeAnalyzer.
 
         Args:
             data_loader: 家計簿データローダー
+            db_manager: データベースマネージャー（キャッシング用、省略時は無効）
 
         """
         self.data_loader = data_loader
+        self.db_manager = db_manager
         self.category_rules = self._load_category_rules()
 
     def extract_income_records(self, start_date: date, end_date: date) -> pd.DataFrame:
@@ -175,7 +186,7 @@ class IncomeAnalyzer:
         self, year: int, month: int, *, include_previous_change: bool = True
     ) -> IncomeSummary:
         """
-        月次収入サマリーを取得
+        月次収入サマリーを取得（キャッシュ対応 - TASK-2015）
 
         Args:
             year: 年
@@ -186,13 +197,20 @@ class IncomeAnalyzer:
             IncomeSummary
 
         """
+        # キャッシュチェック（NFR-040: 1時間有効）
+        cached_snapshot = self._get_cached_snapshot(year, month)
+        if cached_snapshot is not None:
+            return self._load_summary_from_snapshot(cached_snapshot)
+
+        # キャッシュミス - CSVから計算
         start_date = date(year, month, 1)
         # 月末日を取得
         if month == 12:
             end_date = date(year, 12, 31)
         else:
             next_month_start = date(year, month + 1, 1)
-            end_timestamp = pd.Timestamp(next_month_start) - pd.Timedelta(days=1)
+            next_month_ts = pd.Timestamp(next_month_start)
+            end_timestamp = next_month_ts - pd.Timedelta(days=1)
             end_date = end_timestamp.date()
 
         # 収入レコードを抽出
@@ -240,19 +258,24 @@ class IncomeAnalyzer:
 
         # 前月比を計算（無限再帰を防ぐため条件付き）
         if include_previous_change:
-            previous_period_change = self._calculate_previous_month_change(year, month)
+            prev_change = self._calculate_previous_month_change(year, month)
         else:
-            previous_period_change = None
+            prev_change = None
 
-        return IncomeSummary(
+        summary = IncomeSummary(
             year=year,
             month=month,
             total_income=total_income,
             category_breakdown=category_breakdown,
             category_ratios=category_ratios,
-            previous_period_change=previous_period_change,
+            previous_period_change=prev_change,
             average_monthly=None,
         )
+
+        # キャッシュに保存
+        self._save_snapshot_to_cache(summary)
+
+        return summary
 
     def get_annual_summary(self, year: int) -> IncomeSummary:
         """
@@ -430,7 +453,8 @@ class IncomeAnalyzer:
         }
 
         # カスタムルールファイルを探す
-        config_path = Path(__file__).parent.parent / "config" / "income_categories.json"
+        project_root = Path(__file__).parent.parent
+        config_path = project_root / "config" / "income_categories.json"
 
         if config_path.exists():
             try:
@@ -443,3 +467,147 @@ class IncomeAnalyzer:
                 pass
 
         return default_rules
+
+    def _get_cached_snapshot(self, year: int, month: int) -> IncomeSnapshot | None:
+        """
+        キャッシュから収入スナップショットを取得（TASK-2015）
+
+        Args:
+            year: 年
+            month: 月
+
+        Returns:
+            キャッシュされたスナップショット（存在しない or 期限切れの場合はNone）
+
+        """
+        if self.db_manager is None:
+            return None
+
+        snapshot_month = f"{year:04d}-{month:02d}"
+
+        with self.db_manager.get_session() as session:
+            snapshot = (
+                session.query(IncomeSnapshot)
+                .filter(IncomeSnapshot.snapshot_month == snapshot_month)
+                .first()
+            )
+
+            if snapshot is None:
+                return None
+
+            # NFR-040: キャッシュ有効期間チェック（1時間）
+            now = datetime.now()
+            cache_age = (now - snapshot.updated_at).total_seconds()
+
+            if cache_age > CACHE_TTL_SECONDS:
+                # 期限切れ
+                return None
+
+            return snapshot
+
+    def _save_snapshot_to_cache(self, summary: IncomeSummary) -> None:
+        """
+        収入サマリーをキャッシュに保存（TASK-2015）
+
+        Args:
+            summary: 収入サマリー
+
+        """
+        if self.db_manager is None or summary.month is None:
+            return
+
+        snapshot_month = f"{summary.year:04d}-{summary.month:02d}"
+
+        # カテゴリ別金額を整数に変換（単位:円）
+        salary = int(
+            summary.category_breakdown.get(IncomeCategory.SALARY, Decimal("0"))
+        )
+        business = int(
+            summary.category_breakdown.get(IncomeCategory.BUSINESS, Decimal("0"))
+        )
+        real_estate = int(
+            summary.category_breakdown.get(IncomeCategory.REAL_ESTATE, Decimal("0"))
+        )
+        dividend = int(
+            summary.category_breakdown.get(IncomeCategory.DIVIDEND, Decimal("0"))
+        )
+        other = int(summary.category_breakdown.get(IncomeCategory.OTHER, Decimal("0")))
+        total = int(summary.total_income)
+
+        with self.db_manager.get_session() as session:
+            # Upsert: 既存レコードがあれば更新、なければ挿入
+            snapshot = (
+                session.query(IncomeSnapshot)
+                .filter(IncomeSnapshot.snapshot_month == snapshot_month)
+                .first()
+            )
+
+            if snapshot:
+                # 更新
+                snapshot.salary_income = salary
+                snapshot.business_income = business
+                snapshot.real_estate_income = real_estate
+                snapshot.dividend_income = dividend
+                snapshot.other_income = other
+                snapshot.total_income = total
+                snapshot.savings_rate = None  # 将来の拡張用
+                snapshot.updated_at = datetime.now()
+            else:
+                # 新規挿入
+                snapshot = IncomeSnapshot(
+                    snapshot_month=snapshot_month,
+                    salary_income=salary,
+                    business_income=business,
+                    real_estate_income=real_estate,
+                    dividend_income=dividend,
+                    other_income=other,
+                    total_income=total,
+                    savings_rate=None,
+                    created_at=datetime.now(),
+                    updated_at=datetime.now(),
+                )
+                session.add(snapshot)
+
+            session.commit()
+
+    def _load_summary_from_snapshot(self, snapshot: IncomeSnapshot) -> IncomeSummary:
+        """
+        スナップショットからIncomeSummaryを復元
+
+        Args:
+            snapshot: キャッシュされたスナップショット
+
+        Returns:
+            収入サマリー
+
+        """
+        year, month = map(int, snapshot.snapshot_month.split("-"))
+
+        category_breakdown = {
+            IncomeCategory.SALARY: Decimal(snapshot.salary_income),
+            IncomeCategory.BUSINESS: Decimal(snapshot.business_income),
+            IncomeCategory.REAL_ESTATE: Decimal(snapshot.real_estate_income),
+            IncomeCategory.DIVIDEND: Decimal(snapshot.dividend_income),
+            IncomeCategory.OTHER: Decimal(snapshot.other_income),
+        }
+
+        total = Decimal(snapshot.total_income)
+
+        # 構成比率を計算
+        category_ratios = {}
+        for cat, amount in category_breakdown.items():
+            if total > 0:
+                ratio = (amount / total * Decimal("100")).quantize(Decimal("0.01"))
+                category_ratios[cat] = ratio
+            else:
+                category_ratios[cat] = Decimal("0")
+
+        return IncomeSummary(
+            year=year,
+            month=month,
+            total_income=total,
+            category_breakdown=category_breakdown,
+            category_ratios=category_ratios,
+            previous_period_change=None,  # キャッシュには保存しない
+            average_monthly=None,
+        )

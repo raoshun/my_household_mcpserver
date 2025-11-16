@@ -372,6 +372,45 @@ class FireAssetSnapshot(Base):
         return f"<FireAssetSnapshot(id={self.id}, snapshot_date={self.snapshot_date})>"
 
 
+class IncomeSnapshot(Base):
+    """収入データスナップショットテーブル（TASK-2014）."""
+
+    __tablename__ = "income_snapshots"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    # YYYY-MM形式の年月キー（unique）
+    snapshot_month = Column(String(7), nullable=False, unique=True, index=True)
+
+    # 5カテゴリの収入額（整数、単位:円）
+    salary_income = Column(Integer, nullable=False, default=0)
+    business_income = Column(Integer, nullable=False, default=0)
+    real_estate_income = Column(Integer, nullable=False, default=0)
+    dividend_income = Column(Integer, nullable=False, default=0)
+    other_income = Column(Integer, nullable=False, default=0)
+
+    # 合計収入（計算値をキャッシュ）
+    total_income = Column(Integer, nullable=False)
+
+    # 貯蓄率（オプショナル、%表示用に0-100のREAL）
+    savings_rate = Column(Numeric(5, 2), nullable=True)
+
+    # タイムスタンプ
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+    __table_args__ = (
+        Index("idx_income_snapshot_month", "snapshot_month", unique=True),
+    )
+
+    def __repr__(self) -> str:
+        """文字列表現."""
+        return (
+            f"<IncomeSnapshot("
+            f"snapshot_month={self.snapshot_month}, "
+            f"total={self.total_income})>"
+        )
+
+
 class Budget(Base):
     """予算管理テーブル."""
 
