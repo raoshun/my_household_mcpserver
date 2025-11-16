@@ -176,9 +176,10 @@ class RealEstateCashflowAnalyzer:
             return pd.DataFrame()
 
         all_data = pd.concat(dfs, ignore_index=True)
-        # 日付範囲でフィルタ
+        # 日付範囲でフィルタ（pd.Timestampに変換）
         all_data = all_data[
-            (all_data["日付"] >= start_date) & (all_data["日付"] <= end_date)
+            (all_data["日付"] >= pd.Timestamp(start_date))
+            & (all_data["日付"] <= pd.Timestamp(end_date))
         ]
         return all_data
 

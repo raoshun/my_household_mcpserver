@@ -152,10 +152,11 @@ class TestAnnualSummary:
 
     def test_get_annual_summary_basic(self, income_analyzer):
         """基本的な年次サマリー取得"""
-        # 簡略化したデータで年次集計
+        # 各月異なる日付でデータ作成
+        dates = [f"2024-{m:02d}-15" for m in range(1, 13)]
         annual_data = pd.DataFrame(
             {
-                "日付": pd.to_datetime(["2024-01-15"] * 12),
+                "日付": pd.to_datetime(dates),
                 "金額（円）": [100000] * 12,
                 "計算対象": [1] * 12,
                 "大項目": ["給与"] * 12,
@@ -163,8 +164,13 @@ class TestAnnualSummary:
             }
         )
 
-        with patch.object(
-            income_analyzer, "extract_income_records", return_value=annual_data
+        with (
+            patch.object(
+                income_analyzer, "extract_income_records", return_value=annual_data
+            ),
+            patch.object(
+                income_analyzer, "_calculate_previous_year_change", return_value=None
+            ),
         ):
             summary = income_analyzer.get_annual_summary(2024)
 
