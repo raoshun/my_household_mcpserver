@@ -168,7 +168,9 @@ class HouseholdDataLoader:
 
     def _post_process(self, df: pd.DataFrame) -> pd.DataFrame:
         df = self._normalize_columns(df)
-        df = df.loc[(df["計算対象"] == 1) & (df["金額（円）"] < 0)].copy()
+        # Phase 16収入分析対応: 全データを返す（収入・支出両方）
+        # フィルタリングは各分析モジュール側で実施
+        df = df.loc[df["計算対象"] == 1].copy()
         df.sort_values(["日付", "大項目", "中項目"], inplace=True)
         df.reset_index(drop=True, inplace=True)
         return df

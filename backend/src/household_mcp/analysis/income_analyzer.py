@@ -171,13 +171,16 @@ class IncomeAnalyzer:
         # どれにも該当しない場合はその他収入
         return IncomeCategory.OTHER
 
-    def get_monthly_summary(self, year: int, month: int) -> IncomeSummary:
+    def get_monthly_summary(
+        self, year: int, month: int, *, include_previous_change: bool = True
+    ) -> IncomeSummary:
         """
         月次収入サマリーを取得
 
         Args:
             year: 年
             month: 月
+            include_previous_change: 前月比を計算するか（無限再帰回避用）
 
         Returns:
             IncomeSummary
@@ -235,8 +238,11 @@ class IncomeAnalyzer:
             else:
                 category_ratios[cat] = Decimal("0")
 
-        # 前月比を計算
-        previous_period_change = self._calculate_previous_month_change(year, month)
+        # 前月比を計算（無限再帰を防ぐため条件付き）
+        if include_previous_change:
+            previous_period_change = self._calculate_previous_month_change(year, month)
+        else:
+            previous_period_change = None
 
         return IncomeSummary(
             year=year,
@@ -345,8 +351,12 @@ class IncomeAnalyzer:
             prev_year, prev_month = year, month - 1
 
         try:
-            current_summary = self.get_monthly_summary(year, month)
-            prev_summary = self.get_monthly_summary(prev_year, prev_month)
+            current_summary = self.get_monthly_summary(
+                year, month, include_previous_change=False
+            )
+            prev_summary = self.get_monthly_summary(
+                prev_year, prev_month, include_previous_change=False
+            )
 
             if prev_summary.total_income == 0:
                 return None
