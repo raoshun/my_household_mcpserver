@@ -128,9 +128,11 @@ class SavingsRateCalculator:
         return SavingsMetrics(
             year=year,
             month=month,
-            income=income.quantize(_PERCENT_Q)
-            if isinstance(income, Decimal)
-            else Decimal(str(income)).quantize(_PERCENT_Q),
+            income=(
+                income.quantize(_PERCENT_Q)
+                if isinstance(income, Decimal)
+                else Decimal(str(income)).quantize(_PERCENT_Q)
+            ),
             expense=total_expense.quantize(_PERCENT_Q),
             savings=savings,
             savings_rate=savings_rate,
