@@ -357,7 +357,9 @@ class EnhancedFIRESimulator:
                 "savings_difference": float(savings_diff),
                 "improvement_pct": float(
                     (
-                        months_diff / base_result.months_to_fire * Decimal("100")
+                        Decimal(str(months_diff))
+                        / Decimal(str(base_result.months_to_fire))
+                        * Decimal("100")
                     ).quantize(_PERCENT_Q)
                 ),
             },
