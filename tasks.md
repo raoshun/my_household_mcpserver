@@ -3416,8 +3416,29 @@ backend/src/household_mcp/visualization/
 
 ### Phase 4: データベース・インフラ（並行作業）
 
-- [ ] **TASK-2014**: income_snapshots テーブル作成（0.5d）
-- [ ] **TASK-2015**: キャッシング実装（0.5d）
+- [x] **TASK-2014**: income_snapshots テーブル作成（0.5d）
+  - 完了日: 2025-11-17
+  - 実績:
+    - `backend/src/household_mcp/database/models.py`: IncomeSnapshot ORM モデル追加
+    - テーブル構造: snapshot_month (YYYY-MM, UNIQUE), 5つの収入カテゴリ列、total_income, savings_rate, timestamps
+    - Index: idx_income_snapshot_month (UNIQUE on snapshot_month)
+    - `backend/scripts/migrate_fi_tables.py`: income_snapshots 作成/削除/検証関数追加
+    - マイグレーション実行: ✅ 4テーブル全て検証完了 (expense_classification, fi_progress_cache, fire_asset_snapshots, income_snapshots)
+  - コミット: 97fd2fb
+
+- [x] **TASK-2015**: キャッシング実装（0.5d）
+  - 完了日: 2025-11-17
+  - 実績:
+    - `backend/src/household_mcp/analysis/income_analyzer.py` にキャッシング機能追加
+    - CACHE_TTL_SECONDS = 3600 (1時間、NFR-040 準拠)
+    - `get_monthly_summary()`: キャッシュファースト戦略 (cache check → load OR calculate → save)
+    - `_get_cached_snapshot()`: DB から snapshot 取得、TTL 検証（1時間以内）
+    - `_save_snapshot_to_cache()`: upsert パターン（UPDATE 先行、失敗時 INSERT）
+    - `_load_summary_from_snapshot()`: DB から IncomeSummary 復元
+    - db_manager 引数追加（optional、デフォルト None でグレースフルデグラデーション）
+    - テスト: `test_income_caching.py` (5/5 PASSED) - cache miss/hit/expiration/update/without-db
+    - カバレッジ: income_analyzer.py 27% → 78% (+51% ✅)
+  - コミット: 97fd2fb
 
 ### Phase 5: メンテナンス・クリーンアップ（新規）
 
