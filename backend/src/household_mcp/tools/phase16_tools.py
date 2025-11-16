@@ -165,12 +165,16 @@ class Phase16Tools:
                         annual_return_rate=Decimal(str(s["annual_return_rate"])),
                         inflation_rate=Decimal(str(s.get("inflation_rate", "0"))),
                         passive_income=Decimal(str(s.get("passive_income", "0"))),
-                        part_time_income=Decimal(str(s["part_time_income"]))
-                        if s.get("part_time_income")
-                        else None,
-                        side_income=Decimal(str(s["side_income"]))
-                        if s.get("side_income")
-                        else None,
+                        part_time_income=(
+                            Decimal(str(s["part_time_income"]))
+                            if s.get("part_time_income")
+                            else None
+                        ),
+                        side_income=(
+                            Decimal(str(s["side_income"]))
+                            if s.get("side_income")
+                            else None
+                        ),
                     ),
                     annual_expense,
                 )
@@ -240,12 +244,16 @@ class Phase16Tools:
             annual_return_rate=Decimal(str(base_scenario["annual_return_rate"])),
             inflation_rate=Decimal(str(base_scenario["inflation_rate"])),
             passive_income=Decimal(str(base_scenario["passive_income"])),
-            part_time_income=Decimal(str(base_scenario["part_time_income"]))
-            if base_scenario.get("part_time_income")
-            else None,
-            side_income=Decimal(str(base_scenario["side_income"]))
-            if base_scenario.get("side_income")
-            else None,
+            part_time_income=(
+                Decimal(str(base_scenario["part_time_income"]))
+                if base_scenario.get("part_time_income")
+                else None
+            ),
+            side_income=(
+                Decimal(str(base_scenario["side_income"]))
+                if base_scenario.get("side_income")
+                else None
+            ),
         )
 
         fire_changes = {k: Decimal(str(v)) for k, v in changes.items()}
