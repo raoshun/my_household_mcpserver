@@ -124,8 +124,8 @@ class ChartGenerator:
 
 # Export all chart generators for direct use
 __all__ = [
-    "ChartGenerator",
-    "PieChartGenerator",
-    "LineChartGenerator",
     "BarChartGenerator",
+    "ChartGenerator",
+    "LineChartGenerator",
+    "PieChartGenerator",
 ]

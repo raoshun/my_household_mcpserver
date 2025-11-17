@@ -49,9 +49,9 @@ class TestAssetAPIEndpoints:
             # Endpoints must exist. Allow 204 / 200 / 4xx / 5xx. 404 is also
             # accepted here because some environments may return 404 for
             # missing records while still having the endpoint registered.
-            assert resp.status_code != 404 or method == "DELETE", (
-                f"{method} {path} not found (404)"
-            )
+            assert (
+                resp.status_code != 404 or method == "DELETE"
+            ), f"{method} {path} not found (404)"
 
     def test_post_validation_requires_fields(self, client: TestClient) -> None:
         """Test POST requires all mandatory fields."""

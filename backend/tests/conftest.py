@@ -14,6 +14,20 @@ def pytest_configure():
     if str(src_path) not in sys.path:
         sys.path.insert(0, str(src_path))
 
+    # Import the household_mcp package early and register an alias under
+    # `src.household_mcp` so coverage tools that use the src/ path map will
+    # recognize the module as imported. This prevents the coverage warning
+    # "Module src/household_mcp was never imported" when tests run with
+    # --cov=src/household_mcp.
+    try:
+        import importlib
+
+        pkg = importlib.import_module("household_mcp")
+        sys.modules["src.household_mcp"] = pkg
+    except Exception:
+        # Best-effort only; if import fails we do not want test collection to break
+        pass
+
     # Debug: Print dependency availability
     import os
 

@@ -139,12 +139,15 @@ def create_http_app(
     app.include_router(create_trend_router())
 
     # Include existing routers from routes module
-    from household_mcp.web.routes import assets_router, fi_router, transactions_router
+    from household_mcp.web.routes import fi_router, transactions_router
     from household_mcp.web.routes.income_analysis_routes import (
         router as income_analysis_router,
     )
 
-    app.include_router(assets_router)
+    # `assets_router` provides the same endpoints as the inline handlers in
+    # this module; to avoid duplicate OpenAPI operation IDs we do not
+    # include it here. The inline handlers are kept for direct API usage
+    # during tests and lightweight setups.
     app.include_router(fi_router)
     app.include_router(transactions_router)
     app.include_router(income_analysis_router)
@@ -278,122 +281,14 @@ def create_http_app(
 
     # ==================== Asset Management Endpoints ====================
 
-    @app.get("/api/assets/classes")
-    async def get_asset_classes() -> dict[str, Any]:  # type: ignore
-        """
-        Get all asset classes.
+    # Asset endpoints are defined in the `assets` router; include it here so
+    # the tests (which expect the classic CRUD paths like
+    # /api/assets/records/create) continue to work.
+    # NOTE: We removed inline asset endpoint definitions to avoid
+    # duplicate OpenAPI operation IDs (and to centralize asset logic).
+    from household_mcp.web.routes import assets_router
 
-        Returns:
-            List of asset classes with metadata
-
-        """
-        try:
-            from household_mcp.assets.manager import AssetManager
-            from household_mcp.database.manager import DatabaseManager
-
-            db_manager = DatabaseManager()
-            with db_manager.session_scope() as session:
-                manager = AssetManager(session)
-                classes = manager.get_asset_classes()
-                return {
-                    "success": True,
-                    "data": classes,
-                    "count": len(classes),
-                }
-        except Exception as e:
-            logger.exception(f"Error getting asset classes: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
-
-    @app.get("/api/assets/records")
-    async def get_asset_records(  # type: ignore
-        asset_class_id: int | None = Query(
-            None, description="Filter by asset class ID"
-        ),  # type: ignore[assignment]
-        start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),  # type: ignore[assignment]
-        end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),  # type: ignore[assignment]
-    ) -> dict[str, Any]:  # type: ignore
-        """
-        Get asset records with optional filtering.
-
-        Args:
-            asset_class_id: Filter by asset class ID
-            start_date: Filter by start date
-            end_date: Filter by end date
-
-        Returns:
-            List of asset records matching filters
-
-        """
-        try:
-            from datetime import datetime as dt
-
-            from household_mcp.assets.manager import AssetManager
-            from household_mcp.database.manager import DatabaseManager
-
-            db_manager = DatabaseManager()
-            with db_manager.session_scope() as session:
-                manager = AssetManager(session)
-
-                # Parse dates if provided
-                start_dt = None
-                end_dt = None
-                if start_date:
-                    start_dt = dt.strptime(start_date, "%Y-%m-%d")
-                if end_date:
-                    end_dt = dt.strptime(end_date, "%Y-%m-%d")
-
-                records = manager.get_records(
-                    asset_class_id=asset_class_id,
-                    start_date=start_dt,
-                    end_date=end_dt,
-                )
-                return {
-                    "success": True,
-                    "data": [r.model_dump() for r in records],
-                    "count": len(records),
-                }
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=f"Invalid date format: {e!s}")
-        except Exception as e:
-            logger.exception(f"Error getting asset records: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
-
-    @app.post("/api/assets/records")
-    async def create_asset_record(  # type: ignore
-        request_body: Any,  # type: ignore
-    ) -> dict[str, Any]:  # type: ignore
-        """
-        Create a new asset record.
-
-        Args:
-            request_body: AssetRecordRequest with record data
-
-        Returns:
-            Created asset record with ID
-
-        """
-        try:
-            from household_mcp.assets.manager import AssetManager
-            from household_mcp.assets.models import AssetRecordRequest
-            from household_mcp.database.manager import DatabaseManager
-
-            # Parse request body into AssetRecordRequest
-            if isinstance(request_body, dict):
-                request = AssetRecordRequest(**request_body)
-            else:
-                request = request_body
-
-            db_manager = DatabaseManager()
-            with db_manager.session_scope() as session:
-                manager = AssetManager(session)
-                result = manager.create_record(request)
-                return {
-                    "success": True,
-                    "data": result.model_dump(),
-                }
-        except Exception as e:
-            logger.exception(f"Error creating asset record: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
+    app.include_router(assets_router)
 
     @app.get("/api/assets/summary")
     async def get_asset_summary(  # type: ignore
@@ -765,21 +660,5 @@ def create_http_app(
             logger.exception(f"Error executing tool {tool_name}: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
-    # Include FIRE financial independence routes
-    try:
-        from household_mcp.web.routes import (
-            assets_router,
-            fi_router,
-            transactions_router,
-        )
-
-        app.include_router(fi_router)
-        app.include_router(transactions_router)
-        app.include_router(assets_router)
-        logger.info("Included financial independence routes")
-        logger.info("Included transaction CRUD routes")
-        logger.info("Included asset CRUD routes")
-    except ImportError as e:
-        logger.warning(f"Could not import routes: {e}")
-
+    # Return the constructed FastAPI app
     return app

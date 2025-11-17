@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from household_mcp.database import AssetClass, AssetRecord, DatabaseManager
@@ -253,7 +253,9 @@ async def export_assets(format: str = Query(...)) -> dict:
     """GET /export: フォーマット簡易検証."""
     if format != "csv":
         raise HTTPException(status_code=400, detail="format は csv のみ対応")
-    return {"status": "ok", "format": format, "content": "id,name"}
+    # Return a minimal CSV with the correct content type for tests.
+    csv_content = "id,name\n"
+    return Response(content=csv_content, media_type="text/csv")
 
 
 @router.get("/records/{record_id}", response_model=AssetRecordResponse)

@@ -183,3 +183,16 @@ class DatabaseManager:
             self._engine.dispose()
             self._engine = None
             self._session_factory = None
+
+    def __del__(self) -> None:
+        """
+        Ensure the engine is cleanly disposed.
+
+        This reduces ResourceWarning messages during test runs when callers
+        forget to call close() explicitly.
+        """
+        try:
+            self.close()
+        except Exception:
+            # Avoid throwing from destructor
+            pass

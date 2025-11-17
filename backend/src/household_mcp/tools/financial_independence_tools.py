@@ -7,7 +7,10 @@ from typing import Any
 from household_mcp.analysis import FinancialIndependenceAnalyzer
 from household_mcp.database.manager import DatabaseManager
 from household_mcp.dataloader import HouseholdDataLoader
-from household_mcp.services.fire_snapshot import FireSnapshotService
+from household_mcp.services.fire_snapshot import (
+    FireSnapshotService,
+    SnapshotNotFoundError,
+)
 
 # Legacy analyzer for backward compatibility
 analyzer = FinancialIndependenceAnalyzer()
@@ -34,8 +37,29 @@ def get_financial_independence_status(
         FIRE progress information with Japanese text
 
     """
-    # データベースから実データを取得
-    status_data = fire_service.get_status(snapshot_date=None, months=period_months)
+    # データベースから実データを取得（スナップショットが未登録でも実行可能）
+    try:
+        status_data = fire_service.get_status(snapshot_date=None, months=period_months)
+    except SnapshotNotFoundError:
+        # No snapshots exist; return reasonable defaults so the tool is
+        # usable in fresh environments.
+        current_assets = 0
+        annual_expense = fire_service.default_annual_expense
+
+        status_data = {
+            "snapshot": {
+                "total": current_assets,
+                "snapshot_date": None,
+                "is_interpolated": False,
+            },
+            "fi_progress": {
+                "annual_expense": annual_expense,
+                "progress_rate": 0.0,
+                "fire_target": int(annual_expense / fire_service.withdrawal_rate),
+                "monthly_growth_rate": None,
+                "months_to_fi": None,
+            },
+        }
 
     snapshot = status_data["snapshot"]
     fi_progress = status_data["fi_progress"]

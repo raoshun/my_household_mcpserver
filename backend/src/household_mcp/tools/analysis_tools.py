@@ -282,12 +282,12 @@ def generate_comprehensive_cashflow_report(
 
 
 __all__ = [
-    "get_income_summary",
+    "generate_comprehensive_cashflow_report",
     "get_annual_income_summary",
+    "get_income_summary",
+    "get_real_estate_cashflow",
     "get_savings_rate",
     "get_savings_rate_trend",
-    "get_real_estate_cashflow",
     "simulate_fire_scenarios",
     "what_if_fire_simulation",
-    "generate_comprehensive_cashflow_report",
 ]

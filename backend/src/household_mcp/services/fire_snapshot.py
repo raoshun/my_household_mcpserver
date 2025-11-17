@@ -161,6 +161,18 @@ class FireSnapshotService:
         self.withdrawal_rate = withdrawal_rate
         self.retry_attempts = retry_attempts
         self.retry_interval_sec = retry_interval_sec
+        # Ensure the database schema exists for services which run without
+        # an explicit DatabaseManager.initialize_database() call in tests or
+        # higher-level app setup. This is idempotent and safe for production
+        # where the database is already initialized.
+        try:
+            self.db_manager.initialize_database()
+        except Exception:
+            # Avoid failing service initialization for environments where the
+            # DB is intentionally absent (e.g., limited unit tests).
+            logger.debug(
+                "Database initialization skipped in FireSnapshotService.__init__"
+            )
 
     # ------------------------------------------------------------------
     # Public API
