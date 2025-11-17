@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from sqlalchemy.exc import OperationalError
+
 from household_mcp.analysis import FinancialIndependenceAnalyzer
 from household_mcp.database.manager import DatabaseManager
 from household_mcp.dataloader import HouseholdDataLoader
@@ -40,7 +42,7 @@ def get_financial_independence_status(
     # データベースから実データを取得（スナップショットが未登録でも実行可能）
     try:
         status_data = fire_service.get_status(snapshot_date=None, months=period_months)
-    except SnapshotNotFoundError:
+    except (SnapshotNotFoundError, OperationalError):
         # No snapshots exist; return reasonable defaults so the tool is
         # usable in fresh environments.
         current_assets = 0

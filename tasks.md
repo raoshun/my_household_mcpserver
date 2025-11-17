@@ -4,6 +4,7 @@
   - テスト: `tests/unit/test_streaming.py` に同期ジェネレータの単体テストを追加
   - [x] `_recalculate_fi_cache()` を呼び出して CSV ベースの支出により
       FI キャッシュが更新されることを検証（ユニット/統合テストを追加）
+  - [x] イベントループ衝突を回避するためのテスト修正 (`pytest.mark.anyio` に移行)
 
 # 家計簿分析 MCP サーバー タスク計画
 
@@ -107,6 +108,16 @@
 - [x] DataLoader キャッシュ差分テスト (`test_cache_behaviour`)
 - [x] キャッシュ統計テスト (`test_loader_cache_stats`) 追加（ヒット/ミス/リセット）
 - [x] 異常系（欠損列/カテゴリ欠如/無効ディレクトリ）テスト拡張
+
+- [ ] COV-001: 解析/ツールのユニットテスト追加（coverage 向上）
+  - 目的: `analysis` と `tools` で利用されるコア関数にユニットテストを追加し、全体カバレッジの底上げを図る
+  - 優先範囲: `expense_classifier.py`, `fire_calculator.py`, `trends.py`, `financial_independence.py`, `dataloader.py`
+  - 受け入れ条件: CI の総合カバレッジが 56% を超えること
+
+- [ ] COV-002: coverage source mapping を正規化
+  - 目的: `src` alias を消し、pyproject.toml の coverage source を正しく設定してCI warningsを解消する
+  - 詳細: `backend/tests/conftest.py` の暫定 alias を削除し、テスト側で `PYTHONPATH=backend/src` として実行することで coverage が正しくマッピングされることを確認
+  - 受け入れ条件: CI で "Module src/household_mcp was never imported" 警告が消える
 
 ---
 
