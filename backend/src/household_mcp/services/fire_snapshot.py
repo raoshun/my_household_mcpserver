@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from datetime import time as dt_time
 from typing import Any, Callable, Protocol, Sequence, TypeVar, cast
 
@@ -221,7 +221,7 @@ class FireSnapshotService:
                 for field, value in request.category_totals().items():
                     setattr(snapshot, field, value)
                 snapshot.notes = request.notes
-                snapshot.updated_at = datetime.utcnow()
+                snapshot.updated_at = datetime.now(UTC)
 
                 session.flush()
                 self._recalculate_fi_cache(session, target_date)
