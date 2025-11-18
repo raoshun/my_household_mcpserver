@@ -177,6 +177,29 @@ class FireSnapshotService:
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
+    def recalculate_fi_cache(self, snapshot_date: date | None = None) -> None:
+        """
+        Recalculate FI cache for the specified or latest snapshot.
+
+        This is a public wrapper that manages the DB session and resolves the
+        target snapshot date, then delegates to the internal implementation
+        that performs the actual cache update.
+        """
+
+        def _operation() -> None:
+            with self.db_manager.session_scope() as session:
+                target_date = self._resolve_snapshot_date(
+                    session,
+                    snapshot_date,
+                )
+                if target_date is None:
+                    raise SnapshotNotFoundError(
+                        "No snapshots available for recalculation"
+                    )
+                self._recalculate_fi_cache(session, target_date)
+
+        self._run_with_retry(_operation)
+
     def register_snapshot(
         self,
         request: FireSnapshotRequest,

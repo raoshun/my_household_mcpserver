@@ -72,9 +72,7 @@ class TestCalculateAnnualExpenseFromCSV:
         mock_data_loader.load_many.return_value = df
 
         # Execute
-        result = fire_service._calculate_annual_expense_from_csv(
-            date(2024, 12, 31)
-        )
+        result = fire_service._calculate_annual_expense_from_csv(date(2024, 12, 31))
 
         # Verify
         assert result == 1_200_000.0
@@ -103,9 +101,7 @@ class TestCalculateAnnualExpenseFromCSV:
         mock_data_loader.load_many.return_value = df
 
         # Execute
-        result = fire_service._calculate_annual_expense_from_csv(
-            date(2024, 6, 30)
-        )
+        result = fire_service._calculate_annual_expense_from_csv(date(2024, 6, 30))
 
         # Verify: Should be doubled (annualized)
         assert result == 600_000.0
@@ -125,9 +121,7 @@ class TestCalculateAnnualExpenseFromCSV:
         ]
 
         # Execute
-        result = fire_service._calculate_annual_expense_from_csv(
-            date(2024, 3, 31)
-        )
+        result = fire_service._calculate_annual_expense_from_csv(date(2024, 3, 31))
 
         # Verify
         assert result is None
@@ -142,9 +136,7 @@ class TestCalculateAnnualExpenseFromCSV:
         mock_data_loader.iter_available_months.return_value = []
 
         # Execute
-        result = fire_service._calculate_annual_expense_from_csv(
-            date(2024, 12, 31)
-        )
+        result = fire_service._calculate_annual_expense_from_csv(date(2024, 12, 31))
 
         # Verify
         assert result is None
@@ -183,9 +175,7 @@ class TestCalculateAnnualExpenseFromCSV:
         mock_data_loader.load_many.return_value = df
 
         # Execute with snapshot_date in middle of 2024
-        result = fire_service._calculate_annual_expense_from_csv(
-            date(2024, 6, 30)
-        )
+        result = fire_service._calculate_annual_expense_from_csv(date(2024, 6, 30))
 
         # Verify: Should use last 12 months up to 2024-06
         assert result == 1_200_000.0
@@ -213,9 +203,7 @@ class TestCalculateAnnualExpenseFromCSV:
         mock_data_loader.load_many.return_value = df
 
         # Execute
-        result = fire_service._calculate_annual_expense_from_csv(
-            date(2024, 12, 31)
-        )
+        result = fire_service._calculate_annual_expense_from_csv(date(2024, 12, 31))
 
         # Verify
         assert result is None
@@ -241,9 +229,7 @@ class TestCalculateAnnualExpenseFromCSV:
         mock_data_loader.load_many.return_value = df
 
         # Execute
-        result = fire_service._calculate_annual_expense_from_csv(
-            date(2024, 12, 31)
-        )
+        result = fire_service._calculate_annual_expense_from_csv(date(2024, 12, 31))
 
         # Verify: abs() should be applied
         assert result == 900_000.0
@@ -260,9 +246,7 @@ class TestCalculateAnnualExpenseFromCSV:
         )
 
         # Execute
-        result = fire_service._calculate_annual_expense_from_csv(
-            date(2024, 12, 31)
-        )
+        result = fire_service._calculate_annual_expense_from_csv(date(2024, 12, 31))
 
         # Verify: Should catch exception and return None
         assert result is None
@@ -289,9 +273,7 @@ class TestCalculateAnnualExpenseFromCSV:
         mock_data_loader.load_many.return_value = df
 
         # Execute
-        result = fire_service._calculate_annual_expense_from_csv(
-            date(2024, 12, 31)
-        )
+        result = fire_service._calculate_annual_expense_from_csv(date(2024, 12, 31))
 
         # Verify: Should use 12-month calculation (not 6-month doubled)
         assert result == 1_200_000.0
@@ -399,9 +381,7 @@ class TestRecalculateFICacheIntegration:
     """Test _recalculate_fi_cache with CSV integration."""
 
     @patch("household_mcp.services.fire_snapshot.FIRECalculator")
-    @patch(
-        "household_mcp.services.fire_snapshot.FinancialIndependenceAnalyzer"
-    )
+    @patch("household_mcp.services.fire_snapshot.FinancialIndependenceAnalyzer")
     def test_passes_snapshot_date_to_expense_estimation(
         self,
         mock_analyzer_class: Mock,
@@ -451,12 +431,10 @@ class TestRecalculateFICacheIntegration:
         mock_data_loader.load_many.return_value = df
 
         # Initialize service with DB manager
-        svc = FireSnapshotService(
-            mock_db_manager, data_loader=mock_data_loader
-        )
+        svc = FireSnapshotService(mock_db_manager, data_loader=mock_data_loader)
 
-        # Call the recalculation helper
-        svc._recalculate_fi_cache()
+        # Call the public recalculation API with explicit snapshot date
+        svc.recalculate_fi_cache(snapshot_date=mock_snapshot.snapshot_date)
 
-        # Verify that FIRECalculator (via analyzer) was called to calculate FI
-        mock_calculator_class.assert_called()
+        # Verify that FIRECalculator was used to calculate FI target
+        mock_calculator_class.calculate_fire_target.assert_called()
