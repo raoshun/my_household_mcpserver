@@ -6,7 +6,7 @@
 # 変数定義
 PYTHON := python3
 PIP := pip
-PYTEST := pytest
+PYTEST := uv run pytest
 PRE_COMMIT := pre-commit
 
 help: ## このヘルプメッセージを表示
@@ -38,6 +38,12 @@ test: ## テストを実行
 
 test-cov: ## カバレッジ付きでテストを実行
 	$(PYTEST) --cov=src/household_mcp --cov-report=html --cov-report=term
+
+test-unit: ## unit テストのみを実行（integration マーカーの付いたテストを除外）
+	$(PYTEST) -m "not integration and not slow"
+
+test-integration: ## integration テストのみを実行（DB/CSV/HTTPなどの重いテスト）
+	$(PYTEST) -m integration
 
 lint: ## リンターを実行
 	$(PRE_COMMIT) run --all-files

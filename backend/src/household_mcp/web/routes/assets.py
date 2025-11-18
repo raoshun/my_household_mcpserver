@@ -210,12 +210,6 @@ async def create_record_standard(
 # implementations which include full response models and DB persistence.
 
 
-@router.get("/records/{record_id}")
-async def get_single_record(record_id: int) -> dict:
-    """GET /records/{id}: 詳細取得スタブ."""
-    return {"status": "not_implemented", "record_id": record_id}
-
-
 @router.get("/summary")
 async def get_summary(
     year: int = Query(...),

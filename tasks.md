@@ -119,6 +119,29 @@
   - 詳細: `backend/tests/conftest.py` の暫定 alias を削除し、テスト側で `PYTHONPATH=backend/src` として実行することで coverage が正しくマッピングされることを確認
   - 受け入れ条件: CI で "Module src/household_mcp was never imported" 警告が消える
 
+### テスト分類・運用ルール（推奨）
+
+- Unit / Integration / Smoke の明確な切り分けを推奨します。
+
+- 命名 & 配置:
+  - Unit: `backend/tests/unit/` - 外部依存（DB/HTTP/CSV）をモックした快速テスト
+  - Integration: `backend/tests/integration/` - DB/CSV/HTTP などの外部要素を利用する重いテスト
+  - Smoke/E2E: `backend/tests/e2e/` or `backend/tests/smoke/` - サーバ起動やフルスタック検証
+
+- `pytest` マーカー:
+  - 既に `pyproject.toml` の `[tool.pytest.ini_options]` に `integration`, `slow`, `unit` 等を定義しています。
+  - Integration テストには `@pytest.mark.integration` を付与して下さい。Smoke には `@pytest.mark.slow` を使うのがオススメです。
+
+- Makefile 補助コマンド:
+  - Unitテスト: `make test-unit` (integration を除外)
+  - Integrationテスト: `make test-integration`
+  - CI向け: `make ci-test`（現状全テスト + coverage）
+
+- CI の運用例:
+  1. Quick build: `make test-unit` を実行して unit を検証
+  2. Integration job（並列）: `make test-integration` を個別ワーカーで実行
+  3. Slow/E2E: 手動 or nightly 実行
+
 ---
 
 ## フェーズ5: ドキュメント & 運用準備 (Week 5)
