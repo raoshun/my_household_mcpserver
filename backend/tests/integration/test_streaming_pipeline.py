@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 
 import pytest
 
-pytestmark = [pytest.mark.anyio, pytest.mark.integration]
+pytestmark = pytest.mark.integration
 
 
 class TestStreamingPipeline:
@@ -164,6 +164,7 @@ class TestStreamingPipeline:
             mem_increase < 50
         ), f"メモリ使用量増加が50MBを超えました: {mem_increase:.2f}MB (NFR-006違反)"
 
+    @pytest.mark.anyio
     async def test_concurrent_image_generation(self) -> None:
         """複数の画像生成リクエストを並行処理できることを確認"""
         try:

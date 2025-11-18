@@ -6,6 +6,53 @@
       FI キャッシュが更新されることを検証（ユニット/統合テストを追加）
   - [x] イベントループ衝突を回避するためのテスト修正 (`pytest.mark.anyio` に移行)
 
+## 新規: FR-037 非同期画像ストリーミング安定化 タスク計画
+
+- [ ] **TASK-3701**: 現状テスト失敗スタックトレース収集（7件のうち代表1件）
+  - 目的: 例外発生箇所（呼び出しチェーン）特定
+  - 成功条件: 代表トレース貼付・原因候補タグ付け（loop lifecycle / fixture teardown / import side effect）
+
+- [ ] **TASK-3702**: ループ操作コード検索と棚卸し
+  - 手段: `grep -R "loop" streaming/ tests/` で直接 `new_event_loop`, `close()` 呼び出し検出
+  - 成功条件: 問題なし確認 または 影響範囲一覧作成
+
+- [ ] **TASK-3703**: テスト分離リファクタ（async/sync）
+  - 内容: `tests/unit/test_streaming.py` を `test_image_streamer_async.py` / `test_image_streamer_sync.py` に分割
+  - anyio マーカー: async ファイルのみ付与
+  - 成功条件: 分割後全テスト (streaming関連) 緑/同一失敗再現確認
+
+- [ ] **TASK-3704**: ImageStreamer インターフェース改修案実装（`enable_sync_fallback` 追加）
+  - 分岐: `get_running_loop()` 成功なら async、失敗時 sync か one-shot async の選択
+  - 成功条件: 既存インポート互換 & 例外再発なし (単体)
+
+- [ ] **TASK-3705**: 5並行ストリーミング統合テスト追加（TS-051）
+  - 内容: `asyncio.gather`で5件同時チャンク取得、応答時間測定
+  - 成功条件: 例外なし + <0.5s + 全チャンク合計サイズ一致
+
+- [ ] **TASK-3706**: StreamingResponse ヘッダ検証（TS-054）
+  - 内容: `Content-Type` / `Content-Disposition` (filename指定時) チェック
+  - 成功条件: 正しいヘッダ値
+
+- [ ] **TASK-3707**: カバレッジ向上（TS-053）
+  - 内容: 分岐網羅テスト追加（fallback有/無, delay_ms=0 と >0）
+  - 成功条件: `image_streamer.py` 行/分岐 ≥ 90%
+
+- [ ] **TASK-3708**: ロギングモード確認テスト
+  - 内容: DEBUG キャプチャで "mode=async" "mode=sync" 判定
+  - 成功条件: 両モードログ出力確認
+
+- [ ] **TASK-3709**: sync フォールバック削除評価（任意）
+  - 条件: async統一後安定なら `_stream_bytes_sync` を非推奨 (DeprecationWarning) に変更 または 削除
+  - 成功条件: テスト再実行後失敗なし
+
+- [ ] **TASK-3710**: ドキュメント更新
+  - ファイル: `design.md` (反映済み確認), `README.md` (利用例追加), `requirements.md` (承認記録済み)
+  - 成功条件: 設計/要件/README 整合性
+
+- [ ] **TASK-3711**: 最終統合・品質ゲート
+  - 内容: All Checks + 追加テスト + カバレッジ再測定
+  - 成功条件: 例外 0, カバレッジ基準達成, 新テスト緑
+
 # 家計簿分析 MCP サーバー タスク計画
 
 - **バージョン**: 0.8.0

@@ -11,6 +11,9 @@ from typing import Any, Generator
 
 import pytest
 
+# Mark all e2e tests to allow selective exclusion
+pytestmark = pytest.mark.e2e
+
 
 def _get_browser() -> Generator[Any, None, None]:
     """Lazy import and provide browser for tests."""

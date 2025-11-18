@@ -3,7 +3,7 @@
 - **バージョン**: 1.0.0（フェーズ16: 収入分析・強化FIRE計算）
 - **更新日**: 2025-11-17
 - **作成者**: GitHub Copilot (AI assistant)
-- **対象要件**: [requirements.md](./requirements.md) v1.6 に記載の FR-032〜FR-034、NFR-037〜NFR-042
+- **対象要件**: [requirements.md](./requirements.md) v1.6 に記載の FR-032〜FR-037、NFR-037〜NFR-042
 - **実装状況**:
   - Phase 15 完了: テスト 48/48 PASSED (100%), カバレッジ 76%, パフォーマンス < 500ms ✅
   - Phase 16 計画中: 収入分析、貯蓄率計算、不動産キャッシュフロー、強化FIREシミュレーション
@@ -26,7 +26,7 @@
                                       └────────────────────────┘
 ```
 
-### Phase 16 更新点（要約） — FR-035, FR-036
+### Phase 16 更新点（要約） — FR-035, FR-036, FR-037
 
 - 公開ファサード: 分析系ツールは `household_mcp.tools.analysis_tools` に統一（FR-035）。
   - 旧 `household_mcp.tools.phase16_tools` は削除済み（2025-11-17、後方互換性不要と判断）。
@@ -36,6 +36,11 @@
   - `EnhancedFIRESimulator.simulate_scenario` / `what_if_simulation` は `annual_expense` を `calculate_fire_target` に渡す。
   - What-If の変更サマリ（before/after/impact）を返す最小限の構造を維持。
   - Pydantic の API 入力モデルでも `annual_expense` を必須・>0 検証。
+- 非同期画像ストリーミング安定化（FR-037）: FastAPI / pytest(anyio) / MCP 実行環境でイベントループ競合を排除し安定したチャンク配信を保証。
+  - ループ検出ロジックの単純化（`get_running_loop()` 成功時のみ async generator、失敗時は同期フォールバックか削除方針を選択）。
+  - 同期フォールバック `stream_bytes_sync` は任意機能化（削除しても API は壊れない設計）。
+  - 5 並行リクエストで 0.5s 以内レスポンス（FR-016 性能整合）。
+  - テスト分離: async テストファイルと（残すなら）sync テストファイルで anyio マーカーのスコープ最適化。
 
 ---
 
@@ -2022,6 +2027,93 @@ CREATE INDEX idx_asset_records_is_deleted ON asset_records(is_deleted);
 - `linked_transaction_id`: 家計簿の取引ID（将来の連携用、現状は NULL）
 
 ### 13.3 API エンドポイント設計
+
+### 13.4 FR-037 非同期画像ストリーミング安定化 設計
+
+#### 現状分析
+
+- `ImageStreamer` は単純な `async for` + `await asyncio.sleep()` によりチャンク配信。
+- イベントループ競合エラー（"Runner is closed" / "Cannot run the event loop while another loop is running"）が pytest(anyio) 実行時に断続的に発生。
+- 同期フォールバック `stream_bytes_sync` はテストで利用されるが、要件上必須ではない。
+
+#### 問題要因仮説
+
+1. anyio マーカーがモジュール全体に付与され同期テストもイベントループ管理対象になっている。
+2. 他テストまたはフィクスチャで FastAPI/Uvicorn のイベントループ終了後に `ImageStreamer` が再利用される。
+3. グローバルキャッシュモジュール import 時の副作用でループ参照状態が不整合。
+
+#### 設計方針
+
+- ループ検出: `asyncio.get_running_loop()` で単一判定、成功時は async generator、失敗時は同期フォールバック（削除選択時は単純に bytes 分割関数）へ。
+- 同期フォールバックの扱い: オプション機能化。削除する場合は互換 API を維持（クラス属性/メソッド署名変化なし）。
+- テスト分離: `tests/unit/streaming/test_image_streamer_async.py` と `tests/unit/streaming/test_image_streamer_sync.py` に分離。anyio マーカーは async 側のみ。
+- 並行テスト: `tests/integration/test_streaming_concurrency.py` で 5 並行要求（`asyncio.gather`）し全チャンク到達と 0.5s 以内応答確認。
+- カバレッジ目標: `image_streamer.py` 分岐/行 90% 以上（TS-053）。
+- FastAPI 統合: `create_response` の body に async generator を渡し、同期フォールバック利用時も StreamingResponse が正常動作することを検証。
+- ロギング: ループモード選択時に DEBUG ログ（"ImageStreamer mode=async" / "mode=sync"）。
+
+#### 影響範囲と非互換リスク
+
+- sync メソッド削除時: 既存の直接呼び出しテストが失敗 → 残すかラッパーで非推奨化。
+- 非同期のみへ統一: 単純化による保守性向上。高負荷時の CPU sleep を `await asyncio.sleep(delay)` に一本化。
+
+#### API/インターフェース変更（案）
+
+```python
+class ImageStreamer:
+    def __init__(self, chunk_size: int = 8192, enable_sync_fallback: bool = False):
+        self.chunk_size = chunk_size
+        self.enable_sync_fallback = enable_sync_fallback
+
+    async def stream_bytes(self, image_data: bytes, delay_ms: float = 0.01):
+        for i in range(0, len(image_data), self.chunk_size):
+            yield image_data[i:i+self.chunk_size]
+            if delay_ms > 0:
+                await asyncio.sleep(delay_ms)
+
+    def _stream_bytes_sync(self, image_data: bytes, delay_ms: float = 0.01):  # 非公開化
+        import time
+        for i in range(0, len(image_data), self.chunk_size):
+            yield image_data[i:i+self.chunk_size]
+            if delay_ms > 0:
+                time.sleep(delay_ms)
+
+    def create_response(...):
+        try:
+            asyncio.get_running_loop()
+            body = self.stream_bytes(image_data)
+        except RuntimeError:
+            if self.enable_sync_fallback:
+                body = self._stream_bytes_sync(image_data)
+            else:
+                # ループなし環境では簡易 async ランナーで包む（低頻度利用）
+                async def _one_shot():
+                    async for c in self.stream_bytes(image_data):
+                        yield c
+                body = _one_shot()
+        return StreamingResponse(body, media_type=media_type)
+```
+
+#### テスト計画
+
+| テストID | 目的 | ファイル | 検証内容 |
+|---------|------|---------|---------|
+| TS-050 | 非同期チャンク正常 | `test_image_streamer_async.py` | 全チャンク・順序・サイズ |
+| TS-051 | 5並行ストリーム | `test_streaming_concurrency.py` | gather後例外なし & 時間制約 |
+| TS-052 | syncフォールバック選択 | `test_image_streamer_sync.py` | enable_sync_fallback=True 動作 |
+| TS-053 | カバレッジ ≥90% | coverage レポート | 分岐/行達成 |
+| TS-054 | StreamingResponseヘッダ | concurrency テスト内 | Content-Type/Disposition |
+
+#### 成功指標
+
+- 例外再発率 0%（対象エラー）
+- レスポンスタイム（5並行、<0.5s）
+- カバレッジ目標達成
+
+#### ロールバック戦略
+
+- 新クラス初期化フラグ `enable_sync_fallback` を残すことで、非同期統一で問題があれば sync 経由へ即切り替え可能。
+- 旧テスト保持期間（暫定）: 1 フェーズ（次マイナーバージョン）
 
 #### 13.3.1 資産クラス取得
 

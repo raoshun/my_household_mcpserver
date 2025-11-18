@@ -57,8 +57,16 @@ def pytest_configure():
 
 
 # Configure anyio to use only asyncio backend (trio not installed)
-@pytest.fixture(scope="session")
+@pytest.fixture
 def anyio_backend():
+    """Provide anyio backend per test function.
+
+    Changed from 'session' to 'function' scope to ensure each async test
+    gets a fresh event loop. This prevents "Runner is closed" errors when
+    tests run after fixtures (like `app`) that may close the loop.
+
+    Refs: FR-037 (async streaming stability)
+    """
     return "asyncio"
 
 

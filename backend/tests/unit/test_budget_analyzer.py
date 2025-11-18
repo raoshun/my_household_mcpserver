@@ -6,7 +6,7 @@ from tempfile import NamedTemporaryFile
 import pandas as pd
 import pytest
 
-from household_mcp.budget_analyzer import BudgetAnalyzer, COLUMNS_MAP
+from household_mcp.budget_analyzer import COLUMNS_MAP, BudgetAnalyzer
 
 
 class TestBudgetAnalyzer:

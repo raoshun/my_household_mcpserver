@@ -46,8 +46,8 @@ class TestResourceFunctions:
         """Test get_category_hierarchy handles DataSourceError."""
         from household_mcp.exceptions import DataSourceError
 
-        mock_loader.return_value.category_hierarchy.side_effect = (
-            DataSourceError("No data")
+        mock_loader.return_value.category_hierarchy.side_effect = DataSourceError(
+            "No data"
         )
 
         result = resources.get_category_hierarchy()
@@ -74,8 +74,8 @@ class TestResourceFunctions:
         """Test get_available_months handles DataSourceError."""
         from household_mcp.exceptions import DataSourceError
 
-        mock_loader.return_value.iter_available_months.side_effect = (
-            DataSourceError("No data")
+        mock_loader.return_value.iter_available_months.side_effect = DataSourceError(
+            "No data"
         )
 
         result = resources.get_available_months()
@@ -101,9 +101,7 @@ class TestResourceFunctions:
     ):
         """Test get_category_trend_summary with valid data."""
         mock_data_dir.return_value = "data"
-        mock_trend_summary.return_value = {
-            "食費": {"total": 50000, "count": 10}
-        }
+        mock_trend_summary.return_value = {"食費": {"total": 50000, "count": 10}}
 
         result = resources.get_category_trend_summary()
 
