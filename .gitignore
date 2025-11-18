@@ -38,5 +38,5 @@ coverage.xml
 *.woff
 *.woff2
 
-# VS Code: ignore local learning tasks file
-.vscode/tasks.learning.json
+# VS Code: ignore local tasks file
+.vscode/tasks.*.json
