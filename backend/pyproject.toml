@@ -222,7 +222,7 @@ filterwarnings = [
 
 # Coverage設定
 [tool.coverage.run]
-source = ["src"]
+source = ["household_mcp"]
 omit = [
     "*/tests/*",
     "*/__pycache__/*",
