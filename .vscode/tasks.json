@@ -2,13 +2,10 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Learning Support: Check Understanding",
+      "label": "make help",
       "type": "shell",
-      "command": "python",
-      "args": [
-        ".learning_support/understanding_checker.py",
-        "${input:concept_name}"
-      ],
+      "command": "make",
+      "args": ["help"],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -18,33 +15,13 @@
       },
       "options": {
         "cwd": "${workspaceFolder}"
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "Install Web/Streaming Extras",
-      "type": "shell",
-      "command": "uv",
-      "args": ["pip", "install", "-e", ".[web,streaming,visualization,db]"],
-      "group": "build",
-      "options": {
-        "cwd": "${workspaceFolder}/backend"
-      },
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
       }
     },
     {
-      "label": "Learning Support: Generate Learning Path",
+      "label": "make stop-webapp",
       "type": "shell",
-      "command": "python",
-      "args": [
-        ".learning_support/learning_path_generator.py",
-        "${input:target_concept}"
-      ],
+      "command": "make",
+      "args": ["stop-webapp"],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -54,61 +31,76 @@
       },
       "options": {
         "cwd": "${workspaceFolder}"
-      },
-      "problemMatcher": []
+      }
     },
     {
-      "label": "Learning Support: Record TDD Practice",
+      "label": "make install",
       "type": "shell",
-      "command": "python",
-      "args": [
-        ".learning_support/tdd_tracker.py",
-        "${input:tdd_phase}",
-        "${input:concept_name}"
-      ],
+      "command": "make",
+      "args": ["install"],
       "group": "build",
       "presentation": {
         "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
+        "reveal": "always"
       },
       "options": {
         "cwd": "${workspaceFolder}"
-      },
-      "problemMatcher": []
+      }
     },
     {
-      "label": "Learning Support: Check Review Schedule",
+      "label": "make install-dev",
       "type": "shell",
-      "command": "python",
-      "args": [".learning_support/review_scheduler.py", "--check"],
+      "command": "make",
+      "args": ["install-dev"],
       "group": "build",
       "presentation": {
         "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
+        "reveal": "always"
       },
       "options": {
         "cwd": "${workspaceFolder}"
-      },
-      "problemMatcher": []
+      }
     },
     {
-      "label": "TDD: Run Tests (Red Phase)",
+      "label": "make setup",
       "type": "shell",
-      "command": "python",
-      "args": ["-m", "pytest", "${input:test_file}", "-v"],
+      "command": "make",
+      "args": ["setup"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "make clean",
+      "type": "shell",
+      "command": "make",
+      "args": ["clean"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "make test",
+      "type": "shell",
+      "command": "make",
+      "args": ["test"],
       "group": {
         "kind": "test",
         "isDefault": true
       },
       "presentation": {
         "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
+        "reveal": "always"
       },
       "options": {
         "cwd": "${workspaceFolder}"
@@ -116,357 +108,187 @@
       "problemMatcher": ["$python"]
     },
     {
-      "label": "Towncrier: Create Feature Fragment",
+      "label": "make test-unit",
       "type": "shell",
-      "command": "python",
-      "args": [
-        ".learning_support/changelog_helper.py",
-        "create",
-        "feature",
-        "${input:change_description}"
-      ],
-      "group": "build",
+      "command": "make",
+      "args": ["test-unit"],
+      "group": "test",
       "presentation": {
         "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
+        "reveal": "always"
       },
       "options": {
         "cwd": "${workspaceFolder}"
-      },
-      "problemMatcher": []
+      }
     },
     {
-      "label": "Towncrier: Create Bugfix Fragment",
+      "label": "make test-integration",
       "type": "shell",
-      "command": "python",
-      "args": [
-        ".learning_support/changelog_helper.py",
-        "create",
-        "bugfix",
-        "${input:change_description}"
-      ],
-      "group": "build",
+      "command": "make",
+      "args": ["test-integration"],
+      "group": "test",
       "presentation": {
         "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
+        "reveal": "always"
       },
       "options": {
         "cwd": "${workspaceFolder}"
-      },
-      "problemMatcher": []
+      }
     },
     {
-      "label": "Towncrier: Generate Changelog",
+      "label": "make test-cov",
       "type": "shell",
-      "command": "towncrier",
-      "args": ["--draft"],
-      "group": "build",
+      "command": "make",
+      "args": ["test-cov"],
+      "group": "test",
       "presentation": {
         "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
+        "reveal": "always"
       },
       "options": {
         "cwd": "${workspaceFolder}"
-      },
-      "problemMatcher": []
+      }
     },
     {
-      "label": "Learning Support: Full Check",
+      "label": "make format",
       "type": "shell",
-      "command": "python",
-      "args": [".learning_support/full_learning_check.py"],
+      "command": "make",
+      "args": ["format"],
       "group": "build",
       "presentation": {
         "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
+        "reveal": "silent"
       },
       "options": {
         "cwd": "${workspaceFolder}"
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "Install Dependencies",
-      "type": "shell",
-      "command": "uv",
-      "args": ["install", "--dev"],
-      "group": "build",
-      "options": {
-        "cwd": "${workspaceFolder}/backend"
-      },
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
       }
     },
     {
-      "label": "Run Tests",
+      "label": "make lint",
       "type": "shell",
-      "command": "uv",
-      "args": ["run", "pytest"],
-      "group": {
-        "kind": "test",
-        "isDefault": true
-      },
-      "options": {
-        "cwd": "${workspaceFolder}/backend"
-      },
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Format Code",
-      "type": "shell",
-      "command": "uv",
-      "args": ["run", "ruff", "format", "."],
-      "group": "build",
-      "options": {
-        "cwd": "${workspaceFolder}/backend"
-      },
-      "presentation": {
-        "echo": true,
-        "reveal": "silent",
-        "focus": false,
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Sort Imports",
-      "type": "shell",
-      "command": "uv",
-      "args": ["run", "ruff", "check", "--select", "I", "--fix", "."],
-      "group": "build",
-      "options": {
-        "cwd": "${workspaceFolder}/backend"
-      },
-      "presentation": {
-        "echo": true,
-        "reveal": "silent",
-        "focus": false,
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Lint Code",
-      "type": "shell",
-      "command": "uv",
-      "args": ["run", "ruff", "check", "."],
-      "group": "build",
-      "options": {
-        "cwd": "${workspaceFolder}/backend"
-      },
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Type Check",
-      "type": "shell",
-      "command": "uv",
-      "args": ["run", "ruff", "check", "--select", "TCH", "src/"],
-      "group": "build",
-      "options": {
-        "cwd": "${workspaceFolder}/backend"
-      },
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Security Scan",
-      "type": "shell",
-      "command": "uv",
-      "args": ["run", "bandit", "-r", "src/"],
-      "group": "build",
-      "options": {
-        "cwd": "${workspaceFolder}/backend"
-      },
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "All Checks",
-      "dependsOrder": "sequence",
-      "dependsOn": [
-        "Format Code",
-        "Sort Imports",
-        "Lint Code",
-        "Security Scan",
-        "Run Tests"
-      ],
-      "group": "build"
-    },
-    {
-      "label": "Start Dev Server",
-      "type": "shell",
-      "command": "uv",
-      "args": [
-        "run",
-        "uvicorn",
-        "household_mcp.server:app",
-        "--reload",
-        "--host",
-        "0.0.0.0",
-        "--port",
-        "8000"
-      ],
-      "group": "build",
-      "options": {
-        "cwd": "${workspaceFolder}/backend"
-      },
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": true,
-        "panel": "new"
-      },
-      "isBackground": true,
-      "problemMatcher": []
-    },
-    {
-      "label": "Start HTTP API Server",
-      "type": "shell",
-      "command": "uv",
-      "args": [
-        "run",
-        "python",
-        "-m",
-        "uvicorn",
-        "household_mcp.web.http_server:create_http_app",
-        "--factory",
-        "--reload",
-        "--host",
-        "0.0.0.0",
-        "--port",
-        "8000"
-      ],
-      "group": "build",
-      "options": {
-        "cwd": "${workspaceFolder}/backend"
-      },
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": true,
-        "panel": "dedicated",
-        "showReuseMessage": false
-      },
-      "isBackground": true,
-      "problemMatcher": {
-        "pattern": {
-          "regexp": "^.*$",
-          "file": 1,
-          "location": 2,
-          "message": 3
-        },
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": "^.*Uvicorn running.*$",
-          "endsPattern": "^.*Application startup complete.*$"
-        }
-      }
-    },
-    {
-      "label": "Start Webapp HTTP Server",
-      "type": "shell",
-      "command": "python3",
-      "args": ["-m", "http.server", "8080"],
-      "options": {
-        "cwd": "${workspaceFolder}/frontend"
-      },
+      "command": "make",
+      "args": ["lint"],
       "group": "build",
       "presentation": {
         "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "dedicated",
-        "showReuseMessage": false
+        "reveal": "always"
       },
-      "isBackground": true,
-      "problemMatcher": {
-        "pattern": {
-          "regexp": "^.*$",
-          "file": 1,
-          "location": 2,
-          "message": 3
-        },
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": "^.*Serving HTTP.*$",
-          "endsPattern": "^.*Serving HTTP on.*$"
-        }
+      "options": {
+        "cwd": "${workspaceFolder}"
       }
     },
     {
-      "label": "Start Full Webapp Stack",
-      "dependsOrder": "parallel",
-      "dependsOn": ["Start HTTP API Server", "Start Webapp HTTP Server"],
-      "group": {
-        "kind": "build",
-        "isDefault": true
+      "label": "make lint-pre-commit",
+      "type": "shell",
+      "command": "make",
+      "args": ["lint-pre-commit"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always"
       },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "make mypy",
+      "type": "shell",
+      "command": "make",
+      "args": ["mypy"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "make bandit",
+      "type": "shell",
+      "command": "make",
+      "args": ["bandit"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "make ci-lint",
+      "type": "shell",
+      "command": "make",
+      "args": ["ci-lint"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "make check-all",
+      "type": "shell",
+      "command": "make",
+      "args": ["check-all"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "make check-secrets",
+      "type": "shell",
+      "command": "make",
+      "args": ["check-secrets"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "make docker-build",
+      "type": "shell",
+      "command": "make",
+      "args": ["docker-build"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "make docker-up",
+      "type": "shell",
+      "command": "make",
+      "args": ["docker-up"],
+      "group": "build",
       "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": true,
         "panel": "dedicated"
       },
-      "problemMatcher": []
-    },
-    {
-      "label": "Docker: Build Images",
-      "type": "shell",
-      "command": "docker",
-      "args": ["compose", "build"],
-      "group": "build",
       "options": {
         "cwd": "${workspaceFolder}"
-      },
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Docker: Start Full Stack (docker-compose up)",
-      "type": "shell",
-      "command": "docker",
-      "args": ["compose", "up"],
-      "group": "build",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": true,
-        "panel": "dedicated"
       },
       "isBackground": true,
       "problemMatcher": {
@@ -484,107 +306,49 @@
       }
     },
     {
-      "label": "Docker: Start Full Stack (docker-compose up -d)",
+      "label": "make docker-up-detach",
       "type": "shell",
-      "command": "docker",
-      "args": ["compose", "up", "-d"],
+      "command": "make",
+      "args": ["docker-up-detach"],
       "group": "build",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
       "presentation": {
         "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
+        "reveal": "always"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
       }
     },
     {
-      "label": "Docker: Stop Full Stack (docker-compose down)",
+      "label": "make docker-down",
       "type": "shell",
-      "command": "docker",
-      "args": ["compose", "down"],
+      "command": "make",
+      "args": ["docker-down"],
       "group": "build",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
       "presentation": {
         "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
+        "reveal": "always"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
       }
     },
     {
-      "label": "Docker: View Logs",
+      "label": "make docker-logs",
       "type": "shell",
-      "command": "docker",
-      "args": ["compose", "logs", "-f"],
+      "command": "make",
+      "args": ["docker-logs"],
       "group": "build",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
       "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": true,
         "panel": "dedicated"
       },
-      "isBackground": true,
-      "problemMatcher": []
-    },
-    {
-      "label": "Stop Full Webapp Stack",
-      "type": "shell",
-      "command": "bash",
-      "args": [
-        "-c",
-        "echo '=== ポート8080（フロントエンド）を停止 ===' && lsof -i :8080 | grep -v COMMAND | awk '{print $2}' | xargs -r kill -15 && sleep 2 && echo '=== ポート8000（バックエンド）を停止 ===' && lsof -i :8000 | grep -v COMMAND | awk '{print $2}' | xargs -r kill -15 && sleep 2 && echo '=== 停止確認 ===' && (lsof -i :8000 2>/dev/null && echo '⚠️  ポート8000: まだ起動中' || echo '✅ ポート8000: 停止完了') && (lsof -i :8080 2>/dev/null && echo '⚠️  ポート8080: まだ起動中' || echo '✅ ポート8080: 停止完了')"
-      ],
-      "group": "build",
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      },
-      "problemMatcher": []
-    }
-  ],
-  "inputs": [
-    {
-      "id": "concept_name",
-      "description": "学習する概念の名前を入力してください",
-      "default": "CSVリーダー",
-      "type": "promptString"
-    },
-    {
-      "id": "target_concept",
-      "description": "目標とする概念を入力してください",
-      "default": "SQLiteの複雑なJOINクエリ",
-      "type": "promptString"
-    },
-    {
-      "id": "tdd_phase",
-      "description": "TDDのフェーズを選択してください",
-      "default": "red",
-      "type": "pickString",
-      "options": ["red", "green", "refactor"]
-    },
-    {
-      "id": "test_file",
-      "description": "テストファイルのパスを入力してください",
-      "default": "tests/",
-      "type": "promptString"
-    },
-    {
-      "id": "change_description",
-      "description": "変更の説明を入力してください",
-      "default": "新機能を追加",
-      "type": "promptString"
+      "isBackground": true
     }
   ]
 }

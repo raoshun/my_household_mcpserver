@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug MCP Server",
+      "name": "Debug MCP Server (make run-dev)",
       "type": "debugpy",
       "request": "launch",
       "module": "uvicorn",
@@ -15,24 +15,75 @@
         "8000"
       ],
       "console": "integratedTerminal",
-      "cwd": "${workspaceFolder}",
+      "cwd": "${workspaceFolder}/backend",
       "env": {
-        "PYTHONPATH": "${workspaceFolder}/src"
+        "PYTHONPATH": "${workspaceFolder}/backend/src"
       },
-      "justMyCode": false
+      "justMyCode": false,
+      "presentation": {
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated"
+      }
     },
     {
-      "name": "Run Tests",
+      "name": "Frontend HTTP Server (make run-http-frontend)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "http.server",
+      "args": ["8080"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}/frontend",
+      "justMyCode": false,
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated"
+      }
+    },
+    {
+      "name": "Debug HTTP API Server (make run-http-api)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "household_mcp.web.http_server:create_http_app",
+        "--factory",
+        "--reload",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}/backend",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/backend/src"
+      },
+      "justMyCode": false,
+      "presentation": {
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated"
+      }
+    },
+    {
+      "name": "Debug Tests (make test)",
       "type": "debugpy",
       "request": "launch",
       "module": "pytest",
-      "args": ["-v", "${workspaceFolder}/tests/"],
+      "args": ["-v", "${workspaceFolder}/backend/tests/"],
       "console": "integratedTerminal",
-      "cwd": "${workspaceFolder}",
+      "cwd": "${workspaceFolder}/backend",
       "env": {
-        "PYTHONPATH": "${workspaceFolder}/src"
+        "PYTHONPATH": "${workspaceFolder}/backend/src"
       },
-      "justMyCode": false
+      "justMyCode": false,
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
     },
     {
       "name": "Debug Current Test File",
@@ -41,26 +92,40 @@
       "module": "pytest",
       "args": ["-v", "${file}"],
       "console": "integratedTerminal",
-      "cwd": "${workspaceFolder}",
+      "cwd": "${workspaceFolder}/backend",
       "env": {
-        "PYTHONPATH": "${workspaceFolder}/src"
+        "PYTHONPATH": "${workspaceFolder}/backend/src"
       },
-      "justMyCode": false
+      "justMyCode": false,
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
     },
     {
-      "name": "Docker: Start Full Stack (Foreground)",
-      "type": "node",
+      "name": "Python: Current File",
+      "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/node_modules/.bin/docker-compose",
-      "args": ["up"],
-      "cwd": "${workspaceFolder}",
+      "program": "${file}",
       "console": "integratedTerminal",
+      "cwd": "${fileDirname}",
+      "justMyCode": false,
       "presentation": {
-        "echo": true,
         "reveal": "always",
-        "focus": true,
-        "panel": "dedicated"
+        "focus": false,
+        "panel": "shared"
       }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack (make run-webapp)",
+      "configurations": [
+        "Debug HTTP API Server (make run-http-api)",
+        "Frontend HTTP Server (make run-http-frontend)"
+      ],
+      "stopAll": true
     }
   ]
 }
