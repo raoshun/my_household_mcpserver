@@ -21,15 +21,15 @@ def create_duplicate_router() -> APIRouter:
     router = APIRouter(prefix="/api/duplicates", tags=["duplicates"])
 
     @router.post("/detect")
-    async def detect_duplicates(  # type: ignore[no-untyped-def]
-        date_tolerance_days: int = Query(0, description="Date tolerance in days"),  # type: ignore[assignment]
+    async def detect_duplicates(
+        date_tolerance_days: int = Query(0, description="Date tolerance in days"),
         amount_tolerance_abs: float = Query(
             0.0, description="Absolute amount tolerance"
-        ),  # type: ignore[assignment]
+        ),
         amount_tolerance_pct: float = Query(
             0.0, description="Percentage amount tolerance"
-        ),  # type: ignore[assignment]
-    ) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+        ),
+    ) -> dict[str, Any]:
         """
         Detect duplicate transactions.
 
@@ -50,15 +50,15 @@ def create_duplicate_router() -> APIRouter:
                 amount_tolerance_abs=amount_tolerance_abs,
                 amount_tolerance_pct=amount_tolerance_pct,
             )
-            return result  # type: ignore[return-value]
+            return result
         except Exception as e:
             logger.exception(f"Error detecting duplicates: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
     @router.get("/candidates")
-    async def get_duplicate_candidates(  # type: ignore[no-untyped-def]
-        limit: int = Query(10, description="Maximum number of candidates to return"),  # type: ignore[assignment]
-    ) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+    async def get_duplicate_candidates(
+        limit: int = Query(10, description="Maximum number of candidates to return"),
+    ) -> dict[str, Any]:
         """
         Get list of duplicate candidates.
 
@@ -73,7 +73,7 @@ def create_duplicate_router() -> APIRouter:
             from household_mcp.tools import duplicate_tools
 
             result = duplicate_tools.get_duplicate_candidates(limit=limit)
-            return result  # type: ignore[return-value]
+            return result
         except Exception as e:
             logger.exception(f"Error getting duplicate candidates: {e}")
             raise HTTPException(status_code=500, detail=str(e))
@@ -81,7 +81,7 @@ def create_duplicate_router() -> APIRouter:
     @router.get("/{check_id}")
     async def get_duplicate_detail(
         check_id: int,
-    ) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+    ) -> dict[str, Any]:
         """
         Get details of a duplicate candidate.
 
@@ -96,18 +96,18 @@ def create_duplicate_router() -> APIRouter:
             from household_mcp.tools import duplicate_tools
 
             result = duplicate_tools.get_duplicate_candidate_detail(check_id=check_id)
-            return result  # type: ignore[return-value]
+            return result
         except Exception as e:
             logger.exception(f"Error getting duplicate detail: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
     @router.post("/{check_id}/confirm")
-    async def confirm_duplicate(  # type: ignore[no-untyped-def]
+    async def confirm_duplicate(
         check_id: int,
         decision: str = Query(
             ..., description="Decision: duplicate, not_duplicate, or skip"
-        ),  # type: ignore[assignment]
-    ) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+        ),
+    ) -> dict[str, Any]:
         """
         Confirm duplicate decision.
 
@@ -132,9 +132,9 @@ def create_duplicate_router() -> APIRouter:
 
             result = duplicate_tools.confirm_duplicate(
                 check_id=check_id,
-                decision=decision,  # type: ignore[arg-type]
+                decision=decision,
             )
-            return result  # type: ignore[return-value]
+            return result
         except Exception as e:
             logger.exception(f"Error confirming duplicate: {e}")
             raise HTTPException(status_code=500, detail=str(e))
@@ -142,7 +142,7 @@ def create_duplicate_router() -> APIRouter:
     @router.post("/restore/{transaction_id}")
     async def restore_duplicate(
         transaction_id: int,
-    ) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+    ) -> dict[str, Any]:
         """
         Restore a transaction marked as duplicate.
 
@@ -157,15 +157,13 @@ def create_duplicate_router() -> APIRouter:
             from household_mcp.tools import duplicate_tools
 
             result = duplicate_tools.restore_duplicate(transaction_id=transaction_id)
-            return result  # type: ignore[return-value]
+            return result
         except Exception as e:
             logger.exception(f"Error restoring duplicate: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
     @router.get("/stats")
-    async def get_duplicate_stats(
-        self,
-    ) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+    async def get_duplicate_stats() -> dict[str, Any]:
         """
         Get duplicate detection statistics.
 
@@ -177,7 +175,7 @@ def create_duplicate_router() -> APIRouter:
             from household_mcp.tools import duplicate_tools
 
             result = duplicate_tools.get_duplicate_stats()
-            return result  # type: ignore[return-value]
+            return result
         except Exception as e:
             logger.exception(f"Error getting duplicate stats: {e}")
             raise HTTPException(status_code=500, detail=str(e))

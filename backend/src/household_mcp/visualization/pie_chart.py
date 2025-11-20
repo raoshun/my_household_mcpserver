@@ -7,9 +7,9 @@ import warnings
 from typing import Any
 
 try:
-    import matplotlib.pyplot as plt  # type: ignore
+    import matplotlib.pyplot as plt
     import pandas as pd
-    from matplotlib.text import Text  # type: ignore
+    from matplotlib.text import Text
 except ImportError:
     pass
 
@@ -45,9 +45,7 @@ class PieChartGenerator(BaseChartGenerator):
                 width, height = self._parse_image_size(
                     options.get("image_size", "800x600")
                 )
-                fig, ax = plt.subplots(  # type: ignore[possibly-unbound]
-                    figsize=(width / 100, height / 100)
-                )
+                fig, ax = plt.subplots(figsize=(width / 100, height / 100))
 
                 chart_data = self._prepare_pie_chart_data(data)
                 font_prop = self._get_font_properties()
@@ -65,7 +63,7 @@ class PieChartGenerator(BaseChartGenerator):
                 labels = chart_data["category"].tolist()
                 pie_result = ax.pie(
                     chart_data["amount"],
-                    labels=labels,  # type: ignore[arg-type]
+                    labels=labels,
                     colors=colors,
                     autopct="%1.1f%%",
                     startangle=90,
@@ -88,7 +86,7 @@ class PieChartGenerator(BaseChartGenerator):
 
                 return self._save_figure_to_buffer(fig)
         except Exception as e:
-            plt.close("all")  # type: ignore[possibly-unbound]
+            plt.close("all")
             msg = f"Failed to create pie chart: {e!s}"
             raise ChartGenerationError(msg) from e
 
@@ -127,9 +125,7 @@ class PieChartGenerator(BaseChartGenerator):
         grouped = chart_data.groupby("category", as_index=False)
         chart_data = grouped["amount"].sum()
         # Sort by amount descending
-        chart_data = chart_data.sort_values(  # type: ignore[call-overload]
-            "amount", ascending=False
-        )
+        chart_data = chart_data.sort_values("amount", ascending=False)
 
         if chart_data.empty:
             msg = "No positive amounts found for pie chart"

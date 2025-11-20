@@ -7,9 +7,9 @@ import warnings
 from typing import TYPE_CHECKING, Any
 
 try:
-    import matplotlib.pyplot as plt  # type: ignore
+    import matplotlib.pyplot as plt
     import pandas as pd
-    from matplotlib.ticker import FuncFormatter  # type: ignore
+    from matplotlib.ticker import FuncFormatter
 except ImportError:
     pass
 
@@ -19,7 +19,7 @@ from .base import BaseChartGenerator
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from matplotlib.axes import Axes  # type: ignore
+    from matplotlib.axes import Axes
 
 
 class BarChartGenerator(BaseChartGenerator):
@@ -73,9 +73,7 @@ class BarChartGenerator(BaseChartGenerator):
                 chart_data = (
                     chart_data.groupby(category_col)[amount_col].sum().reset_index()
                 )
-                chart_data = chart_data.sort_values(  # type: ignore
-                    amount_col, ascending=True
-                )
+                chart_data = chart_data.sort_values(amount_col, ascending=True)
 
                 # Bars
                 colors = self._get_colors(len(chart_data))
@@ -106,13 +104,13 @@ class BarChartGenerator(BaseChartGenerator):
                 # Axis formatting
                 self._apply_currency_formatter(ax)
                 ax.grid(True, alpha=0.3, axis="x")
-                plt.tight_layout()  # type: ignore[possibly-unbound]
+                plt.tight_layout()
 
                 # Save
                 return self._save_figure_to_buffer(fig)
 
         except Exception as e:
-            plt.close("all")  # type: ignore[possibly-unbound]
+            plt.close("all")
             msg = f"Failed to create bar chart: {e!s}"
             raise ChartGenerationError(msg) from e
 

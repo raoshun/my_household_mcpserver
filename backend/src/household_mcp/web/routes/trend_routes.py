@@ -21,7 +21,7 @@ def create_trend_router() -> APIRouter:
     router = APIRouter(prefix="/api/trend", tags=["trend"])
 
     @router.get("/monthly_summary")
-    async def get_monthly_summary(  # type: ignore[no-untyped-def]
+    async def get_monthly_summary(
         start_year: int = Query(..., description="Start year"),
         start_month: int = Query(..., ge=1, le=12, description="Start month (1-12)"),
         end_year: int = Query(..., description="End year"),
@@ -132,7 +132,7 @@ def create_trend_router() -> APIRouter:
             raise HTTPException(status_code=500, detail=str(e))
 
     @router.get("/category_breakdown")
-    async def get_category_breakdown(  # type: ignore[no-untyped-def]
+    async def get_category_breakdown(
         start_year: int = Query(..., description="Start year"),
         start_month: int = Query(..., ge=1, le=12, description="Start month (1-12)"),
         end_year: int = Query(..., description="End year"),
@@ -212,26 +212,22 @@ def create_trend_router() -> APIRouter:
 
             # Filter expenses only (negative amounts)
             expense_df = combined_df[combined_df["金額（円）"] < 0].copy()
-            expense_df["金額（円）"] = expense_df["金額（円）"].abs()  # type: ignore
+            expense_df["金額（円）"] = expense_df["金額（円）"].abs()
 
             # Find top N categories by total expense
             category_totals = (
                 expense_df.groupby("大項目")["金額（円）"]
                 .sum()
-                .sort_values(ascending=False)  # type: ignore
+                .sort_values(ascending=False)
             )
             top_categories = category_totals.head(top_n).index.tolist()
 
             # Filter to top categories
-            top_expense_df = expense_df[
-                expense_df["大項目"].isin(top_categories)  # type: ignore
-            ]
+            top_expense_df = expense_df[expense_df["大項目"].isin(top_categories)]
 
             # Aggregate by category and month
             category_monthly = (
-                top_expense_df.groupby(["大項目", "year_month"])[  # type: ignore
-                    "金額（円）"
-                ]
+                top_expense_df.groupby(["大項目", "year_month"])["金額（円）"]
                 .sum()
                 .reset_index()
             )

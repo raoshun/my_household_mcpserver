@@ -1,6 +1,7 @@
 """Async tests for image streaming utilities."""
 
 import io
+
 import pytest
 
 # Use anyio for async tests

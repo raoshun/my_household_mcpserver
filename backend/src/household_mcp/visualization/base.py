@@ -9,11 +9,11 @@ import warnings
 from pathlib import Path
 
 try:
-    import matplotlib  # type: ignore
-    import matplotlib.font_manager as fm  # type: ignore
-    import matplotlib.pyplot as plt  # type: ignore
-    from matplotlib.axes import Axes  # type: ignore
-    from matplotlib.figure import Figure  # type: ignore
+    import matplotlib
+    import matplotlib.font_manager as fm
+    import matplotlib.pyplot as plt
+    from matplotlib.axes import Axes
+    from matplotlib.figure import Figure
 
     HAS_VISUALIZATION_DEPS = True
 except ImportError:

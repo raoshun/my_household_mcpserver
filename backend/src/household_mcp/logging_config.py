@@ -13,7 +13,7 @@ from typing import Any
 
 # Check if structlog is available
 try:
-    import structlog  # type: ignore
+    import structlog
 
     HAS_STRUCTLOG = True
 except ImportError:
@@ -79,33 +79,31 @@ def _setup_structlog(level: int, json_format: bool) -> None:
 
     # Build processor chain
     processors: list[Any] = [
-        structlog.contextvars.merge_contextvars,  # type: ignore
-        structlog.stdlib.add_log_level,  # type: ignore
-        structlog.stdlib.add_logger_name,  # type: ignore
-        structlog.processors.TimeStamper(fmt="iso"),  # type: ignore
-        structlog.processors.StackInfoRenderer(),  # type: ignore
+        structlog.contextvars.merge_contextvars,
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.add_logger_name,
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.StackInfoRenderer(),
     ]
 
     if json_format:
-        processors.append(  # type: ignore
-            structlog.processors.JSONRenderer()  # type: ignore
-        )
+        processors.append(structlog.processors.JSONRenderer())
     else:
         processors.extend(
             [
-                structlog.dev.ConsoleRenderer(  # type: ignore
+                structlog.dev.ConsoleRenderer(
                     colors=sys.stderr.isatty(),
-                    exception_formatter=(structlog.dev.plain_traceback),  # type: ignore
+                    exception_formatter=(structlog.dev.plain_traceback),
                 )
             ]
         )
 
     # Configure structlog
-    structlog.configure(  # type: ignore
+    structlog.configure(
         processors=processors,
-        wrapper_class=structlog.stdlib.BoundLogger,  # type: ignore
+        wrapper_class=structlog.stdlib.BoundLogger,
         context_class=dict,
-        logger_factory=structlog.stdlib.LoggerFactory(),  # type: ignore
+        logger_factory=structlog.stdlib.LoggerFactory(),
         cache_logger_on_first_use=True,
     )
 
@@ -126,6 +124,6 @@ def get_logger(name: str | None = None) -> Any:
 
     """
     if HAS_STRUCTLOG:
-        return structlog.get_logger(name)  # type: ignore
+        return structlog.get_logger(name)
     else:
         return logging.getLogger(name)

@@ -24,9 +24,7 @@ def create_core_router(chart_cache: Any) -> APIRouter:
     router = APIRouter(tags=["core"])
 
     @router.get("/api/cache/stats")
-    async def get_cache_stats(
-        self,
-    ) -> dict[str, object]:  # type: ignore[no-untyped-def]
+    async def get_cache_stats() -> dict[str, object]:
         """
         Get cache statistics.
 
@@ -37,9 +35,7 @@ def create_core_router(chart_cache: Any) -> APIRouter:
         return chart_cache.stats()
 
     @router.delete("/api/cache")
-    async def clear_cache(
-        self,
-    ) -> dict[str, object]:  # type: ignore[no-untyped-def]
+    async def clear_cache() -> dict[str, object]:
         """
         Clear all cached charts.
 
@@ -52,9 +48,7 @@ def create_core_router(chart_cache: Any) -> APIRouter:
         return {"status": "success", "message": "Cache cleared"}
 
     @router.get("/health")
-    async def health_check(
-        self,
-    ) -> dict[str, object]:  # type: ignore[no-untyped-def]
+    async def health_check() -> dict[str, object]:
         """
         Health check endpoint.
 

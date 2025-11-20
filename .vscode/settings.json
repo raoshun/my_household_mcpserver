@@ -53,5 +53,7 @@
   "accessibility.openChatEditedFiles": false,
   "python.testing.pytestArgs": [],
   "python.testing.unittestEnabled": false,
-  "python.testing.pytestEnabled": true
+  "python.testing.pytestEnabled": true,
+  "github.copilot.chat.anthropic.thinking.enabled": true,
+  "github.copilot.chat.localeOverride": "ja"
 }

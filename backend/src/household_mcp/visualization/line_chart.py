@@ -7,10 +7,10 @@ import warnings
 from typing import Any
 
 try:
-    import matplotlib.pyplot as plt  # type: ignore
+    import matplotlib.pyplot as plt
     import pandas as pd
-    from matplotlib.axes import Axes  # type: ignore
-    from matplotlib.figure import Figure  # type: ignore
+    from matplotlib.axes import Axes
+    from matplotlib.figure import Figure
 except ImportError:
     pass
 
@@ -87,7 +87,7 @@ class LineChartGenerator(BaseChartGenerator):
                 return self._save_figure_to_buffer(fig)
 
         except Exception as e:
-            plt.close("all")  # type: ignore[possibly-unbound]
+            plt.close("all")
             msg = f"Failed to create line chart: {e!s}"
             raise ChartGenerationError(msg) from e
 
@@ -142,7 +142,7 @@ class LineChartGenerator(BaseChartGenerator):
             trend["__sort_key__"] = pd.PeriodIndex(trend[time_label_col], freq="M")
             trend = trend.sort_values("__sort_key__").drop(columns=["__sort_key__"])
         except Exception:
-            trend = trend.sort_values(time_label_col)  # type: ignore
+            trend = trend.sort_values(time_label_col)
 
         return trend, time_label_col, amount_col
 

@@ -2096,13 +2096,13 @@ class ImageStreamer:
 
 #### テスト計画
 
-| テストID | 目的 | ファイル | 検証内容 |
-|---------|------|---------|---------|
-| TS-050 | 非同期チャンク正常 | `test_image_streamer_async.py` | 全チャンク・順序・サイズ |
-| TS-051 | 5並行ストリーム | `test_streaming_concurrency.py` | gather後例外なし & 時間制約 |
-| TS-052 | syncフォールバック選択 | `test_image_streamer_sync.py` | enable_sync_fallback=True 動作 |
-| TS-053 | カバレッジ ≥90% | coverage レポート | 分岐/行達成 |
-| TS-054 | StreamingResponseヘッダ | concurrency テスト内 | Content-Type/Disposition |
+| テストID | 目的                    | ファイル                        | 検証内容                       |
+| -------- | ----------------------- | ------------------------------- | ------------------------------ |
+| TS-050   | 非同期チャンク正常      | `test_image_streamer_async.py`  | 全チャンク・順序・サイズ       |
+| TS-051   | 5並行ストリーム         | `test_streaming_concurrency.py` | gather後例外なし & 時間制約    |
+| TS-052   | syncフォールバック選択  | `test_image_streamer_sync.py`   | enable_sync_fallback=True 動作 |
+| TS-053   | カバレッジ ≥90%         | coverage レポート               | 分岐/行達成                    |
+| TS-054   | StreamingResponseヘッダ | concurrency テスト内            | Content-Type/Disposition       |
 
 #### 成功指標
 

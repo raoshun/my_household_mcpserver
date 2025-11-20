@@ -1,7 +1,9 @@
 """Sync tests for image streaming utilities and cache."""
 
 import io
+
 import pytest
+
 
 def test_chart_cache_import():
     """Test that ChartCache can be imported when cachetools is available."""
@@ -243,6 +245,7 @@ def test_create_response_sync_fallback_control():
     """Test control of sync fallback behavior."""
     try:
         from fastapi.responses import StreamingResponse  # noqa: F401
+
         from household_mcp.streaming.image_streamer import ImageStreamer
     except ImportError:
         pytest.skip("FastAPI not installed")

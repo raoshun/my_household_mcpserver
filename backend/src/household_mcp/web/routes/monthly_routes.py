@@ -22,13 +22,13 @@ def create_monthly_router() -> APIRouter:
     router = APIRouter(prefix="/api", tags=["monthly"])
 
     @router.get("/monthly")
-    async def get_monthly_data(  # type: ignore[no-untyped-def]
-        year: int = Query(..., description="Year"),  # type: ignore[assignment]
-        month: int = Query(..., description="Month (1-12)"),  # type: ignore[assignment]
-        output_format: str = Query("json", description="Output format: json or image"),  # type: ignore[assignment]
-        graph_type: str = Query("pie", description="Graph type: pie, bar, line, area"),  # type: ignore[assignment]
-        image_size: str = Query("800x600", description="Image size (WxH)"),  # type: ignore[assignment]
-    ) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+    async def get_monthly_data(
+        year: int = Query(..., description="Year"),
+        month: int = Query(..., description="Month (1-12)"),
+        output_format: str = Query("json", description="Output format: json or image"),
+        graph_type: str = Query("pie", description="Graph type: pie, bar, line, area"),
+        image_size: str = Query("800x600", description="Image size (WxH)"),
+    ) -> dict[str, Any]:
         """
         Get monthly household data.
 
@@ -58,7 +58,7 @@ def create_monthly_router() -> APIRouter:
                     graph_type=graph_type,
                     image_size=image_size,
                 )
-                return result  # type: ignore[return-value]
+                return result
             else:
                 # Return JSON data
                 loader = HouseholdDataLoader(src_dir=data_dir)
@@ -76,9 +76,7 @@ def create_monthly_router() -> APIRouter:
             raise HTTPException(status_code=500, detail=str(e))
 
     @router.get("/available-months")
-    async def get_available_months(
-        self,
-    ) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+    async def get_available_months() -> dict[str, Any]:
         """
         Get list of available months.
 
@@ -101,10 +99,10 @@ def create_monthly_router() -> APIRouter:
             raise HTTPException(status_code=500, detail=str(e))
 
     @router.get("/category-hierarchy")
-    async def get_category_hierarchy(  # type: ignore[no-untyped-def]
-        year: int = Query(2025, description="Year"),  # type: ignore[assignment]
-        month: int = Query(1, description="Month"),  # type: ignore[assignment]
-    ) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+    async def get_category_hierarchy(
+        year: int = Query(2025, description="Year"),
+        month: int = Query(1, description="Month"),
+    ) -> dict[str, Any]:
         """
         Get category hierarchy.
 
