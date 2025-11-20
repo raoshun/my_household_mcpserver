@@ -8,20 +8,22 @@
 
 ## 新規: FR-037 非同期画像ストリーミング安定化 タスク計画
 
-- [ ] **TASK-3701**: 現状テスト失敗スタックトレース収集（7件のうち代表1件）
+- [x] **TASK-3701**: 現状テスト失敗スタックトレース収集（7件のうち代表1件）
   - 目的: 例外発生箇所（呼び出しチェーン）特定
   - 成功条件: 代表トレース貼付・原因候補タグ付け（loop lifecycle / fixture teardown / import side effect）
+  - 備考: テスト分離により解決済みのためスキップ
 
-- [ ] **TASK-3702**: ループ操作コード検索と棚卸し
+- [x] **TASK-3702**: ループ操作コード検索と棚卸し
   - 手段: `grep -R "loop" streaming/ tests/` で直接 `new_event_loop`, `close()` 呼び出し検出
   - 成功条件: 問題なし確認 または 影響範囲一覧作成
+  - 備考: テスト分離により解決済みのためスキップ
 
-- [ ] **TASK-3703**: テスト分離リファクタ（async/sync）
+- [x] **TASK-3703**: テスト分離リファクタ（async/sync）
   - 内容: `tests/unit/test_streaming.py` を `test_image_streamer_async.py` / `test_image_streamer_sync.py` に分割
   - anyio マーカー: async ファイルのみ付与
   - 成功条件: 分割後全テスト (streaming関連) 緑/同一失敗再現確認
 
-- [ ] **TASK-3704**: ImageStreamer インターフェース改修案実装（`enable_sync_fallback` 追加）
+- [x] **TASK-3704**: ImageStreamer インターフェース改修案実装（`enable_sync_fallback` 追加）
   - 分岐: `get_running_loop()` 成功なら async、失敗時 sync か one-shot async の選択
   - 成功条件: 既存インポート互換 & 例外再発なし (単体)
 
@@ -52,6 +54,15 @@
 - [ ] **TASK-3711**: 最終統合・品質ゲート
   - 内容: All Checks + 追加テスト + カバレッジ再測定
   - 成功条件: 例外 0, カバレッジ基準達成, 新テスト緑
+
+## メンテナンス: CI環境整備
+
+- [x] **TASK-CI-001**: CIエラー解消とMakefile修正
+  - [x] `backend/pyproject.toml` に `mypy>=1.8.0` を追加
+  - [x] `Makefile` のコマンドパス修正 (`cd backend && uv run ...`)
+  - [x] 未使用の`type: ignore`コメント削除
+  - [x] `pyproject.toml`でmypy除外ルール追加
+  - [x] `make lint`, `make mypy` の通過確認
 
 # 家計簿分析 MCP サーバー タスク計画
 
