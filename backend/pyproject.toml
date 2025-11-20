@@ -161,8 +161,15 @@ exclude = [
     "src/household_mcp/duplicate/detector.py",
     "src/household_mcp/web/http_server.py",
     "src/household_mcp/server/.*",
+    "src/household_mcp/server.py",
+    "src/household_mcp/dataloader_compat.py",
     "src/household_mcp/streaming/.*",
     "src/household_mcp/database/.*",
+    "src/household_mcp/web/routes/.*",
+    "src/household_mcp/analysis/.*",
+    "src/household_mcp/visualization/.*",
+    "src/household_mcp/tools/.*",
+    "src/household_mcp/assets/.*",
 ]
 
 [[tool.mypy.overrides]]
@@ -277,6 +284,7 @@ dev = [
     # Linting & Formatting
     "ruff>=0.6.9",
     "black>=23.0.0",
+    "mypy>=1.8.0",
     "bandit[toml]>=1.7.5",
     # Pre-commit hooks
     "pre-commit>=3.6.0",

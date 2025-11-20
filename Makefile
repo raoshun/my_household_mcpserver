@@ -39,16 +39,16 @@ clean: ## キャッシュファイルとビルド成果物を削除
 	rm -rf build/ dist/ htmlcov/ .coverage
 
 test: ## テストを実行
-	$(PYTEST) -v
+	cd backend && $(PYTEST) -v
 
 test-cov: ## カバレッジ付きでテストを実行
-	$(PYTEST) --cov=src/household_mcp --cov-report=html --cov-report=term
+	cd backend && $(PYTEST) --cov=src/household_mcp --cov-report=html --cov-report=term
 
 test-unit: ## unit テストのみを実行（integration マーカーの付いたテストを除外）
-	$(PYTEST) -m "not integration and not slow"
+	cd backend && $(PYTEST) -m "not integration and not slow"
 
 test-integration: ## integration テストのみを実行（DB/CSV/HTTPなどの重いテスト）
-	$(PYTEST) -m integration
+	cd backend && $(PYTEST) -m integration
 
 lint: ## リンターを実行（ruff）
 	cd backend && uv run ruff check .
@@ -66,10 +66,10 @@ format-ruff: ## コードフォーマットを実行（ruff）
 	cd backend && uv run ruff format .
 
 mypy: ## 型チェックを実行
-	mypy src/
+	cd backend && uv run mypy src/
 
 bandit: ## セキュリティチェックを実行
-	bandit -r src/ -f json -o bandit-report.json
+	cd backend && uv run bandit -r src/ -f json -o bandit-report.json
 
 check-all: ## すべてのチェックを実行
 	make lint
