@@ -105,6 +105,7 @@ class ImageStreamer:
         image_data: bytes,
         media_type: str = "image/png",
         filename: str | None = None,
+        enable_sync_fallback: bool = True,
     ) -> StreamingResponse:
         """
         Create FastAPI StreamingResponse for image.
@@ -113,6 +114,9 @@ class ImageStreamer:
             image_data: Complete image data
             media_type: MIME type (default: "image/png")
             filename: Optional filename for Content-Disposition header
+            enable_sync_fallback: If True, use sync iterator when no event loop
+                                is running. If False, always use async
+                                iterator. (default: True)
 
         Returns:
             FastAPI StreamingResponse
@@ -133,16 +137,20 @@ class ImageStreamer:
 
         # If an asyncio event loop is running, use the async generator.
         # Otherwise fall back to a synchronous iterator to avoid event loop
-        # collisions.
-        # fall back to the synchronous iterator. This avoids calling
-        # ``asyncio.run`` from executing contexts that already have a loop.
+        # collisions, unless fallback is disabled.
         try:
             asyncio.get_running_loop()
             # Running inside an event loop — use async generator
             body = self.stream_bytes(image_data)
         except RuntimeError:
-            # No running loop — use sync generator
-            body = self.stream_bytes_sync(image_data)
+            # No running loop
+            if enable_sync_fallback:
+                # use sync generator
+                body = self.stream_bytes_sync(image_data)
+            else:
+                # use async generator
+                # (caller responsible for execution context)
+                body = self.stream_bytes(image_data)
 
         return StreamingResponse(body, media_type=media_type, headers=headers)
 
