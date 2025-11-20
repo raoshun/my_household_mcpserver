@@ -1,12 +1,7 @@
-"""Tests for image streaming utilities."""
+"""Sync tests for image streaming utilities and cache."""
 
 import io
-
 import pytest
-
-# Use anyio for async tests
-pytestmark = pytest.mark.anyio
-
 
 def test_chart_cache_import():
     """Test that ChartCache can be imported when cachetools is available."""
@@ -114,44 +109,6 @@ def test_image_streamer_buffer_conversion():
     assert extracted == test_data
 
 
-async def test_image_streamer_stream_bytes():
-    """Test async streaming of bytes."""
-    from household_mcp.streaming.image_streamer import ImageStreamer
-
-    streamer = ImageStreamer(chunk_size=5)
-    test_data = b"0123456789"  # 10 bytes
-
-    chunks = []
-    async for chunk in streamer.stream_bytes(test_data, delay_ms=0):
-        chunks.append(chunk)
-
-    # Should be split into 2 chunks (5 bytes each)
-    assert len(chunks) == 2
-    assert chunks[0] == b"01234"
-    assert chunks[1] == b"56789"
-
-
-async def test_image_streamer_stream_from_buffer():
-    """Test async streaming from BytesIO buffer."""
-    from household_mcp.streaming.image_streamer import ImageStreamer
-
-    streamer = ImageStreamer(chunk_size=3)
-    buffer = io.BytesIO(b"abcdefgh")  # 8 bytes
-
-    chunks = []
-    async for chunk in streamer.stream_from_buffer(buffer, delay_ms=0):
-        chunks.append(chunk)
-
-    # Should be split into 3 chunks
-    assert len(chunks) == 3
-    assert chunks[0] == b"abc"
-    assert chunks[1] == b"def"
-    assert chunks[2] == b"gh"
-
-
-# ========== TASK-606: 拡張テスト ==========
-
-
 def test_chart_cache_ttl_expiration():
     """Test that cache items expire after TTL."""
     try:
@@ -221,50 +178,6 @@ def test_chart_cache_key_consistency():
         pytest.skip("cachetools not installed")
 
 
-async def test_image_streamer_empty_data():
-    """Test streaming empty data."""
-    from household_mcp.streaming.image_streamer import ImageStreamer
-
-    streamer = ImageStreamer()
-    chunks = []
-    async for chunk in streamer.stream_bytes(b"", delay_ms=0):
-        chunks.append(chunk)
-
-    assert len(chunks) == 0
-
-
-async def test_image_streamer_single_byte():
-    """Test streaming single byte."""
-    from household_mcp.streaming.image_streamer import ImageStreamer
-
-    streamer = ImageStreamer(chunk_size=8192)
-    chunks = []
-    async for chunk in streamer.stream_bytes(b"X", delay_ms=0):
-        chunks.append(chunk)
-
-    assert len(chunks) == 1
-    assert chunks[0] == b"X"
-
-
-async def test_image_streamer_large_image():
-    """Test streaming large image data (NFR-005: memory efficiency)."""
-    from household_mcp.streaming.image_streamer import ImageStreamer
-
-    # Simulate 5MB image
-    large_data = b"X" * (5 * 1024 * 1024)
-    streamer = ImageStreamer(chunk_size=8192)
-
-    chunk_count = 0
-    total_size = 0
-    async for chunk in streamer.stream_bytes(large_data, delay_ms=0):
-        chunk_count += 1
-        total_size += len(chunk)
-        assert len(chunk) <= 8192  # Each chunk should not exceed chunk_size
-
-    assert total_size == len(large_data)
-    assert chunk_count > 1  # Should be chunked
-
-
 def test_image_streamer_stream_bytes_sync():
     """Test synchronous streaming iterator produces same chunks as async."""
     from household_mcp.streaming.image_streamer import ImageStreamer
@@ -324,3 +237,30 @@ def test_global_cache_operations():
         cache.clear()
     except ImportError:
         pytest.skip("cachetools not installed")
+
+
+def test_create_response_sync_fallback_control():
+    """Test control of sync fallback behavior."""
+    try:
+        from fastapi.responses import StreamingResponse  # noqa: F401
+        from household_mcp.streaming.image_streamer import ImageStreamer
+    except ImportError:
+        pytest.skip("FastAPI not installed")
+
+    streamer = ImageStreamer()
+    test_data = b"test_data"
+
+    # Case 1: Default behavior (fallback=True)
+    # Should return sync generator wrapped in iterate_in_threadpool
+    response = streamer.create_response(test_data)
+    # Starlette wraps sync iterators in iterate_in_threadpool
+    assert response.body_iterator.__name__ == "iterate_in_threadpool"
+
+    # Case 2: Explicit fallback=True
+    response = streamer.create_response(test_data, enable_sync_fallback=True)
+    assert response.body_iterator.__name__ == "iterate_in_threadpool"
+
+    # Case 3: fallback=False
+    # Should return async generator directly (stream_bytes)
+    response = streamer.create_response(test_data, enable_sync_fallback=False)
+    assert response.body_iterator.__name__ == "stream_bytes"
