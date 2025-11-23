@@ -275,3 +275,90 @@ class TestCSVBasedFIRECalculation:
             pd.Timestamp("2024-06-30").date()
         )
         assert csv_annual == 12_000_000.0
+
+    def test_estimate_annual_expense_from_csv(
+        self,
+        temp_csv_data: Path,
+        db_manager_with_snapshot: DatabaseManager,
+    ) -> None:
+        """Test estimate_annual_expense calculates correctly from CSV."""
+        data_loader = HouseholdDataLoader(src_dir=temp_csv_data)
+        fire_service = FireSnapshotService(
+            db_manager_with_snapshot, data_loader=data_loader
+        )
+
+        # Calculate for 2024-12-31 (all 12 months available)
+        expense = fire_service.estimate_annual_expense(
+            snapshot_date=pd.Timestamp("2024-12-31").date()
+        )
+
+        # Expected: 430,000 * 12 = 5,160,000
+        # Each month has 10 records: [-100000, -50000, -30000, -20000, -15000] * 2
+        # Sum per month = 430,000
+        assert expense == 5_160_000.0
+
+    def test_get_financial_independence_status_tool_integration(
+        self,
+        temp_csv_data: Path,
+        db_manager_with_snapshot: DatabaseManager,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test get_financial_independence_status tool integration."""
+        from household_mcp.tools import financial_independence_tools
+
+        # Setup dependencies
+        data_loader = HouseholdDataLoader(src_dir=temp_csv_data)
+        fire_service = FireSnapshotService(
+            db_manager_with_snapshot, data_loader=data_loader
+        )
+
+        monkeypatch.setattr(financial_independence_tools, "data_loader", data_loader)
+        monkeypatch.setattr(financial_independence_tools, "fire_service", fire_service)
+
+        # Execute tool
+        result = financial_independence_tools.get_financial_independence_status(
+            period_months=12
+        )
+
+        # Verify
+        assert result["annual_expense"] == 5_160_000
+        assert result["fire_target"] == 5_160_000 * 25
+        assert result["current_assets"] == 20_500_000
+        # Progress: 20.5M / 129M = ~15.8%
+        expected_progress = (20_500_000 / (5_160_000 * 25)) * 100
+        assert abs(result["progress_rate"] - expected_progress) < 0.1
+
+    def test_get_financial_independence_status_no_snapshot(
+        self,
+        temp_csv_data: Path,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test tool behavior when no snapshots exist but CSV data is available."""
+        from household_mcp.tools import financial_independence_tools
+
+        # Setup: Empty database (no snapshots)
+        db_path = tmp_path / "empty.db"
+        db_manager = DatabaseManager(db_path=str(db_path))
+        db_manager.initialize_database()
+
+        data_loader = HouseholdDataLoader(src_dir=temp_csv_data)
+        fire_service = FireSnapshotService(db_manager, data_loader=data_loader)
+
+        monkeypatch.setattr(financial_independence_tools, "data_loader", data_loader)
+        monkeypatch.setattr(financial_independence_tools, "fire_service", fire_service)
+
+        # Execute tool
+        result = financial_independence_tools.get_financial_independence_status(
+            period_months=12
+        )
+
+        # Verify
+        # Should calculate annual expense from CSV even without snapshots
+        assert result["annual_expense"] == 5_160_000
+        assert result["fire_target"] == 5_160_000 * 25
+
+        # Assets should be 0 as no snapshot exists
+        assert result["current_assets"] == 0
+        assert result["progress_rate"] == 0.0
+        assert result["months_to_fi"] is None

@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import os
+from datetime import date as real_date
+from unittest.mock import patch
+
 import pytest
 
 from household_mcp.tools.financial_independence_tools import (
@@ -11,6 +15,50 @@ from household_mcp.tools.financial_independence_tools import (
     project_financial_independence_date,
     suggest_improvement_actions,
 )
+
+
+@pytest.fixture(autouse=True)
+def mock_today():
+    """Mock today to be 2025-07-01.
+
+    This ensures we have data for 'last month' (June 2025).
+    """
+    with patch("household_mcp.tools.financial_independence_tools.date") as mock_date:
+        mock_date.today.return_value = real_date(2025, 7, 1)
+        mock_date.side_effect = lambda *args, **kwargs: real_date(*args, **kwargs)
+        yield
+
+
+@pytest.fixture(autouse=True)
+def mock_fire_service():
+    """Mock fire_service to return dummy data for integration tests."""
+    with patch(
+        "household_mcp.tools.financial_independence_tools.fire_service"
+    ) as mock_service:
+        mock_service.get_status.return_value = {
+            "snapshot": {
+                "total": 5000000,
+                "snapshot_date": "2025-07-01",
+                "is_interpolated": False,
+            },
+            "fi_progress": {
+                "fire_target": 60000000,
+                "monthly_growth_rate": 0.005,
+                "months_to_fi": 120,
+                "annual_expense": 2400000,
+                "progress_rate": 8.33,
+            },
+        }
+        yield
+
+
+@pytest.fixture(autouse=True)
+def check_data():
+    """Skip tests if data directory or CSV files are missing."""
+    if not os.path.exists("data") or not any(
+        f.endswith(".csv") for f in os.listdir("data")
+    ):
+        pytest.skip("Real data not available in backend/data")
 
 
 class TestFIToolsIntegration:

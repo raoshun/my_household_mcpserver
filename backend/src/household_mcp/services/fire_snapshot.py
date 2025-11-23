@@ -263,6 +263,7 @@ class FireSnapshotService:
         snapshot_date: date | None = None,
         *,
         months: int = 12,
+        recalculate: bool = False,
     ) -> dict[str, Any]:
         """Return FI status along with snapshot and history metadata."""
 
@@ -272,7 +273,9 @@ class FireSnapshotService:
                 if target_date is None:
                     raise SnapshotNotFoundError("No snapshots available")
 
-                cache_entry = self._ensure_cache_entry(session, target_date)
+                cache_entry = self._ensure_cache_entry(
+                    session, target_date, recalculate=recalculate
+                )
                 snapshot_resp = self._snapshot_from_session(
                     session,
                     target_date,
@@ -287,6 +290,29 @@ class FireSnapshotService:
                 }
 
         return self._run_with_retry(_operation)
+
+    def estimate_annual_expense(
+        self,
+        snapshot_date: date | None = None,
+    ) -> float:
+        """
+        Estimate annual expense using CSV data or default.
+
+        This method is useful when no snapshots exist yet, but we want
+        to calculate FIRE targets based on actual spending from CSV.
+
+        Args:
+            snapshot_date: Target date for calculation (default: today)
+
+        Returns:
+            Estimated annual expense in JPY
+
+        """
+        target_date = snapshot_date or date.today()
+        return self._estimate_annual_expense(
+            asset_history=[],
+            snapshot_date=target_date,
+        )
 
     # ------------------------------------------------------------------
     # Internals
@@ -424,16 +450,20 @@ class FireSnapshotService:
         )
 
     def _ensure_cache_entry(
-        self, session: Session, snapshot_date: date
+        self,
+        session: Session,
+        snapshot_date: date,
+        recalculate: bool = False,
     ) -> FIProgressCache:
         snapshot_dt = self._to_datetime(snapshot_date)
-        cache = (
-            session.query(FIProgressCache)
-            .filter(FIProgressCache.snapshot_date == snapshot_dt)
-            .one_or_none()
-        )
-        if cache:
-            return cache
+        if not recalculate:
+            cache = (
+                session.query(FIProgressCache)
+                .filter(FIProgressCache.snapshot_date == snapshot_dt)
+                .one_or_none()
+            )
+            if cache:
+                return cache
         return self._recalculate_fi_cache(session, snapshot_date)
 
     def _to_datetime(self, value: date) -> datetime:
@@ -573,7 +603,9 @@ class FireSnapshotService:
             if len(valid_months) >= 12:
                 recent_12 = valid_months[-12:]
                 df = self.data_loader.load_many(recent_12)
-                total_expense = abs(df["金額（円）"].sum())
+                # Filter for expenses (negative values) only
+                expenses = df[df["金額（円）"] < 0]
+                total_expense = abs(expenses["金額（円）"].sum())
                 if total_expense > 0:
                     logger.info(
                         "Annual expense calculated from 12-month CSV: ¥%s",
@@ -585,7 +617,9 @@ class FireSnapshotService:
             if len(valid_months) >= 6:
                 recent_6 = valid_months[-6:]
                 df = self.data_loader.load_many(recent_6)
-                six_month_expense = abs(df["金額（円）"].sum())
+                # Filter for expenses (negative values) only
+                expenses = df[df["金額（円）"] < 0]
+                six_month_expense = abs(expenses["金額（円）"].sum())
                 if six_month_expense > 0:
                     annualized = six_month_expense * 2.0
                     logger.info(
