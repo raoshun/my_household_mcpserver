@@ -209,6 +209,226 @@
 
 ---
 
+### get_financial_independence_status
+
+経済的自由（FIRE）への進捗状況を取得します。
+
+**パラメータ**:
+
+| 名前            | 型        | 必須 | デフォルト | 説明                   |
+| --------------- | --------- | ---- | ---------- | ---------------------- |
+| `period_months` | `integer` | -    | 12         | 分析対象期間（月数）   |
+
+**レスポンス**:
+
+```json
+{
+  "current_assets": 5000000,
+  "target_assets": 60000000,
+  "progress_rate": 8.33,
+  "annual_expense": 2400000,
+  "months_to_fi": 120,
+  "monthly_growth_rate": 0.005,
+  "trend": "stable"
+}
+```
+
+---
+
+### analyze_expense_patterns
+
+支出パターン（定常・臨時）を分析します。
+
+**パラメータ**:
+
+| 名前            | 型        | 必須 | デフォルト | 説明                   |
+| --------------- | --------- | ---- | ---------- | ---------------------- |
+| `period_months` | `integer` | -    | 12         | 分析対象期間（月数）   |
+| `category`      | `string`  | -    | -          | 特定カテゴリ（省略可） |
+
+**レスポンス**:
+
+```json
+{
+  "regular_spending": 200000,
+  "irregular_spending": 50000,
+  "categories": [
+    {
+      "category": "食費",
+      "classification": "regular",
+      "average_amount": 50000,
+      "confidence": 0.9
+    }
+  ]
+}
+```
+
+---
+
+### project_financial_independence_date
+
+FIRE達成予定日を予測します。
+
+**パラメータ**:
+
+| 名前                           | 型        | 必須 | デフォルト | 説明                   |
+| ------------------------------ | --------- | ---- | ---------- | ---------------------- |
+| `additional_savings_per_month` | `integer` | -    | 0          | 追加貯蓄額（月額）     |
+| `custom_growth_rate`           | `number`  | -    | -          | カスタム成長率（月利） |
+
+**レスポンス**:
+
+```json
+{
+  "current_projection": {
+    "months_to_fi": 120,
+    "target_date": "2035-01"
+  },
+  "improved_projection": {
+    "months_to_fi": 100,
+    "target_date": "2033-05"
+  },
+  "improvement": {
+    "months_saved": 20,
+    "years_saved": 1.7
+  }
+}
+```
+
+---
+
+### suggest_improvement_actions
+
+家計改善アクションを提案します。
+
+**パラメータ**:
+
+| 名前             | 型        | 必須 | デフォルト | 説明                   |
+| ---------------- | --------- | ---- | ---------- | ---------------------- |
+| `annual_expense` | `integer` | -    | -          | 年間支出額（省略可）   |
+
+**レスポンス**:
+
+```json
+{
+  "suggestions": [
+    {
+      "priority": "HIGH",
+      "type": "reduction",
+      "title": "固定費の見直し",
+      "description": "通信費が高い傾向にあります...",
+      "impact": 5000
+    }
+  ]
+}
+```
+
+---
+
+### compare_scenarios
+
+複数シナリオを比較します。
+
+**パラメータ**:
+
+| 名前               | 型     | 必須 | デフォルト | 説明                   |
+| ------------------ | ------ | ---- | ---------- | ---------------------- |
+| `scenario_configs` | `dict` | -    | -          | シナリオ設定（省略可） |
+
+**レスポンス**:
+
+```json
+{
+  "scenarios": [
+    {
+      "name": "Current",
+      "months_to_fi": 120
+    },
+    {
+      "name": "Aggressive Savings",
+      "months_to_fi": 100
+    }
+  ]
+}
+```
+
+---
+
+### register_fire_snapshot
+
+資産スナップショットを登録します。
+
+**パラメータ**:
+
+| 名前                | 型        | 必須 | デフォルト | 説明                   |
+| ------------------- | --------- | ---- | ---------- | ---------------------- |
+| `snapshot_date`     | `string`  | ✓    | -          | 日付（YYYY-MM-DD）     |
+| `cash_and_deposits` | `integer` | -    | 0          | 現金・預金             |
+| `stocks_cash`       | `integer` | -    | 0          | 株式（現物）           |
+| `stocks_margin`     | `integer` | -    | 0          | 株式（信用）           |
+| `investment_trusts` | `integer` | -    | 0          | 投資信託               |
+| `pension`           | `integer` | -    | 0          | 年金                   |
+| `points`            | `integer` | -    | 0          | ポイント               |
+| `notes`             | `string`  | -    | -          | 備考                   |
+
+**レスポンス**:
+
+```json
+{
+  "status": "success",
+  "message": "スナップショットを登録しました",
+  "data": { ... }
+}
+```
+
+---
+
+### get_annual_expense_breakdown
+
+年間支出の内訳を取得します。
+
+**パラメータ**:
+
+| 名前   | 型        | 必須 | デフォルト | 説明                   |
+| ------ | --------- | ---- | ---------- | ---------------------- |
+| `year` | `integer` | -    | 直近1年    | 対象年（YYYY）         |
+
+**レスポンス**:
+
+```json
+{
+  "period": "2024年",
+  "total_annual_expense": 3000000,
+  "monthly_breakdown": [...],
+  "category_breakdown": [...]
+}
+```
+
+---
+
+### compare_actual_vs_fire_target
+
+実支出とFIRE目標支出を比較します。
+
+**パラメータ**:
+
+| 名前            | 型        | 必須 | デフォルト | 説明                   |
+| --------------- | --------- | ---- | ---------- | ---------------------- |
+| `period_months` | `integer` | -    | 12         | 分析対象期間（月数）   |
+
+**レスポンス**:
+
+```json
+{
+  "actual_annual_expense": 3000000,
+  "fire_based_expense": 2400000,
+  "difference": 600000,
+  "expense_ratio": 1.25
+}
+```
+
+---
+
 ## MCP リソース
 
 ### data://category_hierarchy

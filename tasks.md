@@ -39,17 +39,17 @@
 
 ### Phase 1: 基礎分析機能（3-4日）
 
-- [ ] **TASK-2001**: IncomeAnalyzer 基礎実装（1.0d）
-- [ ] **TASK-2002**: SavingsRateCalculator 実装（1.0d）
-- [ ] **TASK-2003**: RealEstateCashflowAnalyzer 実装（1.0d）
-- [ ] **TASK-2004**: Phase 1 単体テスト（1.0d）
+- [x] **TASK-2001**: IncomeAnalyzer 基礎実装（1.0d）
+- [x] **TASK-2002**: SavingsRateCalculator 実装（1.0d）
+- [x] **TASK-2003**: RealEstateCashflowAnalyzer 実装（1.0d）
+- [x] **TASK-2004**: Phase 1 単体テスト（1.0d）
 
 ### Phase 2: FIRE計算強化（4-5日）
 
-- [ ] **TASK-2005**: EnhancedFIRESimulator 基礎実装（1.5d）
-- [ ] **TASK-2006**: 4種類のFIREタイプサポート（1.0d）
-- [ ] **TASK-2007**: シナリオ比較機能（1.0d）
-- [ ] **TASK-2008**: Phase 2 単体テスト（1.0d）
+- [x] **TASK-2005**: EnhancedFIRESimulator 基礎実装（1.5d）
+- [x] **TASK-2006**: 4種類のFIREタイプサポート（1.0d）
+- [x] **TASK-2007**: シナリオ比較機能（1.0d）
+- [x] **TASK-2008**: Phase 2 単体テスト（1.0d）
 
 ### Phase 3: 高度機能・統合（4-5日）
 
@@ -64,7 +64,7 @@
   - 実績: `tests/integration/test_fire_scenarios_api.py` の 6 テスト全て PASSED
     - うち what-if テストでは annual_expense と変更サマリ構造を検証
   - ⚠️ 注意: プロジェクト全体のカバレッジは 18%（閾値 80% 未達）。次タスク TASK-2017 で計画。
-- [ ] **TASK-2013**: ドキュメント整備（0.75d）
+- [x] **TASK-2013**: ドキュメント整備（0.75d）
   - FR-035/036 を requirements.md, design.md に追記完了（2025-11-17）
   - 残作業: README/examples/docs での analysis_tools 参照更新、What-If 例文追加
 
