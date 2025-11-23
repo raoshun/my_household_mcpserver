@@ -2,7 +2,7 @@
   "servers": {
     "my-household-mcp": {
       "command": "uv",
-      "args": ["run", "python", "src/household_mcp/server.py"],
+      "args": ["run", "python", "src/household_mcp/mcp_server.py"],
       "cwd": "${workspaceFolder}/backend"
     }
   }

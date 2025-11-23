@@ -30,7 +30,7 @@ def test_submit_asset_record_invalid_type():
 def test_get_financial_independence_status_no_snapshots(monkeypatch):
     monkeypatch.setattr(fit, "fire_service", fit.fire_service)
 
-    def _raise(snapshot_date=None, months=12):
+    def _raise(snapshot_date=None, months=12, recalculate=False):
         raise SnapshotNotFoundError()
 
     monkeypatch.setattr(fit.fire_service, "get_status", _raise)

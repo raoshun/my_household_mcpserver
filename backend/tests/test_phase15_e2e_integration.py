@@ -311,10 +311,11 @@ class TestPhase15QualityGates:
     def test_all_phase15_tests_pass(self):
         """全テストが PASS することを確認"""
         import subprocess
+        import sys
 
         result = subprocess.run(
             [
-                "python",
+                sys.executable,
                 "-m",
                 "pytest",
                 "tests/test_fire_calculator.py",

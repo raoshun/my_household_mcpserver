@@ -46,7 +46,8 @@
         "copilot/gpt-5.1-codex",
         "copilot/gpt-5.1-codex-mini",
         "copilot/grok-code-fast-1",
-        "copilot/oswe-vscode-secondary"
+        "copilot/oswe-vscode-secondary",
+        "copilot/gemini-3-pro-preview"
       ]
     }
   },

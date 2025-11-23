@@ -54,7 +54,8 @@ class TestHTTPServerEndpoints:
         # FastAPI may not have /health by default, but our custom endpoint should exist
         # if implemented in create_http_app
         if response.status_code == 200:
-            assert "success" in response.json() or response.json() == {}
+            data = response.json()
+            assert "success" in data or "status" in data or data == {}
 
     def test_cors_headers_present(self, client):
         """Test that CORS headers are present in responses."""
