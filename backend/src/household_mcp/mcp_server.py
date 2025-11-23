@@ -46,6 +46,7 @@ try:
         analyze_expense_patterns,
         compare_actual_vs_fire_target,
         compare_scenarios,
+        detect_spending_anomalies,
         get_annual_expense_breakdown,
         get_financial_independence_status,
         project_financial_independence_date,
@@ -901,6 +902,36 @@ if HAS_FI_TOOLS:
                 "error": f"実支出比較失敗: {e!s}",
             }
 
+    @mcp.tool("detect_spending_anomalies")
+    def fi_detect_spending_anomalies(
+        period_months: int = 6,
+        threshold_sigma: float = 2.0,
+    ) -> dict[str, Any]:
+        """
+        Detect spending anomalies based on statistical deviation.
+
+        Args:
+            period_months: Analysis period for baseline (default: 6)
+            threshold_sigma: Standard deviation threshold (default: 2.0)
+
+        Returns:
+            Detected anomalies with details
+
+        """
+        try:
+            return cast(
+                dict[str, Any],
+                detect_spending_anomalies(
+                    period_months=period_months,
+                    threshold_sigma=threshold_sigma,
+                ),
+            )
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"異常検知失敗: {e!s}",
+            }
+
 
 # Phase 15: Advanced Analysis Tools (FIRE, Scenario, Pattern Analysis)
 
@@ -1104,6 +1135,7 @@ async def list_tools() -> Sequence[Any]:
                 "compare_financial_scenarios",
                 "get_annual_expense_breakdown",
                 "compare_actual_vs_fire_target",
+                "detect_spending_anomalies",
             ]
         )
     # Add Phase 15 advanced analysis tools

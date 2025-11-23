@@ -124,7 +124,7 @@
 - [x] **TASK-1702**: `suggest_improvement_actions` の実データ化 (FR-022)
   - 実支出データに基づく削減提案ロジックの実装
   - 変動費・固定費の分類結果を活用
-- [ ] **TASK-1703**: `detect_spending_anomalies` の実装 (FR-023)
+- [x] **TASK-1703**: `detect_spending_anomalies` の実装 (FR-023)
   - 新規MCPツールとして実装
   - 過去平均との乖離（σ）を計算し、異常値を検出
 - [x] **TASK-1704**: `project_financial_independence_date` の実データ化 (FR-024)

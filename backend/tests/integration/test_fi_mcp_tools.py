@@ -11,6 +11,7 @@ import pytest
 from household_mcp.tools.financial_independence_tools import (
     analyze_expense_patterns,
     compare_scenarios,
+    detect_spending_anomalies,
     get_financial_independence_status,
     project_financial_independence_date,
     suggest_improvement_actions,
@@ -259,6 +260,29 @@ class TestFIToolsIntegration:
                 assert "message" in result
             except Exception as e:
                 pytest.fail(f"Tool failed with defaults: {e}")
+
+    def test_detect_anomalies(self) -> None:
+        """Test spending anomaly detection."""
+        # Test with default threshold
+        result = detect_spending_anomalies(threshold_sigma=2.0)
+
+        assert isinstance(result, dict)
+        assert "anomalies" in result
+        assert "threshold_sigma" in result
+        assert result["threshold_sigma"] == 2.0
+
+        # Test with low threshold to ensure we find some anomalies
+        # Using 0.0 means any spending above average is an anomaly
+        result_low = detect_spending_anomalies(threshold_sigma=0.0)
+        anomalies = result_low.get("anomalies", [])
+
+        if anomalies:
+            anomaly = anomalies[0]
+            assert "category" in anomaly
+            assert "month" in anomaly
+            assert "amount" in anomaly
+            assert "z_score" in anomaly
+            assert "threshold" in anomaly
 
 
 class TestFIToolsOutputFormats:

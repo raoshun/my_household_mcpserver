@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
+from statistics import mean, stdev
 from typing import Any
 
 from sqlalchemy.exc import OperationalError
@@ -724,3 +725,91 @@ def compare_actual_vs_fire_target(
             "status": "error",
             "message": f"比較エラー: {exc}",
         }
+
+
+def detect_spending_anomalies(
+    period_months: int = 6,
+    threshold_sigma: float = 2.0,
+) -> dict[str, Any]:
+    """
+    Detect spending anomalies based on statistical deviation.
+
+    Args:
+        period_months: Analysis period for baseline (default: 6)
+        threshold_sigma: Standard deviation threshold (default: 2.0)
+
+    Returns:
+        Detected anomalies with details
+
+    """
+    try:
+        # Load data
+        available_months = list(data_loader.iter_available_months())
+        if not available_months:
+            return {"status": "error", "message": "No data available"}
+
+        target_months = available_months[-period_months:]
+        if not target_months:
+            return {"status": "error", "message": "No data in period"}
+
+        df = data_loader.load_many(target_months)
+
+        # Ensure we have month column (load_many returns '年月キー' usually)
+        # If not, we might need to construct it from '日付'
+        if "年月キー" not in df.columns:
+            # Try to create it
+            if "日付" in df.columns:
+                df["年月キー"] = df["日付"].dt.strftime("%Y-%m")
+            else:
+                return {
+                    "status": "error",
+                    "message": "Cannot determine month from data",
+                }
+
+        anomalies = []
+
+        # Iterate over categories
+        for category in df["大項目"].unique():
+            cat_df = df[df["大項目"] == category]
+            # Group by month to get monthly totals
+            # Use abs() because expenses are negative
+            monthly_totals = cat_df.groupby("年月キー")["金額（円）"].sum().abs()
+
+            if len(monthly_totals) < 3:
+                continue  # Not enough data for stats
+
+            values = monthly_totals.tolist()
+            avg = mean(values)
+            sigma = stdev(values) if len(values) > 1 else 0
+
+            if sigma == 0:
+                continue
+
+            # Check the latest month
+            latest_month = monthly_totals.index[-1]
+            latest_val = monthly_totals.iloc[-1]
+
+            z_score = (latest_val - avg) / sigma
+
+            if z_score > threshold_sigma:
+                anomalies.append(
+                    {
+                        "category": str(category),
+                        "month": str(latest_month),
+                        "amount": int(latest_val),
+                        "average": int(avg),
+                        "sigma": round(sigma, 2),
+                        "z_score": round(z_score, 2),
+                        "threshold": threshold_sigma,
+                    }
+                )
+
+        return {
+            "status": "success",
+            "anomalies": anomalies,
+            "period_months": len(target_months),
+            "threshold_sigma": threshold_sigma,
+        }
+
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
